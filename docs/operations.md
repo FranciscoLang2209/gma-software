@@ -2,8 +2,9 @@
 
 Revisado el 2026-11-15 (Buenos Aires). **Preparación local; puesta en uso pendiente.**
 No hay URL de aplicación ni Supabase dedicado confirmado. Por autorización posterior
-del dueño se creó [el proyecto Vercel app-papa](https://vercel.com/franlang2209-8232/app-papa)
-en la cuenta `franlang2209-8232`, que continúa en Hobby, sin despliegues. Proyecto
+del dueño se creó el proyecto Vercel app-papa, luego renombrado por él a
+[gma-software](https://vercel.com/franlang2209-8232/gma-software),
+en la cuenta `franlang2209-8232`, que continúa en Hobby. Proyecto
 `prj_lPEM6UXsDFB4YBzBs5p1BAKgRHn2`, equipo `team_ckh7dlHz13Q9LyiEOOob04Nx`.
 Configuración remota leída tras guardar: Next.js, Node **24.x**, instalación `npm ci`,
 build `npm run build`. Protección observada `all_except_custom_domains` y
@@ -172,7 +173,10 @@ persiste hasta 250 filas/~1 MiB por RPC, pero relee el libro en cada petición.
    Usar `npm run build` y despliegue **Preview** explícito en el proyecto revisado,
    con protección de acceso disponible en su plan. No desactivar protección para
    automatizar pruebas. El código sigue requiriendo invitación/perfil aunque exista URL.
-   No hay deploy hook ni CI automático nuevo; Git aún no está inicializado.
+   No hay deploy hook ni CI personalizado. Git está inicializado con `origin`
+   en `FranciscoLang2209/gma-software`, branch `main`. Al enlazar Git, Vercel puede
+   iniciar builds automáticamente con los pushes; el prebuild seguirá bloqueándolos
+   hasta tener Supabase y orígenes revisados. No eludir ese control para lograr un deploy.
 
 ## Bootstrap e invitaciones
 

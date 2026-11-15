@@ -188,3 +188,18 @@ La carpeta se encontró vacía, sin `AGENTS.md` ni Git inicializado. Se decidió
   con manifiesto/hashes y ensayar restauración. Retención/RPO/RTO pendientes, sin
   automatizar borrados ni eliminar historia. Ningún mapeo comercial, vigencia o
   conciliación real se decidió por inferencia.
+
+### Continuación: repositorio autorizado
+
+El dueño eligió el repo público `FranciscoLang2209/gma-software` y pidió subir el
+código y conectarlo al proyecto Vercel existente antes de crear la base. Se respeta
+su visibilidad; no se publicó información financiera ni secretos, solo fixtures
+identificados como sintéticos. Git inicializado y primer commit subido, sin forzar
+historia ajena. El proyecto Vercel fue renombrado por el dueño a gma-software y conserva
+su ID/cuenta: no crear un duplicado por el cambio de nombre. Conexión Git y próximos
+pasos registrados en progress.md; la base todavía no existe.
+
+Conexión final GitHub→Vercel verificada tras autorización de la GitHub App por el dueño.
+Se mantienen builds protegidos por la configuración revisada y no se omite la base
+para publicar una demo. Próximo paso autorizado en secuencia: crear/configurar Supabase
+en una cuenta dedicada identificada por el dueño, con región/plan acordados.

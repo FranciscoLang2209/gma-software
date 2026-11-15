@@ -1,5 +1,9 @@
 # App Papá
 
+Repositorio autorizado: [FranciscoLang2209/gma-software](https://github.com/FranciscoLang2209/gma-software).
+Proyecto Vercel: [gma-software](https://vercel.com/franlang2209-8232/gma-software).
+La base Supabase y la puesta en uso siguen pendientes; ver [operación](docs/operations.md).
+
 Aplicación interna para analizar AUM, Revenue y distribución comercial. Esta es la
 **etapa 10: preparación operativa local**, con el circuito funcional de etapa 9 verificado sintéticamente. Incluye preparación XLSX/CSV,
 originales privados, resolución explícita y correcciones versionadas por fuente/mes/custodio, además de filtros, series, cobertura, JSON/CSV paginados y descarga CSV completa.

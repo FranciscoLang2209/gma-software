@@ -380,3 +380,44 @@ la matriz de permisos/circuito y recuperación con sintéticos.** Antes de datos
 cerrar mapeos comerciales/namespaces, alcances/cobertura, vigencias iniciales y
 conciliar un período real contra los Excel privados originales. No repetir etapas1–9
 ni usar aplicaciones ajenas como base de prueba.
+
+## Continuación de etapa 10 — GitHub y conexión Git, 2026-11-15
+
+El dueño creó y autorizó [FranciscoLang2209/gma-software](https://github.com/FranciscoLang2209/gma-software)
+como destino del código. Metadata GitHub confirmó repositorio público y vacío,
+branch predeterminado main y permisos de escritura; `git ls-remote` no devolvió refs.
+Se inicializó Git en la carpeta existente, remoto origin explícito y autor con email
+noreply de GitHub, preservando configuración global. Revisión de123 archivos:
+solo código/docs/migraciones/fixtures sintéticos; `.env` únicamente plantillas vacías,
+sin fuentes privadas/sesiones/builds/dependencias ni patrones de credenciales
+reales detectados. Esta revisión acotada no es una auditoría integral de secretos.
+
+Commit inicial `185871cb4c54eeac56ba06d6de40ad2bd25ef1e7` subido a main;
+SHA remoto y local coinciden. `npm test`:22/22. No se cambió lógica de aplicación,
+paquetes ni migraciones. Se conservó CRLF intencional de CSV sintéticos; revisión
+whitespace con `core.whitespace=cr-at-eol`. Las demás suites siguen como evidencia
+histórica, sin declararlas reejecutadas por esta subida.
+
+El proyecto Vercel conserva ID `prj_lPEM6UXsDFB4YBzBs5p1BAKgRHn2`; al inspeccionarlo
+se observó que el dueño lo renombró a **gma-software**. Dashboard vigente:
+https://vercel.com/franlang2209-8232/gma-software . No se creó otro proyecto.
+El primer intento de enlace Git pidió Login Connection GitHub; se conectó el login
+FranciscoLang2209 en la cuenta Vercel correcta mediante navegador. El siguiente
+intento aún no pudo enlazar el repo: acceso de la GitHub App en revisión. Estado
+final de esta conexión se registra a continuación, después de verificarlo.
+
+Supabase, entornos efectivos, plan/región/volumen y conciliación real permanecen
+pendientes. Próximo paso después de enlazar el repo: identificar la cuenta/organización
+Supabase autorizada y crear/configurar bases dedicadas con el dueño, sin reutilizar
+las tres bases ajenas conectadas ni activar planes pagos por inferencia.
+
+### Resultado de la conexión Git
+
+El dueño confirmó que verificó identidad en GitHub y habilitó el repo en la GitHub App.
+Nuevo `vercel git connect` con ID/proyecto/equipo explícitos respondió **Connected**.
+Navegador en Settings→Git confirmó **FranciscoLang2209/gma-software — Connected**;
+no se conectó WatchParty ni se creó otro proyecto. README/operations apuntan ahora al
+nombre vigente. Se actualiza el registro documental en main después del commit inicial.
+Los pushes pueden iniciar builds Vercel; el control de destinos continuará rechazando
+build remoto sin Supabase/orígenes definidos. No se declara aplicación desplegada ni
+login/importación remota validados. Siguiente paso: Supabase dedicado autorizado.

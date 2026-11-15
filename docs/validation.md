@@ -395,3 +395,40 @@ máxima ni mapeos comerciales/alcances/vigencias iniciales/conciliación de per�
 La guía `operations.md` documenta procedimientos y alternativas condicionadas al plan;
 no se declaran ejecutados. El proyecto Vercel creado permanece sin carga de código/datos
 ni upgrade; los destinos Supabase/orígenes vacíos bloquean su build remoto.
+
+## Continuación: publicación del código en GitHub, 2026-11-15
+
+- Repo público `FranciscoLang2209/gma-software` elegido explícitamente por el dueño;
+  metadata del conector confirmó permiso push/admin, tamaño0 y default main. Remoto
+  vacío comprobado con `git ls-remote` antes de inicializar. Sin sobreescritura de historia.
+- Git inicializado en la carpeta existente, origin HTTPS exacto. Autor local del repo
+  usa nombre GitHub y noreply con ID128090343; no se cambió la identidad global ni se
+  incluyó correo privado en el commit. Git usó su credencial existente por keychain;
+  no se extrajo ni imprimió el token, ni fue necesario autenticar gh.
+-123 archivos inventariados antes del commit: ninguna carpeta de build/dependencias/
+  sesiones/fuentes/backups; cuatro `.env*.example` sin valores. Excel/CSV únicamente
+  en fixtures sintéticos documentados. Revisión de patrones de claves privadas,
+  GitHub/Supabase secretos, AWS, JWT y URLs PostgreSQL con contraseña sin hallazgos;
+  no equivale a certificación de ausencia de secretos o revisión integral.
+- `npm test`:22/22. Sin cambios de lógica ni paquetes en esta continuación. CSV
+  sintéticos mantienen CRLF intencional; revisión whitespace posterior con
+  `core.whitespace=cr-at-eol` correcta. No se repitieron SQL/HTTP/build ya registrados.
+- Commit `185871cb4c54eeac56ba06d6de40ad2bd25ef1e7` subido a main sin force;
+  `git rev-parse HEAD` y `git ls-remote origin refs/heads/main` idénticos.
+- Vercel ID/equipo verificados antes del enlace. Nombre vigente gma-software,
+  Node24.x/Next.js conservados. Primer intento git connect pidió Login Connection;
+  navegador mostró GitHub FranciscoLang2209 conectado después del flujo. Segundo
+  intento de enlace falló; UI mostró solamente WatchParty como repo autorizado de
+  la GitHub App. Se abrió su configuración en la cuenta FranciscoLang2209, que pide
+  Confirm access (sudo/2FA). Se solicitó al dueño verificar identidad y agregar solo
+  gma-software manteniendo permisos existentes. Resultado final se registra al concluir.
+
+No se creó Supabase ni se activaron planes pagos. El prebuild permanece cerrado
+sin destinos Supabase/orígenes; subir y enlazar código no valida la app alojada.
+
+Resultado posterior: el dueño confirmó acceso de la GitHub App. `vercel git connect`
+terminó con **Connected** y la UI Settings→Git mostró el repositorio exacto
+`FranciscoLang2209/gma-software` como Connected. Proyecto/equipo/Node24.x previamente
+comprobados; no se tocó el proyecto WatchParty. Documentación actualizada para el
+nombre vigente. El build remoto sigue sujeto al prebuild sin base/origen configurados;
+no se validaron servicios Supabase ni un despliegue de la aplicación.
