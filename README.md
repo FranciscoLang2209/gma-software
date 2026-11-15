@@ -5,6 +5,10 @@ Proyecto Vercel: [gma-software](https://vercel.com/franlang2209-8232/gma-softwar
 La base de prueba Supabase Free/São Paulo está creada y conectada solo a Preview;
 la puesta en uso con datos reales sigue pendiente. Ver [operación](docs/operations.md).
 
+[Abrir Preview de prueba](https://gma-software-git-prueba-franlang2209-8232.vercel.app).
+Requiere acceso Vercel. SMTP, invitación y primer administrador quedan pendientes
+por decisión del dueño; todavía no hay ingreso operativo por correo.
+
 Aplicación interna para analizar AUM, Revenue y distribución comercial. Esta es la
 **etapa 10: preparación operativa local**, con el circuito funcional de etapa 9 verificado sintéticamente. Incluye preparación XLSX/CSV,
 originales privados, resolución explícita y correcciones versionadas por fuente/mes/custodio, además de filtros, series, cobertura, JSON/CSV paginados y descarga CSV completa.

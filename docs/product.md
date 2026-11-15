@@ -1,6 +1,6 @@
 # App Papá — Producto
 
-Estado: definición funcional vigente; implementación funcional local hasta etapa 9 y preparación operativa local de etapa 10. Sin datos de negocio ni Supabase remoto verificado. Puesta en uso pendiente; ver `operations.md`. Actualizado: 2026-11-15.
+Estado: definición funcional vigente; circuito local sintético hasta etapa 9 y entorno de prueba remoto de etapa 10 con Supabase/Preview verificados parcialmente. Sin datos de negocio; SMTP/invitación y puesta en uso pendientes. Ver `operations.md`. Actualizado: 2026-11-15.
 
 ## Objetivo y usuarios
 

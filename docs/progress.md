@@ -1,6 +1,6 @@
 # App Papá — Progreso
 
-Actualizado: 2026-11-15, Buenos Aires. **Etapa 10 en curso: GitHub conectado a Vercel; Supabase de prueba Free/São Paulo creado, ocho migraciones aplicadas y Auth/Storage restringidos. Preview, invitación/bootstrap y circuito remoto en preparación.** Datos reales, producción y recuperación completa pendientes. Los apartados anteriores son registros históricos.
+Actualizado: 2026-11-15, Buenos Aires. **Etapa 10: GitHub/Vercel conectados; Supabase Free/São Paulo con ocho migraciones; Preview READY y controles anon/lector reales verificados.** El dueño dejó SMTP pendiente: sin invitación ni primer administrador operativo. Publicación remota, datos reales, producción y recuperación completa pendientes. Los apartados anteriores son registros históricos.
 
 ## Etapa 0 — Contexto y reglas
 
@@ -467,3 +467,40 @@ retirada del permiso temporal; además se repitieron las suites existentes.
 Se configura Preview para rama `prueba` y Functions São Paulo. Producción conserva
 base/origen sin configurar, sin usar la base de prueba. URL Auth, plantillas,
 invitación/bootstrap del correo acordado y verificación del despliegue en progreso.
+
+## Cierre de continuación — Preview y límites pendientes
+
+Despliegue **READY**, no producción:
+https://gma-software-git-prueba-franlang2209-8232.vercel.app ,
+ID `dpl_CwPbBttXMudpc28JHjgMPcN17uhX`, commit funcional
+`abdf9997241946e067d6d14bdddfc4f29e60b497`, rama prueba, Node24.x y regiones[gru1]
+leídos del API Vercel. Ese alias exacto quedó como Site URL en Auth, sin redirects
+adicionales ni comodines. /ingresar200 y API sin sesión401, private/no-store.
+
+Con una cuenta **lectora sintética**, Auth/JWT/SSR/PostgREST/Storage reales:
+metadata role=admin no elevó el perfil reader; consulta JSON200 y CSV completo200
+con base vacía; fuente API403; sin gestión/publicación ni lectura/listado de objeto
+privado. Se subió únicamente `operational-checks/SINTETICO-revenue.csv`, copia del
+fixture, para comprobar privacidad real. No es una importación ni tiene hechos
+publicados; conservarlo como fuente sintética de control hasta acordar retención.
+Perfil de prueba deshabilitado y sesión cerrada; JWT anterior pierde acceso. No se
+borraron perfil, usuario, auditoría ni archivo. Sin datos reales ni importes publicados.
+
+El dueño indicó correo para primer administrador (conservado fuera de Git), pero
+eligió **dejar SMTP pendiente**. La UI actual de Supabase Free pide SMTP propio o
+upgrade para editar Invite/Magic Link; no se eludió la restricción ni cambió el
+plan. Las plantillas locales están listas, pero no activas en el servicio. No se
+envió invitación ni se ejecutó bootstrap de admin. No se valida OTP/invitación,
+publicación/corrección por admin en este despliegue ni conciliación real.
+
+La CLI vercel curl falló al reenviar un flag global y generó automáticamente un
+bypass persistente para automatización. Se revocó ese único secreto y se verificó
+bypassCount0 y SSO all_except_custom_domains intacto. Pruebas HTTP hechas mediante
+OIDC corto del mismo proyecto, sin desactivar protección ni publicar credenciales.
+
+**Próximo prompt:** configurar SMTP autorizado en el proyecto de prueba, activar
+las dos plantillas versionadas, invitar al correo ya acordado y ejecutar bootstrap
+revisado; completar login, roles, importación/publicación/corrección y conciliación
+sintética remota. Antes de reales siguen obligatorios mapeos/namespaces, alcances,
+vigencias iniciales y conciliación contra originales. Producción, volumen real,
+retención/RPO/RTO y recuperación de base+Storage siguen sin aprobar/validar.

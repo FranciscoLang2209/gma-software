@@ -1,6 +1,6 @@
 # Validación — evidencia local y pendientes
 
-**Estado vigente, 2026-11-15 (Buenos Aires): etapa 10 preparada localmente; puesta en uso pendiente.** Etapa 9 conserva su circuito sintético verificado; etapa 10 agrega control de destinos y benchmark reproducible. No hay conciliación con archivos reales ni validación de servicios Supabase efectivos. La evidencia nueva está al final. Los apartados anteriores son registros históricos.
+**Estado vigente, 2026-11-15 (Buenos Aires): etapa 10 con Supabase real y Preview READY parcialmente verificados; puesta en uso pendiente.** Hay pruebas reales anon/lector, Storage privado, consulta/exportación vacía y revocación; no publicación remota ni conciliación real. SMTP/invitación diferidos por el dueño. La evidencia nueva está al final; los apartados anteriores son registros históricos.
 
 ## Registro inicial — etapas 2 y 3
 
@@ -468,3 +468,46 @@ reportados por esa ejecución; no se presenta como certificación ni ausencia to
 de riesgos de configuración Auth. Pendientes medición/optimización sin alterar
 permisos por conveniencia. `npm test`22/22, lint y regresión SQL de operador
 administrado más todas las suites de test:db correctos tras la corrección.
+
+## Preview READY y verificación real parcial
+
+Vercel API confirmó dpl_CwPbBttXMudpc28JHjgMPcN17uhX READY, target null (Preview),
+branch prueba, commit abdf9997241946e067d6d14bdddfc4f29e60b497, Node24.x,
+regiones[gru1], alias exacto configurado en Auth:
+https://gma-software-git-prueba-franlang2209-8232.vercel.app . Sin despliegue
+Production aprobado. La instalación/npm build del Preview pasó en hosting.
+
+Pruebas con OIDC corto de Vercel, sin abrir protección: /ingresar200, texto de
+login, private/no-store; /api/consultas sin sesión401 privado. Supabase directo
+sin usuario: current_access401/42501, admin_import_batches401/42501,
+Accept-Profile app_private406/PGRST106 (esquema no expuesto), Storage list200 vacío.
+
+Se creó un usuario Auth y perfil reader **sintéticos**, contraseña aleatoria no
+registrada, sin enviar correos; user_metadata.role=admin es dato de ataque de prueba.
+Inicio por password solo en el SDK de operador para esta cuenta sintética (no se
+agregó flujo de password a la app). JWT/SSR cookies reales contra Preview: current_access
+reader, consulta JSON200/1362bytes, CSV completo200/2699bytes, ambos no-store con
+base sin hechos; fuente API403. RPC source_file/manage_import42501, listado de
+Storage vacío y descarga de objeto privado rechazada. URL pública también denegada.
+El objeto `operational-checks/SINTETICO-revenue.csv` existe realmente, subido por el
+operador desde el fixture sintético; ningún lote/hecho financiero fue creado.
+Se mantiene para trazabilidad, sin borrado automático. Deshabilitar perfil dejó
+current_access null con JWT existente; finalmente se cerró sesión. Usuario/perfil/
+auditoría conservados, sin administrador operativo ni datos reales.
+
+vercel curl generó un bypass persistente antes de fallar por flag global reenviado.
+Se revocó por API usando body privado, sin imprimir el secreto, y se verificó
+protectionBypass vacío y ssoProtection all_except_custom_domains conservado.
+La comprobación HTTP se completó con x-vercel-trusted-oidc-idp-token del proyecto.
+No se presenta un bypass temporal como prueba de acceso público ni se dejó uno activo.
+
+Site URL guardado en Dashboard: alias exacto de prueba; redirects adicionales
+vacíos. Proveedores externos/manual linking/anónimos desactivados, confirm email
+activo. UI de Emails: Set up custom SMTP to edit templates; opciones Pro o Send
+Email hook. El dueño eligió dejar SMTP pendiente; no se hizo upgrade ni se usó API
+para eludir la restricción. No se enviaron invitaciones, asignó admin real ni se
+probó OTP/invitación/primer bootstrap o publicación/corrección/admin HTTP remoto.
+Tampoco se midió volumen representativo real, importación máxima en hosting,
+restauración de datos+Storage, accesibilidad integral o conciliación de Excel real.
+Los únicos archivos subidos fueron fixtures sintéticos. Plan Free no acredita backup
+recuperable incluido; procedimiento de operaciones y retención pendientes del dueño.

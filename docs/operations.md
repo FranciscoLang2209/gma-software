@@ -13,6 +13,12 @@ en la cuenta `franlang2209-8232`, que continúa en Hobby. Proyecto
 Configuración remota leída tras guardar: Next.js, Node **24.x**, instalación `npm ci`,
 build `npm run build`. Protección observada `all_except_custom_domains` y
 `gitForkProtection=true`; no se debilitó. No hay autorización para activar planes pagos.
+Preview verificado: [rama prueba](https://gma-software-git-prueba-franlang2209-8232.vercel.app),
+Functions en gru1 y Node24.x. El acceso conserva protección Vercel y permisos de la app.
+**SMTP quedó pendiente por decisión del dueño:** la consola Free exige SMTP propio
+para editar las plantillas usadas por esta app. No se envió invitación ni se creó el
+primer administrador. No usar el correo predeterminado con enlaces que la app no
+admite ni cambiar a un plan pago para resolverlo sin autorización.
 Se configuró `VERCEL_ORG_ID` como Config para Preview/Production; URL/clave Supabase
 solo en Preview. Production sigue sin base ni origen autorizados. No conectar la
 base de prueba a Production. Si la integración vuelve a sincronizar variables al

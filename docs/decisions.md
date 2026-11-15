@@ -209,3 +209,14 @@ Esto resuelve plan/región de prueba; no define producción, capacidad represent
 retención ni recuperación. Recurso nuevo vía Marketplace del equipo Vercel autorizado,
 separado de las bases ajenas; no conectar credenciales privilegiadas automáticamente
 al runtime de la aplicación.
+
+### Entorno de prueba cerrado y correo diferido
+
+Preview rama prueba usa exclusivamente Supabase Free sa-east-1 y Functions gru1.
+Producción no recibe base ni variables de prueba. El dueño indicó el destinatario
+administrador y decidió dejar SMTP pendiente; su correo no se publica en el repo.
+Sin invitación/bootstrap hasta contar con las plantillas compatibles. La consola
+Free actual exige SMTP propio para editarlas; no se cambió de plan ni implementó
+un login alternativo para evitar ese requisito. Cuenta lectora sintética real usada
+solo para verificar permisos, deshabilitada al terminar y sesión cerrada; no es un
+administrador de negocio. Sin datos financieros reales ni publicados.
