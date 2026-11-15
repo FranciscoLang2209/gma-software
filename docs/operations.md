@@ -1,7 +1,11 @@
 # App Papá — Operación y puesta en uso
 
 Revisado el 2026-11-15 (Buenos Aires). **Preparación local; puesta en uso pendiente.**
-No hay URL de aplicación ni Supabase dedicado confirmado. Por autorización posterior
+La base de prueba **gma-software-prueba** está creada en Supabase Free/São Paulo,
+ref `zwdqnrbqqszjrtkhyqnz`, con ocho migraciones aplicadas y conectada solo a Preview.
+Registro público/anónimo desactivado; bucket privado con límite2MiB. La integración
+conserva en runtime solo URL/clave publicable; no claves administrativas. Todavía
+no hay apertura a datos reales ni restauración completa validada. Por autorización posterior
 del dueño se creó el proyecto Vercel app-papa, luego renombrado por él a
 [gma-software](https://vercel.com/franlang2209-8232/gma-software),
 en la cuenta `franlang2209-8232`, que continúa en Hobby. Proyecto
@@ -9,8 +13,10 @@ en la cuenta `franlang2209-8232`, que continúa en Hobby. Proyecto
 Configuración remota leída tras guardar: Next.js, Node **24.x**, instalación `npm ci`,
 build `npm run build`. Protección observada `all_except_custom_domains` y
 `gitForkProtection=true`; no se debilitó. No hay autorización para activar planes pagos.
-Se configuró `VERCEL_ORG_ID` como Config únicamente para Preview/Production y se
-verificó por listado de nombres/ambientes; aún no hay variables Supabase en Vercel.
+Se configuró `VERCEL_ORG_ID` como Config para Preview/Production; URL/clave Supabase
+solo en Preview. Production sigue sin base ni origen autorizados. No conectar la
+base de prueba a Production. Si la integración vuelve a sincronizar variables al
+rotar claves o reconectar, retirar las administrativas/públicas antes de desplegar.
 
 CLI **65.16.0** ejecutada con `npx`, sin añadir dependencias. Para operar este proyecto
 usar siempre `--scope franlang2209-8232 --global-config /Users/franciscolang/.config/app-papa-vercel`;

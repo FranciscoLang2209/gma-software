@@ -1,6 +1,6 @@
 # App Papá — Progreso
 
-Actualizado: 2026-11-15, fecha local de Buenos Aires. **Etapa 10 solicitada: preparación local de operación verificada; configuración y validación alojadas pendientes de destinos/accesos y decisiones del dueño.** Último circuito funcional completo: etapa 9, sintético local. Los apartados anteriores son registros históricos.
+Actualizado: 2026-11-15, Buenos Aires. **Etapa 10 en curso: GitHub conectado a Vercel; Supabase de prueba Free/São Paulo creado, ocho migraciones aplicadas y Auth/Storage restringidos. Preview, invitación/bootstrap y circuito remoto en preparación.** Datos reales, producción y recuperación completa pendientes. Los apartados anteriores son registros históricos.
 
 ## Etapa 0 — Contexto y reglas
 
@@ -421,3 +421,49 @@ nombre vigente. Se actualiza el registro documental en main después del commit 
 Los pushes pueden iniciar builds Vercel; el control de destinos continuará rechazando
 build remoto sin Supabase/orígenes definidos. No se declara aplicación desplegada ni
 login/importación remota validados. Siguiente paso: Supabase dedicado autorizado.
+
+### Primer build Git y autorización de base de prueba
+
+El push documental `2969ec39588e8a98a89c324bd2af368c797754a2` activó el primer
+build automático de main en Vercel (dpl_61iXpndFKT4i5zZCLwiwS1BqDww1). Clonó
+el repo/commit exactos y completó npm ci; terminó ERROR por el prebuild esperado:
+«Completar el destino revisado en config/deployment-targets.json». No se publicó
+la aplicación. Se conservó el control, sin fallback ni eliminación de permisos.
+Los logs reportaron los siete avisos moderados de desarrollo ya conocidos.
+
+El dueño confirmó proyecto de prueba **Supabase Free ($0)** y región **São Paulo**.
+Se eligió el flujo Marketplace de su equipo Vercel correcto: recurso dedicado
+`gma-software-prueba`, región `gru1` (Supabase sa-east-1), sin conectar automáticamente
+credenciales privilegiadas a los ambientes. No se autoriza producción ni upgrade.
+La instalación requiere aceptar los términos de Supabase/Marketplace en el navegador;
+no se creó ningún recurso con el intento bloqueado. Resultado final registrado después.
+
+## Base de prueba efectiva — 2026-11-15
+
+El dueño aceptó términos del Marketplace/Supabase y autorizó Free ($0), São Paulo.
+Creado **gma-software-prueba**, ref `zwdqnrbqqszjrtkhyqnz`, región gru1/sa-east-1,
+PostgreSQL17.11, recurso `store_iP5U3AlzPe9GVYPH`, instalación
+`icfg_QRthmbPco8qKjX0cBucBBacq`, organización dedicada
+`vercel_icfg_QRthmbPco8qKjX0cBucBBacq` del equipo Vercel autorizado.
+Conectado exclusivamente a Preview, sin tocar bases de otras aplicaciones.
+La integración generó variables administrativas/públicas; se retiraron todas salvo
+SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY. Credenciales de operador fuera del repo/runtime.
+
+Antes de escribir: cero tablas de app, usuarios y buckets. Primera migración aplicada;
+la2 se revirtió por ausencia de SET ROLE en el operador no-superusuario. Se corrigió
+la precondición en2 (no aplicada) y limpieza al cerrar8 (no aplicada), sin editar1
+ni la historia ya aplicada. Las ocho migraciones terminaron correctamente. Assertions
+remotas verificaron todas las tablas privadas con RLS forzado, ejecutor NOLOGIN/
+NOBYPASSRLS, sin membresías con INHERIT/SET, ningún perfil, bucket privado y límite
+2MiB. Auth remoto: signup desactivado por Dashboard y POST signup →422/signup_disabled;
+anónimo desactivado observado en UI. Sin datos financieros reales ni invitaciones aún.
+
+Advisors remoto ejecutado:28 WARN de rendimiento (13 auth_rls_initplan y15
+multiple_permissive_policies), sin otro resultado. No se declara limpio. Se conserva
+el esquema de permisos en vez de mezclar una optimización sin medición de volumen.
+Nueva regresión SQL prueba la cadena con CREATEROLE/BYPASSRLS sin SUPERUSER y la
+retirada del permiso temporal; además se repitieron las suites existentes.
+
+Se configura Preview para rama `prueba` y Functions São Paulo. Producción conserva
+base/origen sin configurar, sin usar la base de prueba. URL Auth, plantillas,
+invitación/bootstrap del correo acordado y verificación del despliegue en progreso.

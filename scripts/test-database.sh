@@ -16,6 +16,17 @@ unset PGSERVICE PGOPTIONS PGHOSTADDR PGPASSWORD
 "$pg_bin/createdb" "$PGDATABASE"
 echo "Base sintética temporal: $PGDATABASE (socket privado, sin TCP)"
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/bootstrap.sql
+# Reproducir el operador administrado de Supabase sin privilegios de superusuario.
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -c 'create role app_papa_migration_test login createrole bypassrls;'
+"$pg_bin/createdb" -O app_papa_migration_test app_papa_managed_synthetic
+sed '/^create role /d' tests/database/bootstrap.sql | "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -U app_papa_migration_test -d app_papa_managed_synthetic
+for migration in supabase/migrations/*.sql; do
+  "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -U app_papa_migration_test -d app_papa_managed_synthetic -f "$migration"
+done
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -d app_papa_managed_synthetic -f tests/database/managed-migrations.test.sql
+"$pg_bin/dropdb" app_papa_managed_synthetic
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -c 'drop role app_papa_executor; drop role app_papa_migration_test;'
+echo 'OK: migraciones con operador CREATEROLE/BYPASSRLS sin SUPERUSER y permiso temporal retirado.'
 for migration in supabase/migrations/*.sql; do
   echo "Aplicando $migration"
   "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f "$migration"

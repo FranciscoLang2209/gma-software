@@ -203,3 +203,9 @@ Conexión final GitHub→Vercel verificada tras autorización de la GitHub App p
 Se mantienen builds protegidos por la configuración revisada y no se omite la base
 para publicar una demo. Próximo paso autorizado en secuencia: crear/configurar Supabase
 en una cuenta dedicada identificada por el dueño, con región/plan acordados.
+
+El dueño confirmó Free ($0) y São Paulo para una base **de prueba** con sintéticos.
+Esto resuelve plan/región de prueba; no define producción, capacidad representativa,
+retención ni recuperación. Recurso nuevo vía Marketplace del equipo Vercel autorizado,
+separado de las bases ajenas; no conectar credenciales privilegiadas automáticamente
+al runtime de la aplicación.

@@ -76,3 +76,20 @@ administración con preview/confirmación, vigencias y auditoría. Solo pruebas 
 comparando las convenciones originales sin la configuración añadida. Conserva función/propietario/
 grants, archivos y versiones existentes; no modifica datos financieros. Verificada desde cero y por
 regresiones SQL/HTTP, sin aplicación remota.
+
+### Primer destino administrado (etapa 10)
+
+En Supabase PostgreSQL17.11 el operador `postgres` tiene CREATEROLE/BYPASSRLS,
+pero no SUPERUSER. La migración2, aún sin aplicar en ese destino, necesitó un
+grant explícito temporal con INHERIT/SET al creador del ejecutor para transferir
+propiedad de funciones. La migración8 retira ese grant propio al terminar.
+La membresía automática de administración de PostgreSQL queda sin INHERIT ni SET;
+ningún rol de aplicación gana membresía. Estas correcciones se hicieron antes de
+aplicar esas dos versiones en el único destino compartido autorizado; la migración1,
+ya aplicada, no se modificó. Ocho versiones coincidentes en el destino de prueba.
+
+`test:db` ahora prueba primero toda la cadena con un operador sintético sin
+SUPERUSER y comprueba propietario/limpieza de permisos, además de sus suites previas.
+Para migraciones futuras que modifiquen funciones del ejecutor, usar y retirar
+explícitamente el permiso temporal del operador dentro del alcance revisado;
+no dar LOGIN/BYPASSRLS al ejecutor ni membresía a usuarios de la aplicación.

@@ -31,4 +31,6 @@ begin
   return batch;
 end $$;
 
+-- Retirar el permiso temporal del operador al completar el bootstrap de migraciones.
+revoke app_papa_executor from current_user granted by current_user;
 commit;

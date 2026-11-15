@@ -2,7 +2,8 @@
 
 Repositorio autorizado: [FranciscoLang2209/gma-software](https://github.com/FranciscoLang2209/gma-software).
 Proyecto Vercel: [gma-software](https://vercel.com/franlang2209-8232/gma-software).
-La base Supabase y la puesta en uso siguen pendientes; ver [operación](docs/operations.md).
+La base de prueba Supabase Free/São Paulo está creada y conectada solo a Preview;
+la puesta en uso con datos reales sigue pendiente. Ver [operación](docs/operations.md).
 
 Aplicación interna para analizar AUM, Revenue y distribución comercial. Esta es la
 **etapa 10: preparación operativa local**, con el circuito funcional de etapa 9 verificado sintéticamente. Incluye preparación XLSX/CSV,

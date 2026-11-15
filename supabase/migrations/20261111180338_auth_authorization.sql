@@ -2,6 +2,8 @@ begin;
 
 -- Este rol solo ejecuta funciones acotadas; no inicia sesión ni omite RLS.
 create role app_papa_executor nologin noinherit nobypassrls;
+-- PostgreSQL administrado requiere SET para transferir las funciones al rol interno.
+grant app_papa_executor to current_user with inherit true, set true;
 grant usage on schema app_private, auth to authenticated, app_papa_executor;
 grant execute on function auth.uid(), auth.jwt() to app_papa_executor;
 

@@ -432,3 +432,39 @@ terminó con **Connected** y la UI Settings→Git mostró el repositorio exacto
 comprobados; no se tocó el proyecto WatchParty. Documentación actualizada para el
 nombre vigente. El build remoto sigue sujeto al prebuild sin base/origen configurados;
 no se validaron servicios Supabase ni un despliegue de la aplicación.
+
+## Base nueva y migraciones administradas — 2026-11-15
+
+Supabase Marketplace creado Free en gru1: `zwdqnrbqqszjrtkhyqnz`, nombre
+`gma-software-prueba`. Región/plan/propietario leídos del recurso; ref coincide con
+URL y conexión PostgreSQL. Conexión al proyecto Vercel solo Preview; nombres de
+variables verificados al terminar: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY y
+VERCEL_ORG_ID (esta última también en Production). Variables secretas/públicas/
+Postgres generadas se eliminaron del runtime; copia de operación en directorio
+privado fuera del repo, nunca valores en stdout o Git.
+
+Inspección SQL previa: PostgreSQL17.11, cero tablas public/app_private, cero
+usuarios Auth/buckets e historial vacío. CLI dry-run mostró ocho migraciones.
+Primera ejecución aplicó1 y revirtió2 por SQLSTATE42501 al transferir propiedad
+al ejecutor: postgres administrado tiene CREATEROLE/BYPASSRLS sin SUPERUSER.
+Se probaron opciones de sesión createrole_self_grant que no llegaron por el pooler;
+no se reintentaron cambios con opciones inefectivas. Se retiró la configuración
+experimental del operador y se verificó pg_db_role_setting vacío. Se corrigieron
+únicamente las migraciones2/8 todavía sin aplicar: grant temporal al creador del
+rol y revoke de su grant al cerrar la cadena. La1 aplicada no se modificó.
+
+Reejecución CLI aplicó2–8, sin seeds ni Vault. Assertions reales:8 versiones, todas
+las tablas privadas con RLS/force, ejecutor sin LOGIN/SUPERUSER/BYPASSRLS y ninguna
+membresía con INHERIT/SET. Membresía automática postgres←ejecutor con grantor
+supabase_admin conserva ADMIN=true, INHERIT=false, SET=false. Cero perfiles.
+Storage app-papa-imports privado; file_size_limit2097152 configurado y leído.
+Registro público desactivado en UI; GET Auth settings200/disable_signup=true y
+POST signup con correo sintético422/signup_disabled, sin alta. Anónimo desactivado
+observado. Ninguna muestra financiera real importada.
+
+Advisors reales `--type all --fail-on warn`: exit1,28 WARN de PERFORMANCE:
+13 auth_rls_initplan y15 multiple_permissive_policies. Sin otros nombres/niveles
+reportados por esa ejecución; no se presenta como certificación ni ausencia total
+de riesgos de configuración Auth. Pendientes medición/optimización sin alterar
+permisos por conveniencia. `npm test`22/22, lint y regresión SQL de operador
+administrado más todas las suites de test:db correctos tras la corrección.
