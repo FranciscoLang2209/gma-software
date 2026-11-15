@@ -1,0 +1,20 @@
+{
+  "development": {
+    "supabaseProjectRef": "",
+    "vercelProjectId": "",
+    "vercelTeamId": "",
+    "origin": ""
+  },
+  "preview": {
+    "supabaseProjectRef": "",
+    "vercelProjectId": "prj_lPEM6UXsDFB4YBzBs5p1BAKgRHn2",
+    "vercelTeamId": "team_ckh7dlHz13Q9LyiEOOob04Nx",
+    "origin": ""
+  },
+  "production": {
+    "supabaseProjectRef": "",
+    "vercelProjectId": "prj_lPEM6UXsDFB4YBzBs5p1BAKgRHn2",
+    "vercelTeamId": "team_ckh7dlHz13Q9LyiEOOob04Nx",
+    "origin": ""
+  }
+}

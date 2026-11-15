@@ -1,0 +1,47 @@
+{
+  "name": "app-papa",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "prebuild": "node scripts/check-deployment.ts",
+    "check:deployment": "node scripts/check-deployment.ts --required",
+    "benchmark:imports": "node --conditions=react-server scripts/benchmark-imports.ts",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test:db": "bash scripts/test-database.sh",
+    "test": "node --conditions=react-server --experimental-strip-types --test tests/*.test.ts",
+    "test:auth:http": "node scripts/test-auth-http.mjs",
+    "test:dashboard": "node scripts/test-dashboard.mjs"
+  },
+  "dependencies": {
+    "@radix-ui/themes": "3.3.0",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.119.0",
+    "csv-parse": "7.0.3",
+    "fflate": "0.8.3",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-is": "19.3.1",
+    "read-excel-file": "9.3.15",
+    "recharts": "3.10.1",
+    "saxen": "11.2.0",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.6",
+    "supabase": "3.1.0",
+    "typescript": "5.9.3"
+  }
+}

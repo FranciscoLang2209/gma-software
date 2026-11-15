@@ -1,0 +1,27 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.env*
+!.env.example
+!.env.*.example
+backups/
+private/
+*.dump
+*.backup
+supabase/.temp/
+supabase/.branches/
+.vercel/
+.DS_Store
+# Las fuentes financieras nunca forman parte del repositorio.
+*.xlsx
+*.xls
+*.csv
+*.tsv
+# Única excepción: fixtures identificados y generados sin datos reales.
+!tests/fixtures/imports/*.csv
+!tests/fixtures/imports/*.xlsx
+*.xlsm
+*.xlsb
+.vercel

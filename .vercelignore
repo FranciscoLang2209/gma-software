@@ -1,0 +1,14 @@
+.env*
+.git/
+supabase/.temp/
+supabase/.branches/
+backups/
+private/
+**/*.xlsx
+**/*.xls
+**/*.xlsm
+**/*.xlsb
+**/*.csv
+**/*.tsv
+**/*.dump
+**/*.backup

@@ -1,0 +1,65 @@
+#:schema https://supabase.com/schemas/config/v1.json
+# Base generada por supabase init (CLI 3.1.0), reducida a los servicios previstos.
+# Solo entorno local; no acredita una base iniciada ni un destino remoto.
+project_id = "app-papa"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+auto_expose_new_tables = false
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false
+sql_paths = []
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = []
+enable_signup = false
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enabled = true
+
+[auth.email.template.magic_link]
+subject = "Tu código de acceso a App Papá"
+content_path = "./supabase/templates/magic-link.html"
+
+[auth.email.template.invite]
+subject = "Invitación a App Papá"
+content_path = "./supabase/templates/invite.html"
+
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+[local_smtp]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false
