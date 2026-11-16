@@ -511,3 +511,70 @@ Tampoco se midió volumen representativo real, importación máxima en hosting,
 restauración de datos+Storage, accesibilidad integral o conciliación de Excel real.
 Los únicos archivos subidos fueron fixtures sintéticos. Plan Free no acredita backup
 recuperable incluido; procedimiento de operaciones y retención pendientes del dueño.
+
+## Rediseño UI/UX — etapas 1 y 2, 2026-11-16
+
+### Evidencia local
+
+- Rama `codex/ui-ux-dashboard`, árbol inicialmente limpio. Cambios limitados a UI,
+  fuente/iconos y documentación; sin cambios en `src/lib`, API, SQL, RLS ni Auth.
+- Node 24.22.1 del runtime local. Sin npm en PATH: npm 11.6.2 temporal se utilizó
+  para consultar peers/instalar las dos dependencias exactas. El resto de versiones
+  y metadatos del lockfile se preservaron. No se instalaron herramientas en el sistema.
+- Lint (`node node_modules/eslint/bin/eslint.js . --max-warnings=0`): correcto.
+- Typecheck (`next typegen` y `tsc --noEmit` mediante binarios locales): correcto.
+- Tests existentes (`node --conditions=react-server --experimental-strip-types
+  --test tests/*.test.ts`): **23/23** correctos.
+- Prebuild local (`node scripts/check-deployment.ts`) y `next build`: correctos;
+  todas las rutas, incluyendo el nuevo icono, compilan. Sin destino remoto.
+- `node scripts/test-auth-http.mjs`: correcto, con build real local y proveedor HTTP
+  sintético. Anónimo/lector/admin, rutas directas, login, preparación/publicación,
+  catálogos, consultas JSON/CSV, revisión, errores privados, origen y no-store.
+- `git diff --check`: correcto.
+
+### Revisión de navegador
+
+Chrome headless con Playwright del runtime, en copias aisladas en `/private/tmp`,
+una desde HEAD anterior y otra desde la UI editada. Solo en esas copias se sustituyó
+el proveedor de acceso/consulta por un fixture explícito y se omitió el proxy.
+La aplicación del repositorio mantiene su acceso y su fuente real, sin fallback.
+Capturas con franja «REVISIÓN VISUAL · DATOS SINTÉTICOS · SIN CONEXIÓN A BASE».
+La serie sintética no acredita resultados de la consulta SQL.
+
+Comprobaciones automatizadas correctas:
+
+- Dos KPIs principales y cuatro secundarios; decimal extenso conservado.
+- Formulario GET envía los filtros avanzados y los abre al volver con filtro aplicado.
+- Exportación y enlace al análisis por custodio conservan equipo y rango por URL.
+- Navegación lectora no muestra Importaciones.
+- Sin desbordamiento del documento en 320, 390, 768 y 1440 px; tabla con scroll local.
+- Tab → «Ir al contenido», Enter → `main#contenido`.
+- Cobertura expandible y lista de importes exactos disponibles.
+- Vacío con N/D y dos gráficos sin valores; error de consulta sin renderizar KPIs.
+- Sin excepciones de página ni errores de consola en la versión nueva tras terminar
+  la hidratación. La versión anterior solicitaba `/favicon.ico` inexistente; se
+  incorporó un icono SVG nativo de Next en la nueva versión.
+
+Se corrigieron dos problemas detectados visualmente: importe decimal largo partido
+en varias líneas en la tabla y fondo que no diferenciaba suficientemente superficies.
+Los importes quedan completos mediante desplazamiento horizontal del contenedor.
+Se revisaron visualmente las capturas; no se usaron datos personales ni financieros reales.
+
+Capturas fuera del repositorio, en la carpeta privada de trabajo:
+`/Users/franciscolang/Documents/ChatGPT/App Papa/ui-ux-review/`:
+`before-desktop.png`, `after-desktop.png`, `after-mobile.png`, `after-empty.png`,
+`after-error.png`, `checks.json`. El arnés y su preparación se conservan allí para
+reproducir esta revisión local; nunca deben desplegarse como aplicación.
+
+### Límites
+
+No se ejecutaron `test:db` ni `test:dashboard`: este equipo no dispone de los
+clientes completos PostgreSQL (`pg_config`, `psql`, `createdb`). Se exploró un paquete
+nativo temporal que solo proporciona servidor, initdb y pg_ctl; no se sustituyó el
+motor ni se conectó una base remota para superar esa ausencia. La prueba HTTP
+sintética no equivale al recorrido Next → PostgreSQL ni a conciliación real.
+
+No se probaron datos reales, despliegue, sesión real de negocio, lector de pantalla
+ni auditoría WCAG completa. La instalación informó siete avisos moderados existentes;
+no se ejecutaron upgrades forzados ni se afirma auditoría limpia. Pendiente revisar
+el resultado con el dueño antes de ampliar el rediseño a otras secciones.

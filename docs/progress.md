@@ -1,5 +1,7 @@
 # App Papá — Progreso
 
+**Estado vigente — 2026-11-16:** rediseño UI/UX, etapas 1 y 2 implementadas localmente en `codex/ui-ux-dashboard`. Sistema visual y navegación compartida, Resumen ejecutivo renovado. Diagnóstico, archivos y plan de siguientes secciones en [ui-ux.md](ui-ux.md). Sin push ni despliegue de este rediseño. Los registros anteriores se conservan como historia.
+
 Actualizado: 2026-11-15, Buenos Aires. **Etapa 10: GitHub/Vercel conectados; Supabase Free/São Paulo con ocho migraciones; Preview READY y controles anon/lector reales verificados.** El dueño dejó SMTP pendiente: sin invitación ni primer administrador operativo. Publicación remota, datos reales, producción y recuperación completa pendientes. Los apartados anteriores son registros históricos.
 
 ## Etapa 0 — Contexto y reglas
@@ -636,3 +638,23 @@ con muestras privadas. No se amplió a administración de usuarios en la app.
 
 Logs runtime del nuevo despliegue, error/fatal y ventana15m: sin grupos devueltos.
 No acredita ausencia de errores fuera de esa ventana ni monitoreo permanente.
+
+## Rediseño UI/UX — etapas 1 y 2, 2026-11-16
+
+Implementado localmente en `codex/ui-ux-dashboard`: base navy/gris, Inter local,
+Lucide, navegación por rol, encabezados, tablas e indicadores reutilizables, skeletons
+y Resumen ejecutivo con KPIs jerarquizados, filtros compactos, gráficos separados,
+exportación y cobertura expandible. Radix y Recharts conservados. El diagnóstico,
+la lista de archivos y el plan pendiente están en [ui-ux.md](ui-ux.md).
+
+Verificado: lint, tipos, 23 tests, prebuild/build y prueba HTTP sintética existente.
+Revisión visual sintética en Chrome: 320/390/768/1440 px, filtros GET y enlaces,
+exportación, navegación lectora, teclado, cobertura, vacío y error sin cifras falsas.
+Capturas antes/después privadas y límites en [validation.md](validation.md).
+No se ejecutó integración PostgreSQL en este equipo; no se probaron fuentes reales.
+No se modificaron modelo, RPC, acceso, RLS ni reglas financieras. Sin push ni despliegue.
+
+**Próximo prompt:** «Revisemos las capturas y el Resumen de las etapas UI/UX 1 y 2.
+Ajustá lo observado dentro de ese alcance; no avances a otras secciones sin indicarlo».
+Los pendientes operativos históricos de GitHub, región, muestras y conciliación
+permanecen independientes de este rediseño.

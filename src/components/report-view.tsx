@@ -1,23 +1,29 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { SlidersHorizontal } from "lucide-react";
 import { Button, Table } from "@radix-ui/themes";
 import type { Report, Metrics } from "@/lib/queries/contracts";
 import { DIMENSIONS, ENTITY_FILTERS, dateLabel, exact, percent, monthLabel, reportHref, usd } from "@/lib/queries/presentation";
 
-export function ReportFilters({ params, report, path, commercial = false, children, accountId }: { params: URLSearchParams; report: Report; path: string; commercial?: boolean; children?: ReactNode; accountId?: string }) {
-  return <section className="panel report-filters" aria-label="Filtros compartidos">
+export function ReportFilters({ params, report, path, commercial = false, children, accountId, compact = false }: { params: URLSearchParams; report: Report; path: string; commercial?: boolean; children?: ReactNode; accountId?: string; compact?: boolean }) {
+  const entityField = (key: string, label: string) => {
+    if (key === "cuenta" && accountId) return <input key={key} type="hidden" name="cuenta" value={accountId} />;
+    const options = report.options?.[key] ?? [], selected = params.get(key) ?? "";
+    return <label key={key}>{label}<select name={key} defaultValue={selected}>
+      <option value="">Todos · incluye sin asignar</option>
+      {selected && !options.some((o) => o.id === selected) && <option value={selected}>{selected}</option>}
+      {options.map((o) => <option value={o.id} key={o.id}>{o.label}</option>)}
+    </select></label>;
+  };
+  return <section className={`panel report-filters${compact ? " compact-filters" : ""}`} aria-label="Filtros compartidos">
     <form action={path} className="import-form">
       <label>Desde · mes<input type="month" name="desde" required min="1900-01" max="9998-12" defaultValue={params.get("desde")!} /></label>
       <label>Hasta · cierre AUM<input type="month" name="hasta" required min="1900-01" max="9998-12" defaultValue={params.get("hasta")!} /></label>
-      {Object.entries(ENTITY_FILTERS).map(([key, label]) => {
-        if (key === "cuenta" && accountId) return <input key={key} type="hidden" name="cuenta" value={accountId} />;
-        const options = report.options?.[key] ?? [], selected = params.get(key) ?? "";
-        return <label key={key}>{label}<select name={key} defaultValue={selected}>
-          <option value="">Todos · incluye sin asignar</option>
-          {selected && !options.some((o) => o.id === selected) && <option value={selected}>{selected}</option>}
-          {options.map((o) => <option value={o.id} key={o.id}>{o.label}</option>)}
-        </select></label>;
-      })}
+      {Object.entries(ENTITY_FILTERS).filter(([key]) => !compact || key === "custodio").map(([key, label]) => entityField(key, label))}
+      {compact && <details className="advanced-filters" open={Object.keys(ENTITY_FILTERS).some((key) => key !== "custodio" && params.has(key))}>
+        <summary><SlidersHorizontal size={15} aria-hidden="true" /> Más filtros{Object.keys(ENTITY_FILTERS).some((key) => key !== "custodio" && params.has(key)) ? " · activos" : ""}</summary>
+        <div className="advanced-fields">{Object.entries(ENTITY_FILTERS).filter(([key]) => key !== "custodio").map(([key, label]) => entityField(key, label))}</div>
+      </details>}
       {commercial && <label>Desglose<select name="agrupar" defaultValue={report.group_by}>
         {Object.entries(DIMENSIONS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </select></label>}
@@ -33,10 +39,10 @@ export function ReportFilters({ params, report, path, commercial = false, childr
   </section>;
 }
 
-export function ReportCoverage({ report, consultedAt }: { report: Report; consultedAt: string }) {
+export function ReportCoverage({ report, consultedAt, anchor = true }: { report: Report; consultedAt: string; anchor?: boolean }) {
   const t = report.total;
   const custodians = new Map((report.options?.custodio ?? []).map((o) => [o.id, o.label]));
-  return <section className="panel report-section" id="cobertura">
+  return <section className="panel report-section" id={anchor ? "cobertura" : undefined}>
     <h2>Cobertura y actualización</h2>
     <p>Última publicación del alcance: <strong>{report.published_at ? dateLabel(report.published_at) : "N/D"}</strong>. Consulta: {dateLabel(consultedAt)} · hora de Buenos Aires.</p>
     <p>Universo observado en el rango y mes anterior. La cobertura esperada todavía no está confirmada; una publicación no acredita completitud.</p>

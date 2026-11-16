@@ -7,7 +7,7 @@ import Loading from "@/app/loading";
 export default async function SummaryPage({ searchParams }: { searchParams: Promise<Search> }) {
   const search = await searchParams;
   return <>
-    <PageHeader eyebrow="PANORAMA GENERAL" title="Resumen" description="AUM al cierre y Revenue del rango, con cifras que se pueden explicar." />
+    <PageHeader eyebrow="PANORAMA GENERAL" title="Resumen ejecutivo" description="Una visión integral de los activos, los ingresos y la cobertura del negocio." />
     <Suspense key={JSON.stringify(search)} fallback={<Loading />}><ReportScreen search={search} /></Suspense>
   </>;
 }

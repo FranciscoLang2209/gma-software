@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogOut, ShieldCheck } from "lucide-react";
 import { Badge, Button } from "@radix-ui/themes";
 import { Navigation } from "@/components/navigation";
 import { requireAccess } from "@/lib/auth/access";
@@ -19,7 +20,7 @@ export default async function WorkspaceLayout({
               GMA
             </span>
             <span>
-              gma-software<small>Análisis de inversiones</small>
+              GMA<small>Investment analytics</small>
             </span>
           </Link>
           <p className="sidebar-label">ESPACIO DE TRABAJO</p>
@@ -31,16 +32,17 @@ export default async function WorkspaceLayout({
         </aside>
         <div className="workspace">
           <div className="topbar">
-            <span>Visión del negocio</span>
+            <span className="workspace-context"><ShieldCheck size={15} aria-hidden="true" /> Espacio privado <span className="context-divider">/</span> Análisis de inversiones</span>
             <div>
               <Badge color="gray" variant="outline">
                 USD
               </Badge>
-              <Badge color="amber">
+              <Badge color="blue">
                 {access.role === "admin" ? "Administrador" : "Lector"}
               </Badge>
               <form action={logout}>
-                <Button type="submit" highContrast>
+                <Button type="submit" variant="ghost" color="gray">
+                  <LogOut size={15} aria-hidden="true" />
                   Cerrar sesión
                 </Button>
               </form>

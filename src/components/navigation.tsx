@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { LayoutDashboard, ChartNoAxesCombined, Wallet, Upload, GitCompareArrows, Settings2, ChevronRight } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const sections = [
-  ["/", "Resumen"],
-  ["/analisis-comercial", "Análisis comercial"],
-  ["/cuentas", "Cuentas"],
-  ["/importaciones", "Importaciones"],
-  ["/correspondencias", "Correspondencias"],
-  ["/configuracion", "Configuración"],
+  ["/", "Resumen", LayoutDashboard],
+  ["/analisis-comercial", "Análisis comercial", ChartNoAxesCombined],
+  ["/cuentas", "Cuentas", Wallet],
+  ["/importaciones", "Importaciones", Upload],
+  ["/correspondencias", "Correspondencias", GitCompareArrows],
+  ["/configuracion", "Configuración", Settings2],
 ] as const;
 
 export function Navigation({ role }: { role: "admin" | "reader" }) {
@@ -28,16 +29,14 @@ export function Navigation({ role }: { role: "admin" | "reader" }) {
             role === "admin" ||
             !["/importaciones", "/correspondencias"].includes(href),
         )
-        .map(([href, label], index) => (
+        .map(([href, label, Icon]) => (
           <Link
             key={href}
             href={(href === "/" || href === "/analisis-comercial" || href === "/cuentas") && filters.size ? `${href}?${filters}` : href}
             aria-current={(pathname === href || (href === "/cuentas" && pathname.startsWith("/cuentas/"))) ? "page" : undefined}
           >
-            <span aria-hidden="true" className="nav-number">
-              0{index + 1}
-            </span>
-            {label}
+            <Icon size={18} aria-hidden="true" strokeWidth={1.7} />
+            <span>{label}</span><ChevronRight size={14} className="nav-chevron" aria-hidden="true" />
           </Link>
         ))}
     </nav>

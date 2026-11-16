@@ -245,3 +245,14 @@ Auto Confirm User y asigna el perfil según [auth.md](auth.md); el bootstrap ini
 conserva bloqueo y rechazo de otro admin. SMTP ya no bloquea el login; recuperación
 asistida por operador hasta configurar correo. Site URL remota y primer usuario
 operativo aún requieren configuración y verificación efectivas.
+
+## UI/UX — etapas 1 y 2, 2026-11-16
+
+Por solicitud expresa: rediseñar sistema visual/navegación y Resumen, sin avanzar
+con los flujos de las demás secciones. Navy, Inter local y Lucide; conservar Radix
+Themes y Recharts. Versiones nuevas exactas: Inter Variable 5.3.0 y Lucide 1.73.0;
+peers React compatibles comprobados en npm e instalación/build locales.
+No cambian modelo, RPC, autorización, RLS, reglas, filtros ni exportación.
+Distribución por custodio mediante el análisis existente; nunca sumar cuentas
+paginadas en el cliente. Sin push ni despliegue autorizado en esta solicitud.
+Próxima etapa de UI requiere revisión del resultado. Ver `ui-ux.md`.

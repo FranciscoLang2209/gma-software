@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Theme } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
+import "@fontsource-variable/inter";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export default function RootLayout({
     <html lang="es-AR">
       <body>
         <Theme
-          accentColor="jade"
+          accentColor="blue"
           grayColor="slate"
           radius="medium"
           appearance="light"
