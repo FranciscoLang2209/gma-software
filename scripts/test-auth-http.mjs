@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 const users = new Map();
 const revoked = new Set();
 let storageReads = 0;
-let otpRequests = 0;
+let passwordRequests = 0;
 let managementCalls = 0, modelCalls = 0;
 let reportCalls = 0, reportFailure = null, lastReportParameters;
 let exportFailure = null, exportRowCount = 300;
@@ -33,28 +33,18 @@ const backend = createServer(async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
   const user = users.get(token);
   res.setHeader("Content-Type", "application/json");
-  if (req.url === "/auth/v1/otp" || req.url === "/auth/v1/verify") {
-    let body = "";
-    for await (const chunk of req) body += chunk;
-    const payload = JSON.parse(body);
-    if (req.url.endsWith("/otp")) {
-      assert.equal(payload.create_user, false, "login no crea usuarios");
-      otpRequests++;
-      return res.end("{}");
-    }
-    if (
-      payload.token !== "123456" &&
-      payload.token_hash !== "SYNTHETIC_INVITATION_HASH_12345"
-    ) {
+  if (req.url === "/auth/v1/token?grant_type=password" || req.url === "/auth/v1/verify") {
+    const payload = JSON.parse(await body(req));
+    if (req.url.includes("grant_type=password")) {
+      passwordRequests++;
+      if (payload.email !== "synthetic@example.invalid" || payload.password !== "SYNTHETIC_PASSWORD_123") {
+        res.writeHead(400);
+        return res.end(JSON.stringify({ message: "Invalid credentials", code: "invalid_credentials" }));
+      }
+    } else if (payload.type !== "invite" || payload.token_hash !== "SYNTHETIC_INVITATION_HASH_12345") {
       res.writeHead(403);
-      return res.end(
-        JSON.stringify({
-          message: "Expired synthetic code",
-          code: "otp_expired",
-        }),
-      );
+      return res.end(JSON.stringify({ message: "Expired synthetic invitation", code: "otp_expired" }));
     }
-    assert.ok(payload.type === "email" || payload.type === "invite");
     return res.end(
       JSON.stringify({
         access_token: loginToken,
@@ -388,7 +378,10 @@ try {
   const loginActions = [
     ...loginHtml.matchAll(/name="\$ACTION_ID_([^"]+)"/g),
   ].map((match) => match[1]);
-  assert.equal(loginActions.length, 2);
+  assert.equal(loginActions.length, 1);
+  assert.match(loginHtml, /Ingresar a gma-software/);
+  assert.match(loginHtml, /Ingresar \| gma-software/);
+  assert.ok(!loginHtml.includes("Solicitar código"));
   async function postAction(path, action, fields, requestOrigin = origin) {
     const form = new FormData();
     form.set(`$ACTION_ID_${action}`, "");
@@ -400,20 +393,16 @@ try {
       redirect: "manual",
     });
   }
-  const otp = await postAction("/ingresar", loginActions[0], {
-    email: "synthetic@example.invalid",
-  });
-  assert.equal(otp.status, 303);
-  assert.match(otp.headers.get("location"), /estado=codigo/);
-  assert.equal(otpRequests, 1);
-  const badCode = await postAction("/ingresar", loginActions[1], {
-    email: "synthetic@example.invalid",
-    token: "999999",
-  });
-  assert.match(badCode.headers.get("location"), /estado=error/);
-  const verified = await postAction("/ingresar", loginActions[1], {
-    email: "synthetic@example.invalid",
-    token: "123456",
+  const invalidLogin = await postAction("/ingresar", loginActions[0], { email: "bad", password: "" });
+  assert.match(invalidLogin.headers.get("location"), /estado=datos/);
+  assert.equal(passwordRequests, 0);
+  for (const email of ["synthetic@example.invalid", "unknown@example.invalid"]) {
+    const deniedLogin = await postAction("/ingresar", loginActions[0], { email, password: "WRONG_SYNTHETIC_PASSWORD" });
+    assert.match(deniedLogin.headers.get("location"), /estado=error/);
+    assert.ok(!deniedLogin.headers.get("set-cookie"));
+  }
+  const verified = await postAction("/ingresar", loginActions[0], {
+    email: "synthetic@example.invalid", password: "SYNTHETIC_PASSWORD_123",
   });
   assert.equal(verified.status, 303);
   assert.ok(verified.headers.get("set-cookie"));
@@ -429,11 +418,11 @@ try {
   const denied = await postAction(
     "/ingresar",
     loginActions[0],
-    { email: "synthetic@example.invalid" },
+    { email: "synthetic@example.invalid", password: "SYNTHETIC_PASSWORD_123" },
     "https://attacker.invalid",
   );
   assert.ok(denied.status >= 400);
-  assert.equal(otpRequests, 1, "Next bloquea Server Action desde otro origen");
+  assert.equal(passwordRequests, 3, "Next bloquea Server Action desde otro origen");
   for (const cookie of [reader, admin]) {
     for (const path of ["/", "/cuentas", "/analisis-comercial", "/configuracion"]) {
       const response = await request(path, cookie);
@@ -787,7 +776,7 @@ try {
   assert.equal((await request(`/api/fuentes/${id}`, invalid)).status, 401);
   assert.equal((await request(`/api/consultas?${reportQuery}`, invalid)).status, 401);
   console.log(
-    "OK HTTP SINTÉTICO: anónimo/lector/admin, rutas directas, OTP sin alta, invitación, CSRF, API de fuentes, no-store, logout y sesión inválida.",
+    "OK HTTP SINTÉTICO: anónimo/lector/admin, rutas directas, contraseña sin alta, invitación heredada, CSRF, API de fuentes, no-store, logout y sesión inválida.",
   );
 } catch (error) {
   console.error(output);

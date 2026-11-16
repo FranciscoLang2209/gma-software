@@ -6,38 +6,17 @@ import {
   getSupabaseConfig,
 } from "@/lib/supabase/server";
 
-export async function requestCode(form: FormData) {
+export async function login(form: FormData) {
   const email = String(form.get("email") ?? "").trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
+  const password = String(form.get("password") ?? "");
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      password.length === 0 || password.length > 4096)
     redirect("/ingresar?estado=datos");
   if (getSupabaseConfig().status !== "configured")
     redirect("/ingresar?estado=configuracion");
   const supabase = await createSupabaseServerClient();
-  // El mensaje es igual para cuentas existentes e inexistentes.
-  await supabase.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: false },
-  });
-  redirect("/ingresar?estado=codigo");
-}
-
-export async function verifyCode(form: FormData) {
-  const email = String(form.get("email") ?? "").trim();
-  const token = String(form.get("token") ?? "").trim();
-  if (
-    email.length > 254 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-    !/^\d{6,8}$/.test(token)
-  )
-    redirect("/ingresar?estado=datos");
-  if (getSupabaseConfig().status !== "configured")
-    redirect("/ingresar?estado=configuracion");
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: "email",
-  });
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  // Respuesta genérica: no revela si existe la cuenta ni registra credenciales.
   if (error) redirect("/ingresar?estado=error");
   redirect("/");
 }

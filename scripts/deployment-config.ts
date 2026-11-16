@@ -5,6 +5,7 @@ type Target = {
   vercelProjectId: string;
   vercelTeamId: string;
   origin: string;
+  sharedSupabase?: boolean;
 };
 
 export function checkDeployment(
@@ -29,8 +30,13 @@ export function checkDeployment(
       ["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname))
     throw new Error("Auth requiere un origen HTTPS exacto sin ruta ni credenciales.");
   if (Object.entries(targets).some(([other, value]) =>
-    other !== name && value.supabaseProjectRef === target.supabaseProjectRef))
-    throw new Error("Desarrollo, prueba y producción requieren Supabase separados.");
+    other !== name && value.supabaseProjectRef === target.supabaseProjectRef && !(
+      [name, other].every((environment) => ["preview", "production"].includes(environment)) &&
+      target.sharedSupabase === true && value.sharedSupabase === true &&
+      value.vercelProjectId === target.vercelProjectId &&
+      value.vercelTeamId === target.vercelTeamId
+    )))
+    throw new Error("Compartir Supabase requiere autorización explícita en Preview y Production del mismo proyecto.");
   if (env.VERCEL_PROJECT_ID !== target.vercelProjectId ||
       env.VERCEL_ORG_ID !== target.vercelTeamId)
     throw new Error("El proyecto/equipo Vercel no coincide con el destino revisado.");

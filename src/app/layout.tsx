@@ -4,7 +4,7 @@ import "@radix-ui/themes/styles.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Resumen | App Papá", template: "%s | App Papá" },
+  title: { default: "Resumen | gma-software", template: "%s | gma-software" },
   description: "Análisis interno de AUM, Revenue y distribución comercial.",
   robots: { index: false, follow: false },
 };

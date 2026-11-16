@@ -504,3 +504,135 @@ revisado; completar login, roles, importación/publicación/corrección y concil
 sintética remota. Antes de reales siguen obligatorios mapeos/namespaces, alcances,
 vigencias iniciales y conciliación contra originales. Producción, volumen real,
 retención/RPO/RTO y recuperación de base+Storage siguen sin aprobar/validar.
+
+
+## Base compartida y despliegue Production — 2026-11-16
+
+El dueño autorizó expresamente usar el recurso existente `gma-software-prueba`
+(`zwdqnrbqqszjrtkhyqnz`, Free, São Paulo) tanto en Production como en Preview,
+y publicar en producción. Esta decisión reemplaza el requisito anterior de bases
+separadas para esos dos entornos; no crea recursos ni cambia planes. Ambos destinos
+se registran con autorización explícita de base compartida. Se mantienen los controles
+de proyecto/equipo, URL, clave publicable y rechazo de credenciales privilegiadas.
+Las escrituras de Preview y Production afectan los mismos datos, usuarios y archivos.
+SMTP, invitación y bootstrap de administrador siguen pendientes; desplegar no los valida.
+
+Verificación de esta corrección: 23/23 pruebas unitarias, lint y build local completos
+correctos. Consulta remota de lectura confirmó 18 tablas con RLS en app_private.
+SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY habilitadas en Preview y Production.
+GitHub rechazó escritura con 403 y la terminal no tiene autenticación Git remota;
+el cambio se conserva como parche. Despliegue directo por API Vercel iniciado desde
+fuentes locales revisadas (commit local 5efa945), ID dpl_BmNQ6ZXJWqZ14Dx1xNoghB1gr3tz.
+Esto no actualiza main remoto: subir el parche antes de futuros builds Git.
+Configuración Auth remota/Site URL no modificada: el conector Supabase disponible
+no ofrece esa operación. SMTP, invitación/bootstrap y login siguen pendientes.
+
+Resultado remoto: Production READY, alias
+https://gma-software-franlang2209-8232.vercel.app, build ~1m50s.
+GET /ingresar devolvió 200 y formulario de correo. No se encontraron logs
+error/fatal del despliegue en la ventana consultada de 15 minutos; sin drains.
+El fetch autenticado de /api/consultas quedó bloqueado con 401 por la capa
+de acceso según el conector; no se declara probada esa API ni login real.
+
+
+## Nombre gma-software y acceso con contraseña — 2026-11-16
+
+Solicitud vigente: cambiar el título visible y resolver parche GitHub/acceso.
+Se aplicó el parche privado `gma-production-shared-supabase.patch`, previamente
+comprobado con `git apply --check`, sobre main local limpio `ad3f9b8`.
+Incluye destino Production, excepción explícita de base compartida, documentación
+y prueba de regresión; conserva todos los controles de destino y credenciales.
+
+Nombre visible actualizado en login, metadata/pestañas, navegación, pie,
+monograma GMA y plantillas locales. Login ahora tiene título propio «Ingresar».
+El dueño eligió email y contraseña, altas solo por administrador y sin confirmación
+por correo. `signInWithPassword` reemplaza las acciones de solicitar/verificar OTP;
+validación en servidor, error genérico y cookies SSR. Sin registro público, cambio
+de roles ni clave privilegiada en runtime. Ruta de invitación heredada conservada.
+La creación de cuentas confirmadas es operación del dueño/operador en Dashboard;
+se documenta Auto Confirm User/Admin API `email_confirm: true`, y recuperación
+asistida. SMTP no es requisito para este login. No se construyó panel de usuarios.
+
+Verificado en esta continuación: `npm ci` con lockfile intacto; 23/23 unitarias;
+lint; build local con TypeScript; `test:auth:http` SINTÉTICO contra Next compilado:
+validación rechaza formulario inválido sin backend; contraseña incorrecta y cuenta
+inexistente dan mismo error sin cookies; contraseña válida crea cookies; CSRF,
+anónimo/lector/admin, invitación heredada, rutas, fuentes privadas, consultas,
+preparación y gestión correctos. Node del runtime24.22.1. No se repitieron SQL ni
+dashboard: no se cambió modelo financiero/DB. Revisión React aplicada a cambios
+TSX: formularios etiquetados, autocomplete de contraseña, estado accesible y
+componentes de servidor, sin dependencias nuevas.
+
+Supabase correcto ACTIVE_HEALTHY. Consulta remota de solo lectura confirmó que
+la cuenta administrativa solicitada aún no existe y hay cero admins habilitados.
+El conector no permite crear usuarios Auth ni modificar Site URL/SMTP; no se
+insertaron usuarios directamente en tablas internas ni se modificó Auth alojado.
+`docs/auth.md` adapta el bootstrap a cuenta confirmada con contraseña y conserva
+lock, UUID/correo verificados, rechazo de otro admin y auditoría. Bootstrap NO ejecutado.
+
+GitHub: main remoto continúa `ad3f9b8`. Crear rama por conector →403
+«Resource not accessible by integration», incluso tras reconexión confirmada por
+el dueño; metadata de permisos admin/push no acredita token de escritura efectivo.
+Git HTTPS `push --dry-run` sin credencial (could not read Username). No se creó
+rama remota ni se subió código; se conserva parche actualizado para recuperación.
+
+Vercel proyecto/equipo/Node24 verificados. Despliegue directo Production iniciado
+con 68 fuentes revisadas y sin secretos; ID `dpl_mMN5iDaiknnRR6ipMKDnAQEMNuBT`.
+No acredita publicación en GitHub ni login real. Resultado final se registra abajo.
+
+Próximo paso: crear cuenta confirmada en el Dashboard autorizado, asignar perfil
+admin mediante bootstrap revisado y comprobar login real sin compartir contraseña;
+actualizar Site URL al alias Production y redirects exactos. Recuperar permiso
+Contents de escritura de GitHub y subir este cambio antes de nuevos builds Git.
+No se validaron importaciones financieras reales ni se cambió plan/otra base.
+
+
+El primer build directo `dpl_mMN5iDaiknnRR6ipMKDnAQEMNuBT` falló al comprobar
+TypeScript porque el paquete de despliegue omitía `tests/fixtures/imports/build.ts`,
+importado por dos scripts. Se repitió con ese constructor sintético incluido (69
+archivos), sin modificar tsconfig ni ocultar errores. Segundo despliegue:
+`dpl_8dCYqJipuFNhTxsyBNQniTS9xKhn`. Auditoría `npm audit --omit=dev` remota
+contra registry: **0 vulnerabilidades**; instalación completa reportó7 moderadas,
+sin actualización de versiones ni afirmación de auditoría de desarrollo limpia.
+
+
+### Resultado final de esta continuación
+
+Production **READY**, `dpl_8dCYqJipuFNhTxsyBNQniTS9xKhn`, build/puesta en línea
+aproximadamente99s. Aliases verificados:
+https://gma-software.vercel.app y
+https://gma-software-franlang2209-8232.vercel.app . GET autenticado por conector
+Vercel `/ingresar` en ambos →200, título «Ingresar | gma-software», encabezado
+«Ingresar a gma-software», input password y private/no-store. La comprobación
+conector no prueba por sí sola acceso público; protección Vercel no modificada.
+El despliegue API informa regiones[iad1] aunque vercel.json pide gru1; no se afirma
+coincidencia regional y queda pendiente revisar configuración efectiva del hosting.
+
+El dueño creó la cuenta Auth confirmada con contraseña y avisó. Lectura posterior
+confirmó UUID/correo exactos acordados, email confirmado y contraseña presente,
+sin leer ni imprimir hash. Bootstrap transaccional de docs/auth.md ejecutado
+con lock y comprobación de ausencia de admin; verificación posterior: perfil admin
+habilitado y exactamente1 admin habilitado. Responsable: dueño solicita/crea cuenta;
+Codex ejecuta bootstrap por conector autorizado del proyecto. Identidad/UUID se
+conservan en registro privado fuera del repo, sin contraseña ni tokens.
+**El dueño confirmó que ingresó con contraseña y llegó al resumen** en el alias
+corto: login real verificado por confirmación del usuario, sin automatizar ni
+conocer su contraseña. No valida importación/publicación/corrección remotas.
+
+GitHub permanece bloqueado por permiso de escritura del conector y ausencia de
+credencial Git local. No equivale a fallo del código ni se resolvió con la
+reconexión realizada. Parche completo de recuperación guardado fuera de Git como
+`gma-title-password-production.patch`, en la carpeta privada de trabajo del dueño.
+No hacer futuros builds Git hasta incorporar estos cambios. Site URL remota no
+modificada por Codex ni leída de nuevo: sigue pendiente confirmarla en Dashboard;
+no interviene en el login con contraseña verificado. SMTP queda opcional para
+futura recuperación por correo; no está configurado ni necesario para este acceso.
+
+**Próximo prompt:** recuperar escritura Contents de GitHub o autenticar Git,
+subir el commit local sin force y verificar igualdad con main; confirmar Site URL
+Production en Dashboard y revisar región efectiva. Después, por nuevo alcance,
+probar importación/publicación/corrección sintéticas remotas y conciliación real
+con muestras privadas. No se amplió a administración de usuarios en la app.
+
+Logs runtime del nuevo despliegue, error/fatal y ventana15m: sin grupos devueltos.
+No acredita ausencia de errores fuera de esa ventana ni monitoreo permanente.

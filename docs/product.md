@@ -113,3 +113,16 @@ Archivos fuente privados, originales y procedencia preservados. Cambios financie
 - El circuito se verifica en el destino autorizado y el dueño tiene instrucciones de operación y recuperación.
 
 Estos criterios son futuros; la etapa 0 solo establece documentación.
+
+
+## Acceso actualizado — 2026-11-16
+
+Nombre visible: **gma-software**. El dueño eligió acceso con email y contraseña,
+con cuentas creadas únicamente por administrador/operador, confirmadas durante
+el alta, sin confirmación por mail. Se mantiene el registro público desactivado,
+perfil habilitado y autorización en servidor/SQL/Storage. No se añadió panel de
+usuarios ni credencial privilegiada al runtime. El operador crea la cuenta con
+Auto Confirm User y asigna el perfil según [auth.md](auth.md); el bootstrap inicial
+conserva bloqueo y rechazo de otro admin. SMTP ya no bloquea el login; recuperación
+asistida por operador hasta configurar correo. Site URL remota y primer usuario
+operativo aún requieren configuración y verificación efectivas.

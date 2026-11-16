@@ -14,12 +14,12 @@ export default async function WorkspaceLayout({
     <>
       <div className="app-shell">
         <aside className="sidebar">
-          <Link href="/" className="brand" aria-label="App Papá, inicio">
+          <Link href="/" className="brand" aria-label="gma-software, inicio">
             <span className="brand-monogram" aria-hidden="true">
-              AP
+              GMA
             </span>
             <span>
-              App Papá<small>Análisis de inversiones</small>
+              gma-software<small>Análisis de inversiones</small>
             </span>
           </Link>
           <p className="sidebar-label">ESPACIO DE TRABAJO</p>
@@ -50,7 +50,7 @@ export default async function WorkspaceLayout({
             {children}
           </main>
           <footer>
-            App Papá <span>Información no disponible ≠ cero · Moneda: USD</span>
+            gma-software <span>Información no disponible ≠ cero · Moneda: USD</span>
           </footer>
         </div>
       </div>

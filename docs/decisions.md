@@ -220,3 +220,28 @@ Free actual exige SMTP propio para editarlas; no se cambió de plan ni implement
 un login alternativo para evitar ese requisito. Cuenta lectora sintética real usada
 solo para verificar permisos, deshabilitada al terminar y sesión cerrada; no es un
 administrador de negocio. Sin datos financieros reales ni publicados.
+
+
+## Base compartida y despliegue Production — 2026-11-16
+
+El dueño autorizó expresamente usar el recurso existente `gma-software-prueba`
+(`zwdqnrbqqszjrtkhyqnz`, Free, São Paulo) tanto en Production como en Preview,
+y publicar en producción. Esta decisión reemplaza el requisito anterior de bases
+separadas para esos dos entornos; no crea recursos ni cambia planes. Ambos destinos
+se registran con autorización explícita de base compartida. Se mantienen los controles
+de proyecto/equipo, URL, clave publicable y rechazo de credenciales privilegiadas.
+Las escrituras de Preview y Production afectan los mismos datos, usuarios y archivos.
+SMTP, invitación y bootstrap de administrador siguen pendientes; desplegar no los valida.
+
+
+## Acceso actualizado — 2026-11-16
+
+Nombre visible: **gma-software**. El dueño eligió acceso con email y contraseña,
+con cuentas creadas únicamente por administrador/operador, confirmadas durante
+el alta, sin confirmación por mail. Se mantiene el registro público desactivado,
+perfil habilitado y autorización en servidor/SQL/Storage. No se añadió panel de
+usuarios ni credencial privilegiada al runtime. El operador crea la cuenta con
+Auto Confirm User y asigna el perfil según [auth.md](auth.md); el bootstrap inicial
+conserva bloqueo y rechazo de otro admin. SMTP ya no bloquea el login; recuperación
+asistida por operador hasta configurar correo. Site URL remota y primer usuario
+operativo aún requieren configuración y verificación efectivas.

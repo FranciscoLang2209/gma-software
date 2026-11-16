@@ -16,7 +16,7 @@ const env = {
   SUPABASE_PUBLISHABLE_KEY: "sb_publishable_SYNTHETIC",
 };
 
-test("build remoto exige destino revisado, aislado y variables solo servidor", () => {
+test("build remoto exige destino revisado y variables solo servidor", () => {
   assert.equal(checkDeployment(env, { preview: target }), "preview");
   assert.throws(() => checkDeployment(env, {}));
   assert.throws(() => checkDeployment(env, { preview: target, production: target }));
@@ -31,4 +31,16 @@ test("build remoto exige destino revisado, aislado y variables solo servidor", (
   ]) assert.throws(() => checkDeployment({ ...env, ...patch }, { preview: target }));
   for (const origin of ["", "http://localhost:3000", "https://localhost", `${target.origin}/`, `${target.origin}/invitacion`, "https://user:pass@example.invalid"])
     assert.throws(() => checkDeployment(env, { preview: { ...target, origin } }));
+});
+
+test("Preview y Production comparten base solo con autorización mutua y mismo proyecto", () => {
+  const shared = { ...target, sharedSupabase: true };
+  const targets = { preview: shared, production: shared };
+  assert.equal(checkDeployment(env, targets), "preview");
+  assert.equal(checkDeployment({ ...env, VERCEL_ENV: "production" }, targets), "production");
+  assert.throws(() => checkDeployment(env, { preview: shared, production: target }));
+  assert.throws(() => checkDeployment(env, { preview: target, production: shared }));
+  assert.throws(() => checkDeployment(env, { ...targets, development: shared }));
+  assert.throws(() => checkDeployment(env, { preview: shared, production: { ...shared, vercelProjectId: "prj_OTHER" } }));
+  assert.throws(() => checkDeployment(env, { preview: shared, production: { ...shared, vercelTeamId: "team_OTHER" } }));
 });

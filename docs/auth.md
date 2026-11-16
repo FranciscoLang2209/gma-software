@@ -1,8 +1,27 @@
-# Acceso por invitación — etapa 3
+# Acceso administrado — gma-software
 
 Implementación local del 2026-11-11. **Sin destino Supabase dedicado configurado ni verificación remota.** Los tres enlaces conectados se consultaron solo para listar proyectos: ninguno corresponde a App Papá. No se aplicó SQL, creó usuario, envió invitación ni cambió configuración remota.
 
-## Configuración efectiva pendiente en el proyecto dedicado
+## Flujo vigente — 2026-11-16
+
+El dueño eligió email y contraseña, con altas exclusivas por administrador y sin
+confirmación por correo. `/ingresar` usa `signInWithPassword`; no crea usuarios,
+no solicita códigos ni ofrece registro. El perfil habilitado y la sesión vigente
+siguen siendo obligatorios. Errores de credenciales son genéricos. El alta se hace
+por operador autorizado en Auth → Add user → Create user, con contraseña entregada
+por canal privado y **Auto Confirm User**. Alternativa de operador: Admin API
+`createUser` con `email_confirm: true`, exclusivamente fuera del runtime Next.
+No se necesita desactivar la confirmación global ni habilitar signup público.
+SMTP queda fuera del camino de login; recuperación de contraseña es asistida por
+el operador hasta configurar correo. No se añadió un panel de usuarios a la app.
+La ruta de invitación anterior conserva compatibilidad, pero no es el alta vigente.
+
+El bootstrap SQL siguiente ahora exige UUID/correo y usuario confirmado con contraseña,
+en lugar de `invited_at`; conserva lock, control de admin existente y auditoría.
+Las instrucciones históricas de OTP/SMTP más abajo describen el flujo anterior.
+No implican que se haya creado el administrador ni modificado Auth alojado.
+
+## Configuración histórica de invitación en el proyecto dedicado
 
 Antes de habilitar usuarios reales, el operador con acceso al proyecto debe:
 
@@ -18,7 +37,7 @@ La configuración **local versionada** ya tiene `auth.enable_signup=false`, acce
 
 ## Primer administrador, sin autoasignación
 
-El dueño/operador usa Supabase Dashboard → Auth → Invite User para invitar al correo acordado, después de configurar la plantilla. Copia el UUID exacto generado y comprueba que corresponde a ese correo. Aceptar una invitación **no asigna ningún rol**. Un usuario sin perfil habilitado no puede consultar la aplicación ni datos.
+El dueño/operador crea la cuenta confirmada con contraseña en Supabase Dashboard → Auth → Add user → Create user. Copia el UUID exacto y verifica el correo acordado. Crear la cuenta **no asigna ningún rol**. Un usuario sin perfil habilitado no puede consultar la aplicación ni datos.
 
 En SQL Editor del proyecto dedicado, con acceso del operador, ejecutar una sola vez lo siguiente, reemplazando los dos placeholders. No ejecutar desde el navegador de la app ni crear una RPC de bootstrap:
 
@@ -34,8 +53,9 @@ begin
     raise exception 'Ya existe un administrador; revisar con el dueño';
   end if;
   if not exists (select 1 from auth.users
-    where id=invited_user and email=invited_email and invited_at is not null) then
-    raise exception 'La invitación no coincide con UUID y correo revisados';
+    where id=invited_user and email=invited_email
+      and email_confirmed_at is not null and coalesce(encrypted_password,'') <> '') then
+    raise exception 'La cuenta confirmada no coincide con UUID y correo revisados';
   end if;
   insert into app_private.user_profiles(id,role,enabled)
     values (invited_user,'admin',true);
@@ -45,12 +65,12 @@ commit;
 
 El evento de auditoría registra el rol de base del operador; `actor_id` es null porque SQL Editor no es una sesión del usuario invitado. Conservar el responsable de esta operación en el registro operativo del dueño. No registrar tokens ni claves. El lock evita dos bootstrap concurrentes. No se elige al primer usuario registrado, no se confía en nombres ni `user_metadata`, y no se incorpora una clave privilegiada al runtime.
 
-Para otros usuarios: invitar por Dashboard, verificar su UUID y crear explícitamente un perfil `reader`, con `created_by` igual al UUID del administrador responsable. Cualquier alta `admin`, cambio de rol o habilitación exige decisión y operación explícita del dueño/operador. **Ningún usuario de la app, incluido admin, tiene INSERT/UPDATE/DELETE de perfiles por API.** Se conserva auditoría; para revocar acceso, actualizar `enabled=false` por el operador. No borrar perfiles/historia. En emergencia de pérdida del único administrador, el operador verifica identidad y documenta la recuperación por SQL Editor; no hay endpoint público de recuperación de privilegios.
+Para otros usuarios: crear cuenta confirmada con contraseña por Dashboard, verificar su UUID y crear explícitamente un perfil `reader`, con `created_by` igual al UUID del administrador responsable. Cualquier alta `admin`, cambio de rol o habilitación exige decisión y operación explícita del dueño/operador. **Ningún usuario de la app, incluido admin, tiene INSERT/UPDATE/DELETE de perfiles por API.** Se conserva auditoría; para revocar acceso, actualizar `enabled=false` por el operador. No borrar perfiles/historia. En emergencia de pérdida del único administrador, el operador verifica identidad y documenta la recuperación por SQL Editor; no hay endpoint público de recuperación de privilegios.
 
 ## Sesión y autorización
 
 - `@supabase/ssr` 0.12.7 con Supabase JS 2.119.0 y Next 16.4.6. Clientes nuevos por solicitud, cookies oficiales `getAll`/`setAll`; Proxy refresca con `getClaims`, propaga cookies y aplica encabezados de caché. Identidad confirmada con `getUser` y perfil vigente por RPC. No se usa `getSession` para autorizar.
-- `/ingresar`: solicitud de código con `shouldCreateUser:false`, mensaje indistinguible para cuentas inexistentes, validación de correo/código en servidor. Invitación: `verifyOtp` de tipo fijo `invite`, con aceptación por Server Action; login OTP de tipo fijo `email`. El frontend no ofrece registro ni solicita roles.
+- `/ingresar`: email y contraseña validados en servidor; `signInWithPassword`, errores genéricos y cookies SSR. Sin alta ni OTP desde la pantalla. Invitaciones heredadas conservan `verifyOtp` tipo `invite` por POST. El frontend no solicita roles.
 - Proxy verifica antes de renderizar; cada página del workspace y la API vuelven a verificar identidad/rol. Importaciones y Correspondencias requieren admin; Configuración es consultable por lector, y toda mutación requiere admin. Las Server Actions de Auth usan la protección de origen de Next, sin ampliar `allowedOrigins`.
 - Todas las páginas son dinámicas y las respuestas pasan por `private, no-store`, `Pragma`, `Expires` y `Referrer-Policy:no-referrer`. Las consultas del cliente servidor usan `cache:no-store`. Sin ISR ni cachés persistentes de datos privados.
 - Perfil habilitado y `session_id` existente en `auth.sessions`, del mismo usuario y con `not_after` vigente, son condición de cada política. Deshabilitar un perfil o eliminar/vencer la sesión niega acceso aun con JWT anterior. Logout cierra la sesión actual (`scope:local`), borra cookies mediante SSR y muestra error genérico con reintento si falla. Otros dispositivos conservan sus sesiones; deshabilitar el perfil revoca acceso global inmediatamente en las consultas posteriores.

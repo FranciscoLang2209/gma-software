@@ -37,8 +37,8 @@ se eliminó ese archivo nuevo, sin imprimir el token, porque el runtime no lo ne
 | Ambiente | Base/Auth/Storage | Variables Next | Datos |
 | --- | --- | --- | --- |
 | Desarrollo | Stack local propio o proyecto dedicado de desarrollo | `.env.development.local`, desde `.env.development.example` | Sintéticos |
-| Prueba alojada | Supabase dedicado de prueba, separado de producción | Vercel **Preview**, desde `.env.preview.example` | Sintéticos identificados |
-| Producción | Supabase dedicado de producción, referencia diferente | Vercel **Production**, desde `.env.production.example` | Reales solo tras los criterios de apertura |
+| Prueba alojada | Supabase compartido con producción por decisión del dueño | Vercel **Preview**, desde `.env.preview.example` | Sintéticos identificados |
+| Producción | Mismo Supabase que Preview: `zwdqnrbqqszjrtkhyqnz` | Vercel **Production**, desde `.env.production.example` | Reales solo tras los criterios de apertura |
 
 Los arneses `test:db`, `test:auth:http` y `test:dashboard` crean su entorno sintético;
 no necesitan ni deben recibir credenciales reales. Preview ejecuta Next en
@@ -57,8 +57,10 @@ SMTP se configura en Supabase. No pegarlas en el chat, comandos, logs ni reposit
 `config/deployment-targets.json` es el registro **sin secretos** de los destinos
 revisados: referencia Supabase, proyecto/equipo Vercel y origen HTTPS fijo para Auth.
 Sus valores vacíos bloquean el build remoto intencionalmente. Completar únicamente
-el ambiente autorizado, contrastando los IDs con los dashboards. Bases configuradas
-para distintos ambientes deben tener referencias diferentes.
+el ambiente autorizado, contrastando los IDs con los dashboards. Preview y Production pueden compartir referencia solo con `sharedSupabase: true`
+en ambos destinos y el mismo proyecto/equipo Vercel. Desarrollo continúa separado.
+Las pruebas alojadas comparten usuarios, archivos y datos con producción; sus escrituras
+afectan el mismo negocio. Los arneses locales siguen usando datos sintéticos aislados.
 
 `npm run prebuild` ejecuta el control cuando `VERCEL=1`; verifica entorno, proyecto,
 equipo declarado, URL/clave publicable e impide variables Supabase privilegiadas o
@@ -159,12 +161,15 @@ persiste hasta 250 filas/~1 MiB por RPC, pero relee el libro en cada petición.
 3. Auth alojado: **Allow new users to sign up desactivado**, acceso anónimo
    desactivado, sin OAuth/SSO no solicitados. Verificar lectura de configuración
    después de guardar; `supabase/config.toml` solo configura el stack local.
-4. Site URL = origen HTTPS fijo del ambiente registrado; invitación =
+4. Site URL compartida = `https://gma-software-franlang2209-8232.vercel.app`;
+   al configurar Auth alojado, conservar el alias Preview como redirect exacto
+   `https://gma-software-git-prueba-franlang2209-8232.vercel.app`.
+   Este registro no actualiza la configuración remota automáticamente. Invitación =
    `ORIGEN/invitacion?token_hash={{ .TokenHash }}` mediante plantilla versionada
    `supabase/templates/invite.html`. Magic Link usa el código `{{ .Token }}` de
    `magic-link.html`. La aceptación del hash es por POST, no fragmento de URL.
    Limitar redirects a URLs exactas necesarias de ese ambiente, sin comodines,
-   localhost ni producción en prueba. No hay callback OAuth que configurar.
+   localhost ni otros proyectos. No hay callback OAuth que configurar.
    Preview con URL efímera debe adoptar un alias fijo revisado antes de invitar;
    no promover un preview esperando que Site URL cambie automáticamente.
 5. SMTP autorizado con remitente/dominio verificado y límites efectivos. El SMTP
@@ -347,3 +352,16 @@ y procedimiento de recuperación/borrado. Hasta acordarla, no hay cron, lifecycl
 ni borrado automático. Esto conserva el historial; no constituye una política de
 retención permanente acordada. Antes de habilitar borrados demostrar recuperación
 de base **y** archivos bajo el plan efectivo.
+
+
+## Acceso actualizado — 2026-11-16
+
+Nombre visible: **gma-software**. El dueño eligió acceso con email y contraseña,
+con cuentas creadas únicamente por administrador/operador, confirmadas durante
+el alta, sin confirmación por mail. Se mantiene el registro público desactivado,
+perfil habilitado y autorización en servidor/SQL/Storage. No se añadió panel de
+usuarios ni credencial privilegiada al runtime. El operador crea la cuenta con
+Auto Confirm User y asigna el perfil según [auth.md](auth.md); el bootstrap inicial
+conserva bloqueo y rechazo de otro admin. SMTP ya no bloquea el login; recuperación
+asistida por operador hasta configurar correo. Site URL remota y primer usuario
+operativo aún requieren configuración y verificación efectivas.

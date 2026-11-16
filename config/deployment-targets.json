@@ -9,12 +9,14 @@
     "supabaseProjectRef": "zwdqnrbqqszjrtkhyqnz",
     "vercelProjectId": "prj_lPEM6UXsDFB4YBzBs5p1BAKgRHn2",
     "vercelTeamId": "team_ckh7dlHz13Q9LyiEOOob04Nx",
-    "origin": "https://gma-software-git-prueba-franlang2209-8232.vercel.app"
+    "origin": "https://gma-software-git-prueba-franlang2209-8232.vercel.app",
+    "sharedSupabase": true
   },
   "production": {
-    "supabaseProjectRef": "",
+    "supabaseProjectRef": "zwdqnrbqqszjrtkhyqnz",
     "vercelProjectId": "prj_lPEM6UXsDFB4YBzBs5p1BAKgRHn2",
     "vercelTeamId": "team_ckh7dlHz13Q9LyiEOOob04Nx",
-    "origin": ""
+    "origin": "https://gma-software-franlang2209-8232.vercel.app",
+    "sharedSupabase": true
   }
 }
