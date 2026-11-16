@@ -1,4 +1,6 @@
 "use client";
+import { DatePicker } from "./ui/date-picker";
+import { Select } from "./ui/select";
 import { useRef, useState, type FormEvent } from "react";
 import { GitCompareArrows, ShieldCheck } from "lucide-react";
 import { WorkflowSteps } from "./workflow-steps";
@@ -103,7 +105,7 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
         {r.matches.length > 0 && <details open><summary>Coincidencias exactas acreditadas; revisar posibles conflictos</summary>{r.matches.map((m, i) => <p key={i}>{m.namespace}: {m.original} · Custodio {code(m.custodian_id)} → <code>{m.account_id}</code> · {m.evidence}</p>)}</details>}
         <details><summary>Todas las celdas originales por posición</summary><pre>{JSON.stringify(r.originals, null, 2)}</pre></details>
         {editable && <form className="import-form" key={`${r.id}-${r.resolution?.account_id ?? "pending"}-${r.resolution?.advisor_id ?? ""}`} onSubmit={(e) => void resolve(e, r.id)}>
-          <label>Custodio confirmado para esta fila<select name="custodian_id" required defaultValue={r.resolution?.custodian_id ?? ""} disabled={busy}><option value="">Elegir explícitamente</option>{custodians.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}</select></label>
+          <label>Custodio confirmado para esta fila<Select name="custodian_id" required defaultValue={r.resolution?.custodian_id ?? ""} disabled={busy}><option value="">Elegir explícitamente</option>{custodians.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}</Select></label>
           <label>Cuenta destino UUID (vacío crea una cuenta nueva)<input name="account_id" list="account-options" defaultValue={r.resolution?.account_id ?? ""} disabled={busy} /></label>
           {detail.batch.source === "fa" && <>
             <label>Comercial UUID (vacío conserva sin asignar)<input name="advisor_id" list="advisor-options" defaultValue={r.resolution?.advisor_id ?? ""} disabled={busy} /></label>
@@ -114,21 +116,21 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
         </form>}
       </article>)}
       <div className="import-pagination">
-        <Button variant="soft" disabled={busy || detail.page === 0} onClick={() => void run(() => reload(detail.batch.id, detail.page - 1))}>Anterior</Button>
+        <Button variant="soft" highContrast disabled={busy || detail.page === 0} onClick={() => void run(() => reload(detail.batch.id, detail.page - 1))}>Anterior</Button>
         <span>Página {detail.page + 1} · {detail.batch.rows} filas</span>
-        <Button variant="soft" disabled={busy || (detail.page + 1) * 25 >= detail.batch.rows} onClick={() => void run(() => reload(detail.batch.id, detail.page + 1))}>Siguiente</Button>
+        <Button variant="soft" highContrast disabled={busy || (detail.page + 1) * 25 >= detail.batch.rows} onClick={() => void run(() => reload(detail.batch.id, detail.page + 1))}>Siguiente</Button>
       </div>
       {["needs_resolution", "ready"].includes(detail.batch.status) && <form className="import-form" onSubmit={(e) => void review(e)} key={`${detail.batch.id}-${detail.batch.review?.token ?? "pending"}`}>
         <h3 className="form-heading">Revisar alcance completo</h3>
-        <label>Mes<input type="month" name="month_display" value={detail.batch.period.slice(0, 7)} readOnly /></label>
+        <label>Mes<DatePicker type="month" name="month_display" value={detail.batch.period.slice(0, 7)} readOnly /></label>
         <input type="hidden" name="period" value={detail.batch.period} />
         <input type="hidden" name="custodian_id" value={detail.batch.custodian_id} />
         <p>Reemplazo exclusivo de {detail.batch.source.toUpperCase()}, {detail.batch.period}, custodio {code(detail.batch.custodian_id)}. Los demás custodios conservan sus datos.</p>
         {detail.batch.source === "fa" && <>
-          <label>Columna confirmada como comercial<select name="commercial_column" required defaultValue={detail.batch.review?.commercial_column ?? ""} disabled={busy || detail.batch.status === "ready"}><option value="">Pendiente de confirmación</option><option>Owner Name payout</option><option>Broker</option></select></label>
+          <label>Columna confirmada como comercial<Select name="commercial_column" required defaultValue={detail.batch.review?.commercial_column ?? ""} disabled={busy || detail.batch.status === "ready"}><option value="">Pendiente de confirmación</option><option>Owner Name payout</option><option>Broker</option></Select></label>
           {detail.batch.status === "ready" && <input type="hidden" name="commercial_column" value={detail.batch.review?.commercial_column ?? ""} />}
-          <label>Vigencia desde (inclusive)<input type="date" name="valid_from" required defaultValue={detail.batch.review?.valid_from ?? ""} readOnly={detail.batch.status === "ready"} disabled={busy} /></label>
-          <label>Vigencia hasta (exclusiva; vacío sin fin)<input type="date" name="valid_to" defaultValue={detail.batch.review?.valid_to ?? ""} readOnly={detail.batch.status === "ready"} disabled={busy} /></label>
+          <label>Vigencia desde (inclusive)<DatePicker type="date" name="valid_from" required defaultValue={detail.batch.review?.valid_from ?? ""} readOnly={detail.batch.status === "ready"} disabled={busy} /></label>
+          <label>Vigencia hasta (exclusiva; vacío sin fin)<DatePicker type="date" name="valid_to" defaultValue={detail.batch.review?.valid_to ?? ""} readOnly={detail.batch.status === "ready"} disabled={busy} /></label>
           <p>AUM y Revenue se atribuyen según la asignación vigente al último día del mes. Meses anteriores a esta vigencia quedan sin asignar. OLD Owner se conserva como referencia, sin crear historia. Confirmar una fecha pasada es una decisión explícita para ese intervalo.</p>
         </>}
         <label><input type="checkbox" name="complete_scope" required disabled={busy} /> Confirmo que revisé el archivo completo para este mes y custodio, incluidas omisiones y el alcance del reemplazo.</label>
@@ -148,7 +150,7 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
         <label><input type="checkbox" required disabled={busy} /> Revisé esta comparación y autorizo publicar{detail.comparison.active ? " y reemplazar exclusivamente la versión activa de este alcance" : " este alcance"}.</label>
         <Button disabled={busy}>Publicar versión revisada</Button>
       </form>}
-      <Button variant="soft" disabled={busy} onClick={() => void run(() => reload())}>Recargar estado y conciliación</Button>
+      <Button variant="soft" highContrast disabled={busy} onClick={() => void run(() => reload())}>Recargar estado y conciliación</Button>
     </section>}
   </>;
 }

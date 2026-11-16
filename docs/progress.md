@@ -1,6 +1,6 @@
 # App Papá — Progreso
 
-**Estado vigente — 2026-11-16:** UI/UX 1–2 aprobadas y publicadas en `main` (`2475ab1`), remoto verificado y Vercel success según GitHub. Continuación UI/UX 3–7 implementada localmente en `codex/ui-ux-sections`, pendiente de revisión. Ver último registro y [ui-ux.md](ui-ux.md).
+**Estado vigente — 2026-11-16:** UI/UX 1–7 publicadas. Cierre de accesibilidad y reemplazo de selects/calendarios por componentes shadcn adaptados completados y verificados localmente; el dueño solicitó incluir todos los cambios en main. Ver último registro y validation.md.
 
 Actualizado: 2026-11-15, Buenos Aires. **Etapa 10: GitHub/Vercel conectados; Supabase Free/São Paulo con ocho migraciones; Preview READY y controles anon/lector reales verificados.** El dueño dejó SMTP pendiente: sin invitación ni primer administrador operativo. Publicación remota, datos reales, producción y recuperación completa pendientes. Los apartados anteriores son registros históricos.
 
@@ -681,3 +681,71 @@ preview/save de modelo, restricciones lectoras y 24 combinaciones de ruta/ancho
 **Próximo prompt:** «Revisemos las etapas UI/UX 3–7; ajustá lo observado y, cuando
 lo indique, incorporá esta continuación a main». La continuación permanece local;
 no confundirla con las etapas 1–2 ya publicadas.
+
+
+## Cierre UI/UX — revisión de main y validación final, 2026-11-16
+
+La solicitud vigente fue revisar los pushes a main y continuar por la etapa
+correspondiente. Lectura del endpoint GitHub `branches/main`: SHA
+`0f87e48df636d333ea593379986433b92027508c`, igual al HEAD local y a las referencias
+locales main/origin/main. Sus dos últimos commits son `2475ab1` (UI/UX 1–2) y
+`0f87e48` (UI/UX 3–7). El estado combinado del último commit informa Vercel
+`success`, «Deployment has completed». Esto corrige los registros anteriores
+que dejaban 3–7 pendientes de push; no acredita un recorrido financiero remoto.
+
+Se continuó con el cierre y validación del rediseño, sin crear nuevas funciones.
+Se preservaron los tres archivos con cambios locales encontrados al iniciar:
+shell con regiones identificadas, marca con nombre visible coherente y badge de
+rol de alto contraste; catálogo con región propia; tablas con un solo contenedor
+de desplazamiento accesible y footer con texto más oscuro. La revisión dinámica
+detectó contraste 4,25:1 en «Recargar estado y conciliación»; se aplicó `highContrast`
+a los seis botones secundarios de preparación/correspondencias, conservando sus
+acciones, estados y confirmaciones. Sin cambios en lógica financiera, consultas,
+API, SQL, permisos, dependencias ni lockfile.
+
+Verificado con Node 24.22.1: lint, generación de tipos/TypeScript, 23/23 tests,
+prebuild/build y regresión HTTP sintética por roles, más `git diff --check`.
+Navegador Chrome/Playwright sobre la copia sintética aislada existente:
+
+- axe 4.14.1: 24 combinaciones de rol/ruta/ancho y 14 estados del recorrido,
+  sin violaciones detectadas en `.app-shell`; hay verificaciones incompletas
+  de contraste de gráficos y encabezados de tabla, sin afirmar conformidad WCAG.
+- Scroll con teclado en historia mensual a 390 px: contenedor 324 px, contenido
+  836 px, desplazamiento exterior 80 px, interior Radix 0 px.
+- Seis rutas × 320/390/768/1440 px sin desbordamiento del documento; filtros,
+  exportación, búsqueda/detalle/regreso, preparación, publicación confirmada y
+  revisión/guardado del modelo correctos con respuestas sintéticas explícitas.
+- Restricciones visuales lectoras y consulta fallida sin KPIs; sin errores de
+  consola/excepciones en ese recorrido. Capturas desktop/móvil revisadas.
+
+Evidencia privada y límites detallados en `validation.md`. No se ejecutaron
+`test:db` ni `test:dashboard`: faltan `pg_config`, `psql` y `createdb` en este
+entorno. Sin importaciones, conciliación de Excel ni sesión de negocio remotas.
+Los ajustes de cierre quedan locales en `codex/ui-ux-final-validation`; no se
+hizo un nuevo commit, push ni despliegue.
+
+**Próximo prompt:** «Revisá e incorporá a main el cierre de accesibilidad UI/UX
+validado en codex/ui-ux-final-validation y comprobá su despliegue». Después, como
+etapa operativa separada: recorrido sintético remoto y conciliación real con
+muestras privadas, sin inferir definiciones comerciales pendientes.
+
+
+## Selects y calendarios shadcn — 2026-11-16
+
+Por solicitud del dueño, se sustituyeron todos los selects de negocio por la
+composición Select de shadcn/Radix y las fechas por Popover + Calendar basado en
+React DayPicker, adaptados al CSS existente sin migrar a Tailwind. Meses con
+selección de mes/año explícita; vigencias con calendario diario en español.
+Se mantienen nombres y valores FormData, campos obligatorios, disabled/readOnly,
+filtros GET y fechas sin conversiones UTC. Los input/select nativos internos de
+validación de las librerías no son controles visuales del producto.
+Dependencias directas exactas y lockfile actualizados; sin cambios financieros.
+Lint, tipos, 23 tests y build locales correctos. Navegador sintético: selección
+por popup, elección mensual y FormData de filtros comprobados; calendario de
+vigencias comprobado por separado. No se afirma haber repetido la matriz axe ni
+el arnés anterior (sus selectOption/fill nativos requieren adaptación).
+El dueño autorizó publicar a main todos los cambios locales, incluido el cierre
+anterior de accesibilidad. Próximo paso: verificar despliegue y revisar en sesión
+real, sin confundir estos checks con conciliación financiera real.
+
+Verificación adicional: calendario de vigencias y controles a 390 px sin overflow del documento; corregida la especificidad CSS de los inputs internos de validación.

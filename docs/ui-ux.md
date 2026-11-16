@@ -122,3 +122,47 @@ validaciones. Ante un estado desconocido no se inventa una etapa actual.
 
 Próximo paso: revisar esta continuación y, si se solicita, incorporarla a `main`.
 No ampliar a métricas financieras, usuarios, integraciones ni cambios de acceso.
+
+
+## Cierre de validación — 2026-11-16
+
+**Estado actual:** las etapas 1–7 ya están en `main`, SHA `0f87e48`, verificado
+contra GitHub; Vercel reporta despliegue completado. Los apartados anteriores
+registran el estado previo a ese push.
+
+La continuación en `codex/ui-ux-final-validation` cierra accesibilidad y regresión:
+regiones del shell/catálogos diferenciadas, nombre de marca coherente con el texto
+visible, rol y botones secundarios con alto contraste, footer más legible y
+scroll horizontal de tablas en un solo contenedor enfocable. Se conservaron los
+ajustes locales existentes y se completó el contraste de los botones de importación.
+No se agregaron funcionalidades ni dependencias, ni se modificaron contratos,
+consultas, operaciones, autorización o métricas.
+
+Lint, tipos, 23 tests, build y prueba HTTP sintética correctos. Chrome/Playwright:
+24 combinaciones estáticas de rol/ruta/ancho y 14 capturas de estados con axe sin
+violaciones detectadas; 24 combinaciones responsive, flujos operativos y scroll
+por teclado comprobados. Persisten comprobaciones automáticas incompletas, sin
+afirmar auditoría WCAG integral. Evidencia y límites en `validation.md`.
+
+Próximo paso: incorporar los ajustes de cierre a main y verificar el despliegue;
+las pruebas con datos reales y conciliación pertenecen al alcance operativo
+posterior. Este cierre todavía no se publicó.
+
+
+## Selects y calendarios shadcn — 2026-11-16
+
+Por solicitud del dueño, se sustituyeron todos los selects de negocio por la
+composición Select de shadcn/Radix y las fechas por Popover + Calendar basado en
+React DayPicker, adaptados al CSS existente sin migrar a Tailwind. Meses con
+selección de mes/año explícita; vigencias con calendario diario en español.
+Se mantienen nombres y valores FormData, campos obligatorios, disabled/readOnly,
+filtros GET y fechas sin conversiones UTC. Los input/select nativos internos de
+validación de las librerías no son controles visuales del producto.
+Dependencias directas exactas y lockfile actualizados; sin cambios financieros.
+Lint, tipos, 23 tests y build locales correctos. Navegador sintético: selección
+por popup, elección mensual y FormData de filtros comprobados; calendario de
+vigencias comprobado por separado. No se afirma haber repetido la matriz axe ni
+el arnés anterior (sus selectOption/fill nativos requieren adaptación).
+El dueño autorizó publicar a main todos los cambios locales, incluido el cierre
+anterior de accesibilidad. Próximo paso: verificar despliegue y revisar en sesión
+real, sin confundir estos checks con conciliación financiera real.

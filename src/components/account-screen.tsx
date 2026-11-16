@@ -1,3 +1,4 @@
+import { Select } from "./ui/select";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Wallet, Users } from "lucide-react";
@@ -85,8 +86,8 @@ export async function AccountScreen({ search, id }: { search: Search; id?: strin
   return <>
     <ReportFilters params={params} report={data.report} path={path} accountId={id} compact>
       {id && <><input type="hidden" name="buscar" value={params.get("buscar") ?? ""} /><input type="hidden" name="orden" value={params.get("orden") ?? "identifier"} /></>}
-      {!id && <><label>Buscar identificador o cliente<input type="search" name="buscar" maxLength={200} defaultValue={params.get("buscar") ?? ""} placeholder="Ej.: 000123" /></label><label>Orden<select name="orden" defaultValue={params.get("orden") ?? "identifier"}><option value="identifier">Identificador · ascendente</option><option value="client">Cliente · ascendente</option><option value="aum">AUM · descendente</option><option value="revenue">Revenue · descendente</option></select></label></>}
-      <label>Filas por página<select name="limite" defaultValue={String(p.page_size)}>{[...new Set([10, 25, 50, 100, p.page_size])].sort((a,b) => a-b).map((n) => <option key={n}>{n}</option>)}</select></label>
+      {!id && <><label>Buscar identificador o cliente<input type="search" name="buscar" maxLength={200} defaultValue={params.get("buscar") ?? ""} placeholder="Ej.: 000123" /></label><label>Orden<Select name="orden" defaultValue={params.get("orden") ?? "identifier"}><option value="identifier">Identificador · ascendente</option><option value="client">Cliente · ascendente</option><option value="aum">AUM · descendente</option><option value="revenue">Revenue · descendente</option></Select></label></>}
+      <label>Filas por página<Select name="limite" defaultValue={String(p.page_size)}>{[...new Set([10, 25, 50, 100, p.page_size])].sort((a,b) => a-b).map((n) => <option key={n}>{n}</option>)}</Select></label>
     </ReportFilters>
     {id ? <DetailView data={data as AccountDetail} params={params} admin={role === "admin"} /> : <DirectoryTable data={data as Directory} params={params} />}
     {!id && <p className="section-note">La cobertura siguiente usa el rango y los filtros de entidades. La búsqueda textual acota el directorio; orden y paginación organizan sus filas.</p>}

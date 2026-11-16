@@ -14,8 +14,8 @@ export default async function WorkspaceLayout({
   return (
     <>
       <div className="app-shell">
-        <aside className="sidebar">
-          <Link href="/" className="brand" aria-label="gma-software, inicio">
+        <aside className="sidebar" aria-label="Espacio de trabajo">
+          <Link href="/" className="brand">
             <span className="brand-monogram" aria-hidden="true">
               GMA
             </span>
@@ -31,13 +31,13 @@ export default async function WorkspaceLayout({
           </div>
         </aside>
         <div className="workspace">
-          <div className="topbar">
+          <header className="topbar">
             <span className="workspace-context"><ShieldCheck size={15} aria-hidden="true" /> Espacio privado <span className="context-divider">/</span> Análisis de inversiones</span>
             <div>
               <Badge color="gray" variant="outline">
                 USD
               </Badge>
-              <Badge color="blue">
+              <Badge color="blue" highContrast>
                 {access.role === "admin" ? "Administrador" : "Lector"}
               </Badge>
               <form action={logout}>
@@ -47,7 +47,7 @@ export default async function WorkspaceLayout({
                 </Button>
               </form>
             </div>
-          </div>
+          </header>
           <main id="contenido" tabIndex={-1}>
             {children}
           </main>

@@ -1,3 +1,5 @@
+import { DatePicker } from "./ui/date-picker";
+import { Select } from "./ui/select";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { SlidersHorizontal } from "lucide-react";
@@ -9,24 +11,24 @@ export function ReportFilters({ params, report, path, commercial = false, childr
   const entityField = (key: string, label: string) => {
     if (key === "cuenta" && accountId) return <input key={key} type="hidden" name="cuenta" value={accountId} />;
     const options = report.options?.[key] ?? [], selected = params.get(key) ?? "";
-    return <label key={key}>{label}<select name={key} defaultValue={selected}>
+    return <label key={key}>{label}<Select name={key} defaultValue={selected}>
       <option value="">Todos · incluye sin asignar</option>
       {selected && !options.some((o) => o.id === selected) && <option value={selected}>{selected}</option>}
       {options.map((o) => <option value={o.id} key={o.id}>{o.label}</option>)}
-    </select></label>;
+    </Select></label>;
   };
   return <section className={`panel report-filters${compact ? " compact-filters" : ""}`} aria-label="Filtros compartidos">
     <form action={path} className="import-form">
-      <label>Desde · mes<input type="month" name="desde" required min="1900-01" max="9998-12" defaultValue={params.get("desde")!} /></label>
-      <label>Hasta · cierre AUM<input type="month" name="hasta" required min="1900-01" max="9998-12" defaultValue={params.get("hasta")!} /></label>
+      <label>Desde · mes<DatePicker type="month" name="desde" required min="1900-01" max="9998-12" defaultValue={params.get("desde")!} /></label>
+      <label>Hasta · cierre AUM<DatePicker type="month" name="hasta" required min="1900-01" max="9998-12" defaultValue={params.get("hasta")!} /></label>
       {Object.entries(ENTITY_FILTERS).filter(([key]) => !compact || key === "custodio").map(([key, label]) => entityField(key, label))}
       {compact && <details className="advanced-filters" open={Object.keys(ENTITY_FILTERS).some((key) => key !== "custodio" && params.has(key))}>
         <summary><SlidersHorizontal size={15} aria-hidden="true" /> Más filtros{Object.keys(ENTITY_FILTERS).some((key) => key !== "custodio" && params.has(key)) ? " · activos" : ""}</summary>
         <div className="advanced-fields">{Object.entries(ENTITY_FILTERS).filter(([key]) => key !== "custodio").map(([key, label]) => entityField(key, label))}</div>
       </details>}
-      {commercial && <label>Desglose<select name="agrupar" defaultValue={report.group_by}>
+      {commercial && <label>Desglose<Select name="agrupar" defaultValue={report.group_by}>
         {Object.entries(DIMENSIONS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-      </select></label>}
+      </Select></label>}
       {children}
       <div className="report-actions"><Button type="submit" highContrast>Aplicar filtros</Button><Link href={path}>Limpiar filtros</Link></div>
     </form>

@@ -1,4 +1,6 @@
 "use client";
+import { DatePicker } from "./ui/date-picker";
+import { Select } from "./ui/select";
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Upload, ArrowRight, History } from "lucide-react";
@@ -194,15 +196,15 @@ export function ImportPreparation({
         >
           <label>
             Fuente
-            <select name="source" required disabled={busy}>
+            <Select name="source" required disabled={busy}>
               <option value="aum">AUM</option>
               <option value="revenue">Revenue</option>
               <option value="fa">FA</option>
-            </select>
+            </Select>
           </label>
           <label>
             Período / referencia FA
-            <input
+            <DatePicker
               type="month"
               name="period"
               required
@@ -213,18 +215,18 @@ export function ImportPreparation({
           </label>
           <label>
             Alcance: un custodio
-            <select name="custodian" required disabled={busy}>
+            <Select name="custodian" required disabled={busy}>
               <option value="">Elegí custodio</option>
               {custodians.map((c) => (
                 <option value={c.id} key={c.id}>
                   {c.name} ({c.code})
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             Formato de importes de texto
-            <select
+            <Select
               name="numericFormat"
               defaultValue="undefined"
               disabled={busy}
@@ -234,15 +236,15 @@ export function ImportPreparation({
               </option>
               <option value="dot">1,234.56 — punto decimal</option>
               <option value="comma">1.234,56 — coma decimal</option>
-            </select>
+            </Select>
           </label>
           <label>
             Delimitador CSV
-            <select name="delimiter" defaultValue="," disabled={busy}>
+            <Select name="delimiter" defaultValue="," disabled={busy}>
               <option value=",">Coma</option>
               <option value=";">Punto y coma</option>
               <option value={"\t"}>Tabulación</option>
-            </select>
+            </Select>
           </label>
           <label>
             Archivo original
@@ -292,7 +294,7 @@ export function ImportPreparation({
           <div className="import-form">
             <label>
               Hoja
-              <select
+              <Select
                 value={sheet}
                 onChange={(e) => setSheet(e.target.value)}
                 disabled={busy || frozen}
@@ -300,11 +302,11 @@ export function ImportPreparation({
                 {detail.sheets.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               Convención numérica
-              <select
+              <Select
                 value={format}
                 onChange={(e) => setFormat(e.target.value as NumericFormat)}
                 disabled={busy || frozen}
@@ -312,7 +314,7 @@ export function ImportPreparation({
                 <option value="undefined">Sin definir</option>
                 <option value="dot">1,234.56</option>
                 <option value="comma">1.234,56</option>
-              </select>
+              </Select>
             </label>
             {["uploaded", "validating"].includes(detail.batch.status) && (
               <Button
@@ -324,7 +326,7 @@ export function ImportPreparation({
             )}
             {processing && (
               <Button
-                variant="soft"
+                variant="soft" highContrast
                 onClick={() => {
                   paused.current = true;
                 }}
@@ -461,7 +463,7 @@ export function ImportPreparation({
           {!detail.rows.length && <p>Sin filas en esta página.</p>}
           <div className="import-pagination">
             <Button
-              variant="soft"
+              variant="soft" highContrast
               disabled={busy || detail.page === 0}
               onClick={() => {
                 setBusy(true);
@@ -476,7 +478,7 @@ export function ImportPreparation({
               Página {detail.page + 1} · {detail.rowMatches} filas en esta vista
             </span>
             <Button
-              variant="soft"
+              variant="soft" highContrast
               disabled={busy || (detail.page + 1) * 25 >= detail.rowMatches}
               onClick={() => {
                 setBusy(true);

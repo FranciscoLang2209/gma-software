@@ -1,4 +1,6 @@
 "use client";
+import { DatePicker } from "./ui/date-picker";
+import { Select } from "./ui/select";
 import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -9,6 +11,7 @@ import { dateLabel, monthLabel, usd } from "@/lib/queries/presentation";
 
 const labels: Record<string, string> = { id: "UUID", name: "Nombre", code: "Código", active: "Estado", account_id: "Cuenta", custodian_id: "Custodio", client_id: "Cliente", service: "Servicio", advisor_id: "Comercial", group_id: "Equipo", valid_from: "Desde inclusiva", valid_to: "Hasta exclusiva", is_primary: "Principal" };
 const references = { account_id: "accounts", custodian_id: "custodians", client_id: "clients", advisor_id: "advisors", group_id: "teams" } as const;
+function ModelInput(props: React.InputHTMLAttributes<HTMLInputElement>) { return props.type === "date" ? <DatePicker {...props} /> : <input {...props} />; }
 export function ModelManager({ entity, catalog, admin, editingId }: { entity: Entity; catalog: Catalog; admin: boolean; editingId?: string }) {
   const router = useRouter();
   const [preview, setPreview] = useState<Preview | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(""), [notice, setNotice] = useState("");
@@ -44,10 +47,10 @@ export function ModelManager({ entity, catalog, admin, editingId }: { entity: En
     if ("active" in input) input.active = input.active === "true";
     void run(async () => { setPreview(await call({ operation: "preview", entity, target_id: row?.id ?? null, input, reason })); });
   }
-  const field = (key: string, required = true) => <label key={key}>{labels[key] ?? key}<input name={key} required={required} defaultValue={String(row?.[key as keyof ModelRow] ?? "")} maxLength={key.endsWith("_id") ? 36 : 200}
+  const field = (key: string, required = true) => <label key={key}>{labels[key] ?? key}<ModelInput name={key} required={required} defaultValue={String(row?.[key as keyof ModelRow] ?? "")} maxLength={key.endsWith("_id") ? 36 : 200}
     type={key.startsWith("valid_") ? "date" : "text"} list={key in references ? `options-${references[key as keyof typeof references]}` : undefined} placeholder={key.endsWith("_id") ? "UUID · elegí una referencia" : undefined} /></label>;
   return <div className="model-workspace">
-    <aside className="model-sidebar"><p className="eyebrow">CATÁLOGOS Y VIGENCIAS</p><nav className="report-tabs model-nav" aria-label="Entidades del modelo">{Object.entries(ENTITIES).map(([key, label]) => <Link key={key} aria-current={entity === key ? "page" : undefined} href={`/configuracion?entidad=${key}`}>{label}</Link>)}</nav><div className="model-role"><ShieldCheck size={16} aria-hidden="true" /><p>{admin ? "Administrador · cambios con revisión previa" : "Lector · consulta de catálogos"}</p></div></aside>
+    <aside className="model-sidebar" aria-label="Catálogos y vigencias"><p className="eyebrow">CATÁLOGOS Y VIGENCIAS</p><nav className="report-tabs model-nav" aria-label="Entidades del modelo">{Object.entries(ENTITIES).map(([key, label]) => <Link key={key} aria-current={entity === key ? "page" : undefined} href={`/configuracion?entidad=${key}`}>{label}</Link>)}</nav><div className="model-role"><ShieldCheck size={16} aria-hidden="true" /><p>{admin ? "Administrador · cambios con revisión previa" : "Lector · consulta de catálogos"}</p></div></aside>
     <div className="model-content">
     <section className="panel report-section"><div className="section-heading"><div><p className="eyebrow">MODELO DEL NEGOCIO</p><h2><BookOpen size={18} aria-hidden="true" /> {ENTITIES[entity]}</h2></div><span className="semantic-badge">{catalog.row_count} registros</span></div><p>Las entidades se desactivan; se conserva su historia. Las bajas no reasignan cifras históricas. Desde inclusiva y hasta exclusiva en todas las vigencias.</p>
       <div className="table-scroll" role="region" aria-label={`Catálogo de ${ENTITIES[entity]}`} tabIndex={0}><Table.Root className="data-table"><Table.Header><Table.Row>{columns.map((c) => <Table.ColumnHeaderCell key={c}>{labels[c]}</Table.ColumnHeaderCell>)}{admin && <Table.ColumnHeaderCell>Acción</Table.ColumnHeaderCell>}</Table.Row></Table.Header><Table.Body>{catalog.rows.map((r) => <Table.Row key={r.id}>{columns.map((c) => <Table.Cell key={c}>{labelValue(c, r[c as keyof ModelRow])}</Table.Cell>)}{admin && <Table.Cell><Link href={`/configuracion?entidad=${entity}&editar=${r.id}&offset=${catalog.offset}`}>Editar</Link></Table.Cell>}</Table.Row>)}</Table.Body></Table.Root></div>
@@ -59,7 +62,7 @@ export function ModelManager({ entity, catalog, admin, editingId }: { entity: En
         {row && <p>UUID {row.id} · <Link href={`/configuracion?entidad=${entity}`}>Terminar edición</Link></p>}
         <form ref={formRef} className="import-form" onSubmit={review} onChange={() => { setPreview(null); setNotice(""); }}>
           {temporal ? <>{entity === "assignments" && field("account_id")}{field("advisor_id")}{entity === "memberships" && field("group_id")}{field("valid_from")}{field("valid_to", false)}<label>Evidencia o referencia<input name="evidence" required minLength={3} maxLength={2000} /></label></> : entity === "accounts" ? <>{field("client_id", false)}{field("service")}</> : <>{field("name")}{entity === "custodians" && field("code")}</>}
-          {!temporal && <label>Estado<select name="active" defaultValue={row?.active === false ? "false" : "true"}><option value="true">Activo</option><option value="false">Desactivado</option></select></label>}
+          {!temporal && <label>Estado<Select name="active" defaultValue={row?.active === false ? "false" : "true"}><option value="true">Activo</option><option value="false">Desactivado</option></Select></label>}
           <label>Motivo del cambio<textarea name="reason" required minLength={3} maxLength={2000} /></label>
           <div className="report-actions"><Button disabled={busy} type="submit">{busy ? "Procesando…" : "Revisar efecto antes de guardar"}</Button></div>
         </form>

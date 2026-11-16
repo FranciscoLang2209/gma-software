@@ -984,3 +984,30 @@ h1 { font-size: clamp(26px, 2.4vw, 32px); letter-spacing: -1.1px; font-weight: 6
 .section-heading .eyebrow { font-size: 9px; }
 .radix-themes .rt-Button.rt-variant-solid:not(:disabled) { background-color: var(--gma-navy); color: white; }
 .radix-themes .rt-Button.rt-variant-solid:not(:disabled):hover { background-color: #244d6a; }
+
+/* Final accessibility review: retain one keyboard-scrollable table container. */
+.table-scroll > .rt-TableRoot > .rt-ScrollAreaRoot { overflow: visible; }
+.table-scroll > .rt-TableRoot > .rt-ScrollAreaRoot > [data-radix-scroll-area-viewport] { overflow: visible !important; }
+footer { color: var(--gma-muted); }
+
+/* shadcn Select and Calendar, adapted to the existing CSS design system. */
+.ui-select-trigger { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; min-width:0; min-height:40px; padding:8px 12px; border:1px solid #bac8d7; border-radius:6px; background:white; color:#173952; font:inherit; text-align:left; cursor:pointer; }
+.ui-select-trigger:disabled { opacity:.6; cursor:default; }
+.ui-select-trigger[aria-invalid=true] { border-color:#a02525; }
+.ui-select-content,.ui-date-content { z-index:100; background:white; color:#173952; border:1px solid #bac8d7; border-radius:8px; box-shadow:0 8px 24px #17395220; padding:6px; max-width:calc(100vw - 24px); }
+.ui-select-content { min-width:var(--radix-select-trigger-width); max-height:min(320px,var(--radix-select-content-available-height)); overflow:hidden; font:14px "Inter Variable",sans-serif; }
+.ui-select-item { display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border-radius:4px; cursor:pointer; outline:none; }
+.ui-select-item[data-highlighted] { background:#eaf0f6; }
+.ui-select-item[data-disabled] { opacity:.5; }
+.ui-select-scroll { display:flex; justify-content:center; }
+.ui-validation-input { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; opacity:0; pointer-events:none; }
+.ui-date-content { padding:12px; width:310px; }
+.ui-calendar { --rdp-accent-color:#173952; --rdp-accent-background-color:#eaf0f6; --rdp-day-width:38px; --rdp-day-height:38px; margin:12px 0 0; font:14px "Inter Variable",sans-serif; }
+.ui-calendar-controls { display:grid; grid-template-columns:1fr 85px; gap:8px; }
+.ui-calendar-controls input { width:100%; border:1px solid #bac8d7; border-radius:6px; padding:8px; font:inherit; }
+.ui-month-confirm,.ui-date-clear { width:100%; padding:10px; margin-top:10px; border:1px solid #bac8d7; border-radius:6px; background:#eaf0f6; color:#173952; cursor:pointer; }
+.ui-date-content .ui-calendar { --rdp-day-width:36px; --rdp-day-height:36px; --rdp-day_button-width:34px; --rdp-day_button-height:34px; max-width:100%; }
+.ui-date-content .rdp-month_grid { width:100%; table-layout:fixed; }
+.ui-date-content .rdp-day_button { width:34px; height:34px; }
+.ui-date-content .rdp-months { max-width:100%; }
+.radix-themes .ui-validation-input { width:1px; min-width:0; height:1px; min-height:0; padding:0; border:0; }

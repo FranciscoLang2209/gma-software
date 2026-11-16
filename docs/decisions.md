@@ -268,3 +268,33 @@ Mismos contratos, RPC, permisos y reglas; sin nuevas dependencias.
 Los gráficos comerciales limitan la presentación a ocho grupos de la página y
 explicitan su alcance; no calculan totales ni porcentajes desde filas paginadas.
 La publicación de la continuación queda para revisión posterior.
+
+
+## Cierre UI/UX — 2026-11-16
+
+La lectura de main en GitHub confirma `0f87e48` con etapas UI/UX 1–7; reemplaza
+el pendiente histórico de publicación de 3–7. El estado Vercel del commit es
+`success`; no equivale a conciliación ni prueba financiera remota.
+La solicitud de continuar se aplica al cierre de validación/accesibilidad del
+rediseño existente. Se mantiene Radix/Recharts, sin dependencias nuevas ni cambios
+de negocio, servidor o permisos. Ajustes locales de contraste y navegación por
+teclado en `codex/ui-ux-final-validation`; publicación de este cierre pendiente.
+
+
+## Selects y calendarios shadcn — 2026-11-16
+
+Por solicitud del dueño, se sustituyeron todos los selects de negocio por la
+composición Select de shadcn/Radix y las fechas por Popover + Calendar basado en
+React DayPicker, adaptados al CSS existente sin migrar a Tailwind. Meses con
+selección de mes/año explícita; vigencias con calendario diario en español.
+Se mantienen nombres y valores FormData, campos obligatorios, disabled/readOnly,
+filtros GET y fechas sin conversiones UTC. Los input/select nativos internos de
+validación de las librerías no son controles visuales del producto.
+Dependencias directas exactas y lockfile actualizados; sin cambios financieros.
+Lint, tipos, 23 tests y build locales correctos. Navegador sintético: selección
+por popup, elección mensual y FormData de filtros comprobados; calendario de
+vigencias comprobado por separado. No se afirma haber repetido la matriz axe ni
+el arnés anterior (sus selectOption/fill nativos requieren adaptación).
+El dueño autorizó publicar a main todos los cambios locales, incluido el cierre
+anterior de accesibilidad. Próximo paso: verificar despliegue y revisar en sesión
+real, sin confundir estos checks con conciliación financiera real.

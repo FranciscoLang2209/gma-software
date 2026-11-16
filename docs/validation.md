@@ -644,3 +644,122 @@ No se ejecutaron test:db/test:dashboard ni pruebas con fuentes reales; permanece
 las limitaciones de PostgreSQL del registro anterior. Tampoco auditoría completa
 WCAG/lector de pantalla. El push verificado corresponde a etapas 1–2;
 esta continuación 3–7 no se ha enviado ni desplegado.
+
+
+## Cierre UI/UX — main verificado y regresión final, 2026-11-16
+
+### Alcance y base remota
+
+GitHub `branches/main` devuelve `0f87e48df636d333ea593379986433b92027508c`, igual
+al HEAD local. Incluye `2475ab1` (base/Resumen) y `0f87e48` (demás secciones).
+GitHub `commits/<sha>/status` devuelve contexto Vercel, `success`, «Deployment
+has completed». No se accedió a una sesión de negocio ni se modificó el despliegue.
+Se corrige así el registro histórico anterior que solo acreditaba el primer push.
+
+Rama de cierre: `codex/ui-ux-final-validation`. Al iniciar ya había cambios en
+layout del workspace, CSS y ModelManager; se preservaron y verificaron. Cambios:
+
+- Sidebar y catálogos tienen nombres distintos; topbar es `header`.
+- La marca usa su texto visible como nombre accesible; badge del rol en alto contraste.
+- El scroll anidado de Radix se delega al contenedor `.table-scroll`, que ya tiene
+  nombre y `tabIndex=0`; no se elimina el acceso al contenido financiero completo.
+- Footer con el token de texto secundario más oscuro.
+- La captura dinámica detectó contraste 4,25:1 en el botón de recarga de
+  correspondencias. Se añadió `highContrast` a los seis botones secundarios
+  de preparación/correspondencias, incluidos paginación y pausa.
+
+Sin cambios en `src/lib`, API, SQL, Auth/RLS, cálculos, contratos, dependencias ni
+lockfile. Revisión React: props visuales/semánticas, sin nuevos hooks, efectos,
+fetches ni alteraciones de confirmación o guardas.
+
+### Checks locales ejecutados
+
+Node 24.22.1 del runtime disponible; npm no está en PATH, por eso se invocaron
+los binarios locales equivalentes, sin instalar herramientas ni cambiar versiones:
+
+- `node node_modules/eslint/bin/eslint.js . --max-warnings=0`: correcto.
+- `node node_modules/next/dist/bin/next typegen` y
+  `node node_modules/typescript/bin/tsc --noEmit`: correctos.
+- `node --conditions=react-server --experimental-strip-types --test tests/*.test.ts`:
+  23 aprobados, cero fallos.
+- `node scripts/check-deployment.ts` y `node node_modules/next/dist/bin/next build`:
+  correctos; compilación y TypeScript completados también después del ajuste final.
+- `node scripts/test-auth-http.mjs`: correcto contra build local y proveedor
+  HTTP sintético; ingreso, roles, rutas directas, CSRF, fuentes, consultas/CSV,
+  preparación por lotes y gestión/revisión/publicación/modelo.
+- `git diff --check`: correcto.
+
+### Navegador y accesibilidad
+
+Se reutilizó `/private/tmp/gma-sections-review`, copia aislada con franja visible
+«REVISIÓN VISUAL · DATOS SINTÉTICOS · SIN CONEXIÓN A BASE». Los componentes UI
+inspeccionados coinciden con el workspace. Solo el arnés usa datos/roles simulados,
+omite el proxy e intercepta endpoints de escritura; no se introdujo un fallback
+en el producto. Es evidencia de UI y flujos simulados, no de persistencia real.
+
+Chrome headless mediante Playwright, axe-core 4.14.1, reglas `wcag2a`, `wcag2aa`,
+`wcag21a`, `wcag21aa`, `wcag22aa` y `best-practice`, limitadas a `.app-shell`:
+
+| Comprobación | Resultado |
+| --- | --- |
+| Rutas iniciales, admin/reader × 390/1440 px | 24 casos; cero violaciones detectadas. Reader omite Importaciones/Correspondencias. |
+| Estados de interacción capturados | 14 casos; cero violaciones detectadas tras corregir el contraste. Incluye candidata lista para publicar y preview del modelo, desktop/móvil. |
+| Responsive | Seis rutas × 320/390/768/1440 px: 24 comprobaciones sin overflow del documento. |
+| Tabla mensual con teclado, 390 px | Flechas desplazan el contenedor exterior 80 px; ancho 324 px, contenido 836 px, scroll interior Radix 0 px. |
+| Filtros/exportación | Dimensión, rango y equipo conservados por URL; enlace CSV conserva selección. |
+| Cuentas | Búsqueda `0001`, detalle y regreso preservan búsqueda/filtros. |
+| Importaciones | Carga/preparación no publican; review no publica; sin checkbox no hay publish; confirmado se envía una sola vez. |
+| Configuración | Preview antes de save; lector sin editor ni botón de cambios. |
+| Error de consulta | Error visible y ausencia de KPIs; sin cero de fallback. |
+| Consola/visual | Sin excepciones ni errores en el recorrido. Revisadas capturas de análisis desktop y confirmación móvil. |
+
+axe devuelve comprobaciones `incomplete` de contraste en gráficos y de relación
+entre encabezados/celdas en tablas sin filas. Se conservan en los informes; cero
+violaciones automáticas no acredita conformidad WCAG, lector de pantalla ni todas
+las variantes, hover, foco o estados de error. El reporte está limitado al shell.
+
+Evidencia privada en
+`/Users/franciscolang/Documents/ChatGPT/App Papa/ui-ux-final-validation/`:
+`axe-results.json`, `dynamic-axe.json` y scripts `gma-a11y.mjs`,
+`gma-keyboard-scroll.mjs`, `gma-dynamic-a11y.mjs`. El archivo previo
+`axe-before.json` se conserva como antecedente; no se regeneró en esta sesión.
+Capturas sintéticas y `checks.json` actualizados en la carpeta privada
+`ui-ux-sections-review/`, incluidos `commercial-desktop.png`,
+`resolution-ready-desktop.png`, `resolution-ready-mobile.png` y
+`settings-preview-desktop.png`. El arnés no debe desplegarse.
+
+### Límites y continuidad
+
+No se ejecutaron `test:db`/`test:dashboard`: `pg_config`, `psql` y `createdb` no
+están disponibles. No se cambiaron DB ni cálculos para suplirlo, ni se usó la
+base remota para estas pruebas. Sin muestras financieras, conciliación real,
+publicación/corrección financiera remota ni auditoría integral de accesibilidad.
+No se repitió auditoría de dependencias ni se actualizó el lockfile.
+
+La revisión automática de permisos del primer intento de lanzar Chrome agotó
+su plazo; el único reintento fue admitido y las pruebas finalizaron correctamente.
+No quedó trabajo bloqueado por ese timeout.
+Los cambios de cierre permanecen locales; no se ejecutó commit, push ni despliegue.
+Próximo paso documentado: incorporar el cierre y comprobar despliegue, seguido de
+validación operativa separada con muestras privadas y definiciones confirmadas.
+
+
+## Selects y calendarios shadcn — 2026-11-16
+
+Por solicitud del dueño, se sustituyeron todos los selects de negocio por la
+composición Select de shadcn/Radix y las fechas por Popover + Calendar basado en
+React DayPicker, adaptados al CSS existente sin migrar a Tailwind. Meses con
+selección de mes/año explícita; vigencias con calendario diario en español.
+Se mantienen nombres y valores FormData, campos obligatorios, disabled/readOnly,
+filtros GET y fechas sin conversiones UTC. Los input/select nativos internos de
+validación de las librerías no son controles visuales del producto.
+Dependencias directas exactas y lockfile actualizados; sin cambios financieros.
+Lint, tipos, 23 tests y build locales correctos. Navegador sintético: selección
+por popup, elección mensual y FormData de filtros comprobados; calendario de
+vigencias comprobado por separado. No se afirma haber repetido la matriz axe ni
+el arnés anterior (sus selectOption/fill nativos requieren adaptación).
+El dueño autorizó publicar a main todos los cambios locales, incluido el cierre
+anterior de accesibilidad. Próximo paso: verificar despliegue y revisar en sesión
+real, sin confundir estos checks con conciliación financiera real.
+
+Verificación adicional: calendario de vigencias y controles a 390 px sin overflow del documento; corregida la especificidad CSS de los inputs internos de validación.
