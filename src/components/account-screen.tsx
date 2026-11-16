@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Wallet, Users } from "lucide-react";
+import { MetricCard } from "./metric-card";
+import { ReportChart } from "./report-chart";
+import { CoverageDisclosure } from "./coverage-disclosure";
 import { Table } from "@radix-ui/themes";
 import { requireAccess } from "@/lib/auth/access";
 import { accountParameters, accountHref, type Directory, type AccountDetail, type Provenance } from "@/lib/accounts/contracts";
 import { monthLabel, usd, dateLabel, type Search } from "@/lib/queries/presentation";
 import { UUID } from "@/lib/imports/contracts";
-import { ReportCoverage, ReportFilters } from "./report-view";
+import { ReportFilters } from "./report-view";
 
 function ProvenanceLink({ item, admin }: { item: Provenance; admin: boolean }) {
   return <span>Importación {admin ? <Link href={`/correspondencias?lote=${item.batch_id}`}>{item.batch_id}</Link> : item.batch_id} · v{item.version} · fila {item.import_row_id}<br />Publicada {dateLabel(item.published_at)} · por {item.published_by}</span>;
@@ -19,13 +23,13 @@ function Pagination({ count, offset, limit, href, label }: { count: number; offs
 }
 function DirectoryTable({ data, params }: { data: Directory; params: URLSearchParams }) {
   return <section className="panel report-section">
-    <h2>Directorio de cuentas</h2>
+    <div className="section-heading directory-heading"><div><p className="eyebrow">DIRECTORIO FILTRADO</p><h2>Directorio de cuentas</h2></div><span className="semantic-badge">{data.row_count} cuentas encontradas</span></div>
     <p>Comercial y equipo son referencias al cierre de {monthLabel(data.report.period.to)}. El Revenue conserva la atribución de cada mes. Incluye cuentas sin datos y desactivadas.</p>
     <div className="table-scroll" role="region" aria-label="Directorio de cuentas" tabIndex={0}>
       <Table.Root className="data-table"><Table.Header><Table.Row>{["Custodio", "Identificador principal", "Cliente", "Comercial al cierre", "Equipo al cierre", "Servicio", "AUM al cierre · USD", "Revenue del rango · USD"].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header>
         <Table.Body>{data.rows.map((a) => <Table.Row key={a.id}>
-          <Table.Cell>{a.custodian}</Table.Cell><Table.RowHeaderCell><Link href={accountHref(`/cuentas/${a.id}`, params, { cuenta: a.id })}>{a.identifier}</Link><br /><small>{a.identifier_source ? `${a.identifier_source} · ${a.identifier_namespace}` : "Sin identificador externo · UUID"}{!a.active && " · Desactivada"}</small></Table.RowHeaderCell>
-          <Table.Cell>{a.client ?? "Sin asignar"}</Table.Cell><Table.Cell>{a.advisor ?? "Sin asignar"}</Table.Cell><Table.Cell>{a.team ?? "Sin asignar"}{a.assignment_changed && <p>Cambió durante el rango · ver historia</p>}</Table.Cell><Table.Cell>{a.service}</Table.Cell>
+          <Table.Cell>{a.custodian}</Table.Cell><Table.RowHeaderCell><Link href={accountHref(`/cuentas/${a.id}`, params, { cuenta: a.id })}>{a.identifier}</Link><br /><small className="cell-secondary">{a.identifier_source ? `${a.identifier_source} · ${a.identifier_namespace}` : "Sin identificador externo · UUID"}{!a.active && " · Desactivada"}</small></Table.RowHeaderCell>
+          <Table.Cell>{a.client ?? "Sin asignar"}</Table.Cell><Table.Cell>{a.advisor ?? "Sin asignar"}</Table.Cell><Table.Cell>{a.team ?? "Sin asignar"}{a.assignment_changed && <p className="cell-warning">Cambió durante el rango · ver historia</p>}</Table.Cell><Table.Cell>{a.service}</Table.Cell>
           <Table.Cell className="money">{usd(a.aum_usd)}<br /><small>{a.aum_values}/{a.aum_rows} importes</small></Table.Cell><Table.Cell className="money">{usd(a.revenue_usd)}<br /><small>{a.revenue_values}/{a.revenue_rows} importes</small></Table.Cell>
         </Table.Row>)}</Table.Body></Table.Root>
     </div>
@@ -37,27 +41,30 @@ function DirectoryTable({ data, params }: { data: Directory; params: URLSearchPa
 function DetailView({ data, params, admin }: { data: AccountDetail; params: URLSearchParams; admin: boolean }) {
   const a = data.account;
   return <>
-    <section className="panel report-section"><h2>{a.identifier}</h2><p>{a.custodian} · Cliente: {a.client ?? "Sin asignar"} · Servicio: {a.service} · {a.active ? "Activa" : "Desactivada"}</p><p>UUID {a.id}</p>
+    <div className="account-detail-toolbar"><Link className="button-outline" href={accountHref("/cuentas", params, { cuenta: null })}><ArrowLeft size={15} aria-hidden="true" /> Volver al listado con filtros</Link><span className="semantic-badge">{a.active ? "Activa" : "Desactivada"}</span></div>
+    <nav className="detail-links" aria-label="Secciones de la cuenta"><a href="#identidad">Identidad</a><a href="#historia">Historia mensual</a><a href="#asignaciones">Vigencias</a><a href="#registros">Revenue y procedencia</a><a href="#cobertura">Cobertura</a></nav>
+    <section className="panel report-section account-identity" id="identidad"><p className="eyebrow">CUENTA · {a.custodian}</p><h2>{a.identifier}</h2><p>{a.custodian} · Cliente: {a.client ?? "Sin asignar"} · Servicio: {a.service} · {a.active ? "Activa" : "Desactivada"}</p><p>UUID {a.id}</p>
       <p>Referencia al cierre: {a.advisor ?? "Sin comercial"} / {a.team ?? "Sin equipo"}. {a.assignment_changed && "La asignación cambió durante el rango."}</p>
       <p>Con los filtros aplicados: AUM al cierre {usd(data.report.total.aum_usd)} · Revenue del rango {usd(data.report.total.revenue_usd)}. Cliente y servicio usan la clasificación de la cuenta, sin historia propia.</p>
-      <Link href={accountHref("/cuentas", params, { cuenta: null })}>Volver al listado con filtros</Link>
       {admin && <p><Link href={`/configuracion?entidad=accounts&editar=${a.id}`}>Editar clasificación o desactivar</Link> · <Link href="/configuracion?entidad=assignments">Administrar asignaciones con revisión histórica</Link></p>}
     </section>
     <section className="panel report-section"><h2>Identificadores por fuente y namespace</h2><p>Se conservan como texto. Cada equivalencia pertenece al custodio {a.custodian}; no se unen cuentas por nombre ni número ambiguo.</p>
       <div className="table-scroll" role="region" aria-label="Identificadores" tabIndex={0}><Table.Root className="data-table"><Table.Header><Table.Row>{["Fuente", "Namespace", "Valor original", "Fila de origen"].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header><Table.Body>{data.identifiers.map((i) => <Table.Row key={`${i.source}/${i.namespace}/${i.value_original}`}><Table.Cell>{i.source}</Table.Cell><Table.Cell>{i.namespace}</Table.Cell><Table.RowHeaderCell>{i.value_original}</Table.RowHeaderCell><Table.Cell>{i.source_row_id ?? "Registro manual"}</Table.Cell></Table.Row>)}</Table.Body></Table.Root></div>
       {!data.identifiers.length && <p>Sin identificadores externos resueltos.</p>}
     </section>
-    <section className="panel report-section"><h2>Historia mensual y atribución del Revenue</h2><p>Meses del rango seleccionado. AUM es la foto de cada mes; no se suman fotos. Cada fila indica la asignación al cierre de ese mes, incluso cuando queda fuera del filtro de equipo o comercial.</p>
-      <div className="table-scroll" role="region" aria-label="Historia mensual de la cuenta" tabIndex={0}><Table.Root className="data-table"><Table.Header><Table.Row>{["Mes", "Comercial", "Equipo", "AUM · USD", "Revenue · USD", "Cobertura", "Filtro"].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header><Table.Body>{data.months.map((m) => <Table.Row key={m.period}><Table.RowHeaderCell>{monthLabel(m.period)}</Table.RowHeaderCell><Table.Cell>{m.advisor ?? "Sin asignar"}</Table.Cell><Table.Cell>{m.team ?? "Sin asignar"}</Table.Cell><Table.Cell>{usd(m.aum_usd)}</Table.Cell><Table.Cell>{usd(m.revenue_usd)}</Table.Cell><Table.Cell>AUM {m.aum_values}/{m.aum_rows} · Revenue {m.revenue_values}/{m.revenue_rows} importes</Table.Cell><Table.Cell>{m.matches_filters ? "Incluido en cifras filtradas" : "Contexto · fuera del filtro"}</Table.Cell></Table.Row>)}</Table.Body></Table.Root></div>
+    <section className="metric-grid primary-metrics" aria-label="Cifras filtradas de la cuenta"><MetricCard title="AUM al cierre" value={usd(data.report.total.aum_usd)} period={monthLabel(data.report.period.to)} icon={<Wallet size={18} />} note="Foto del mes de cierre, sin arrastre de saldos." /><MetricCard title="Revenue del rango" value={usd(data.report.total.revenue_usd)} period={`${monthLabel(data.report.period.from)} — ${monthLabel(data.report.period.to)}`} icon={<Users size={18} />} note="Payout broker de los registros incluidos por los filtros." /></section>
+    <div className="report-charts"><ReportChart report={data.report} source="aum" /><ReportChart report={data.report} source="revenue" /></div>
+    <section className="panel report-section" id="historia"><h2>Historia mensual y atribución del Revenue</h2><p>Meses del rango seleccionado. AUM es la foto de cada mes; no se suman fotos. Cada fila indica la asignación al cierre de ese mes, incluso cuando queda fuera del filtro de equipo o comercial.</p>
+      <div className="table-scroll" role="region" aria-label="Historia mensual de la cuenta" tabIndex={0}><Table.Root className="data-table"><Table.Header><Table.Row>{["Mes", "Comercial", "Equipo", "AUM · USD", "Revenue · USD", "Cobertura", "Filtro"].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header><Table.Body>{data.months.map((m) => <Table.Row key={m.period}><Table.RowHeaderCell>{monthLabel(m.period)}</Table.RowHeaderCell><Table.Cell>{m.advisor ?? "Sin asignar"}</Table.Cell><Table.Cell>{m.team ?? "Sin asignar"}</Table.Cell><Table.Cell align="right" className="money">{usd(m.aum_usd)}</Table.Cell><Table.Cell align="right" className="money">{usd(m.revenue_usd)}</Table.Cell><Table.Cell>AUM {m.aum_values}/{m.aum_rows} · Revenue {m.revenue_values}/{m.revenue_rows} importes</Table.Cell><Table.Cell>{m.matches_filters ? "Incluido en cifras filtradas" : "Contexto · fuera del filtro"}</Table.Cell></Table.Row>)}</Table.Body></Table.Root></div>
       <details><summary>Procedencia de las fotos AUM del rango</summary><ul>{data.aum.map((item) => <li key={item.period}>{monthLabel(item.period)} · {usd(item.amount_usd)} · <ProvenanceLink item={item} admin={admin} /></li>)}</ul>{!data.aum.length && <p>No hay fotos publicadas en el rango.</p>}</details>
     </section>
-    <section className="panel report-section"><h2>Asignaciones y membresías con vigencia</h2><p>Desde inclusiva, hasta exclusiva. Sin cobertura fechada queda sin asignar. Una referencia actual no acredita historia anterior. Los FA publicados se corrigen por importación versionada.</p>
+    <section className="panel report-section" id="asignaciones"><h2>Asignaciones y membresías con vigencia</h2><p>Desde inclusiva, hasta exclusiva. Sin cobertura fechada queda sin asignar. Una referencia actual no acredita historia anterior. Los FA publicados se corrigen por importación versionada.</p>
       <ul>{data.assignments.map((x) => <li key={x.id}>{x.advisor ?? "Sin comercial acreditado"} · {x.valid_from} → {x.valid_to ?? "Sin fin"} · {x.source}{x.batch_id && <> · Importación {admin ? <Link href={`/correspondencias?lote=${x.batch_id}`}>{x.batch_id}</Link> : x.batch_id}</>}{x.source_row_id && <> · fila {x.source_row_id}</>}</li>)}</ul>
       {!data.assignments.length && <p>Sin asignaciones acreditadas.</p>}
       <h3>Membresías de los comerciales de esta cuenta</h3><ul>{data.memberships.map((x) => <li key={x.id}>{x.advisor} / {x.team} · {x.valid_from} → {x.valid_to ?? "Sin fin"}</li>)}</ul>
     </section>
     <section className="panel report-section" id="registros"><h2>Registros de Revenue publicados</h2><p>Registros del rango y de los filtros históricos. Repeticiones legítimas conservadas. {admin ? "Las columnas originales se muestran como texto inerte." : "Los originales y archivos fuente están reservados al administrador."} Las correcciones financieras se realizan por importación versionada.</p>
-      <div className="table-scroll" role="region" aria-label="Registros Revenue paginados" tabIndex={0}><Table.Root className="data-table"><Table.Header><Table.Row>{["Mes", "Payout broker · USD", "Procedencia", ...(admin ? ["Originales"] : [])].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header><Table.Body>{data.records.map((r) => <Table.Row key={r.id}><Table.RowHeaderCell>{monthLabel(r.period)}</Table.RowHeaderCell><Table.Cell>{usd(r.amount_usd)}</Table.Cell><Table.Cell><ProvenanceLink item={r} admin={admin} /></Table.Cell>{admin && <Table.Cell>{r.original && <details><summary>Ver columnas originales</summary><p>{r.original.file} · {r.original.sheet} · fila {r.original.row}</p><dl>{Object.entries(r.original.cells).map(([key, value]) => <div key={key}><dt>{r.original?.headers?.find((h) => String(h.position) === key)?.original ?? key}</dt><dd>{value ?? "N/D"}</dd></div>)}</dl></details>}</Table.Cell>}</Table.Row>)}</Table.Body></Table.Root></div>
+      <div className="table-scroll" role="region" aria-label="Registros Revenue paginados" tabIndex={0}><Table.Root className="data-table"><Table.Header><Table.Row>{["Mes", "Payout broker · USD", "Procedencia", ...(admin ? ["Originales"] : [])].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header><Table.Body>{data.records.map((r) => <Table.Row key={r.id}><Table.RowHeaderCell>{monthLabel(r.period)}</Table.RowHeaderCell><Table.Cell align="right" className="money">{usd(r.amount_usd)}</Table.Cell><Table.Cell><ProvenanceLink item={r} admin={admin} /></Table.Cell>{admin && <Table.Cell>{r.original && <details><summary>Ver columnas originales</summary><p>{r.original.file} · {r.original.sheet} · fila {r.original.row}</p><dl>{Object.entries(r.original.cells).map(([key, value]) => <div key={key}><dt>{r.original?.headers?.find((h) => String(h.position) === key)?.original ?? key}</dt><dd>{value ?? "N/D"}</dd></div>)}</dl></details>}</Table.Cell>}</Table.Row>)}</Table.Body></Table.Root></div>
       <Pagination count={data.record_count} offset={data.offset} limit={data.limit} label="Paginación de registros Revenue" href={(offset) => accountHref(`/cuentas/${a.id}`, params, { offset: String(offset), revision: data.revision }) + "#registros"} />
     </section>
   </>;
@@ -76,13 +83,13 @@ export async function AccountScreen({ search, id }: { search: Search; id?: strin
   if (id && !result.data) notFound();
   const data = result.data as Directory | AccountDetail;
   return <>
-    <ReportFilters params={params} report={data.report} path={path} accountId={id}>
+    <ReportFilters params={params} report={data.report} path={path} accountId={id} compact>
       {id && <><input type="hidden" name="buscar" value={params.get("buscar") ?? ""} /><input type="hidden" name="orden" value={params.get("orden") ?? "identifier"} /></>}
       {!id && <><label>Buscar identificador o cliente<input type="search" name="buscar" maxLength={200} defaultValue={params.get("buscar") ?? ""} placeholder="Ej.: 000123" /></label><label>Orden<select name="orden" defaultValue={params.get("orden") ?? "identifier"}><option value="identifier">Identificador · ascendente</option><option value="client">Cliente · ascendente</option><option value="aum">AUM · descendente</option><option value="revenue">Revenue · descendente</option></select></label></>}
       <label>Filas por página<select name="limite" defaultValue={String(p.page_size)}>{[...new Set([10, 25, 50, 100, p.page_size])].sort((a,b) => a-b).map((n) => <option key={n}>{n}</option>)}</select></label>
     </ReportFilters>
     {id ? <DetailView data={data as AccountDetail} params={params} admin={role === "admin"} /> : <DirectoryTable data={data as Directory} params={params} />}
     {!id && <p className="section-note">La cobertura siguiente usa el rango y los filtros de entidades. La búsqueda textual acota el directorio; orden y paginación organizan sus filas.</p>}
-    <ReportCoverage report={data.report} consultedAt={new Date().toISOString()} />
+    <CoverageDisclosure report={data.report} consultedAt={new Date().toISOString()} />
   </>;
 }

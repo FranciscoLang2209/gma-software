@@ -256,3 +256,15 @@ No cambian modelo, RPC, autorización, RLS, reglas, filtros ni exportación.
 Distribución por custodio mediante el análisis existente; nunca sumar cuentas
 paginadas en el cliente. Sin push ni despliegue autorizado en esta solicitud.
 Próxima etapa de UI requiere revisión del resultado. Ver `ui-ux.md`.
+
+## Continuación UI/UX — 2026-11-16
+
+El dueño aprobó el rediseño inicial, solicitó push a main y continuar las etapas
+siguientes. Push del commit `2475ab1` confirmado; GitHub reporta Vercel success.
+Se autoriza implementar las cinco secciones del plan UI, denominadas etapas 3–7:
+Análisis comercial, Cuentas, Importaciones, Correspondencias y Configuración.
+Trabajadas en `codex/ui-ux-sections`, separadas de lo ya aprobado/publicado.
+Mismos contratos, RPC, permisos y reglas; sin nuevas dependencias.
+Los gráficos comerciales limitan la presentación a ocho grupos de la página y
+explicitan su alcance; no calculan totales ni porcentajes desde filas paginadas.
+La publicación de la continuación queda para revisión posterior.

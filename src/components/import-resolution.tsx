@@ -1,5 +1,8 @@
 "use client";
 import { useRef, useState, type FormEvent } from "react";
+import { GitCompareArrows, ShieldCheck } from "lucide-react";
+import { WorkflowSteps } from "./workflow-steps";
+import { StatusBadge } from "./status-badge";
 import { Button, Table } from "@radix-ui/themes";
 
 type Batch = { id: string; source: string; period: string; custodian_id: string; status: string; file_name_original: string };
@@ -65,8 +68,9 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
   }
   const editable = detail?.batch.status === "needs_resolution" && !detail.batch.blocking_errors;
   return <>
+    <WorkflowSteps status={detail?.batch.status ?? "needs_resolution"} />
     <section className="panel import-panel">
-      <h2>Elegir importación</h2>
+      <div className="section-heading"><div><p className="eyebrow">IDENTIDAD Y CONCILIACIÓN</p><h2><GitCompareArrows size={18} aria-hidden="true" /> Elegir importación</h2></div><span className="semantic-badge">Solo administrador</span></div>
       <form className="import-form" onSubmit={(e) => { e.preventDefault(); void run(() => reload(id, 0)); }}>
         <label>Importación reciente o UUID
           <input list="batch-options" value={id} onChange={(e) => { setId(e.target.value); setDetail(null); }} required disabled={busy} />
@@ -82,17 +86,17 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
       <datalist id="account-options">{accounts.map((a) => <option key={a.id} value={a.id}>{code(a.custodian_id)}</option>)}</datalist>
       <datalist id="advisor-options">{advisors.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</datalist>
     </section>
-    {error && <p role="alert" className="import-error">{error}</p>}
-    {notice && <p role="status">{notice}</p>}
+    {error && <p role="alert" className="import-error feedback feedback-error">{error}</p>}
+    {notice && <p role="status" className="feedback feedback-success">{notice}</p>}
     {detail && <section className="panel import-panel" aria-busy={busy}>
-      <h2>{detail.batch.filename} · {labels[detail.batch.status] ?? detail.batch.status}</h2>
+      <div className="section-heading"><h2>{detail.batch.filename}</h2><StatusBadge status={detail.batch.status} label={labels[detail.batch.status] ?? detail.batch.status} /></div>
       <p>{detail.batch.source.toUpperCase()} · {detail.batch.period} · Custodio declarado: {code(detail.batch.custodian_id)} · {detail.batch.rows} filas · {detail.batch.blocking_errors} errores bloqueantes.</p>
       <a href={`/api/fuentes/${detail.batch.id}`}>Descargar original privado</a>
       {detail.batch.errors.map((e, i) => <p key={i}>{e.message ?? JSON.stringify(e)}</p>)}
       {["uploaded", "validating", "failed"].includes(detail.batch.status) && <p>La publicación está bloqueada. <a href="/importaciones">Completá la preparación o cargá un archivo corregido.</a> Un vacío no confirma cero y no puede reemplazar datos en este MVP.</p>}
       <h3>Valores originales, destino y evidencia</h3>
       {detail.rows.map((r) => <article className="panel import-panel resolution-row" key={r.id}>
-        <h4>{r.sheet} / fila {r.row}</h4>
+        <div className="resolution-heading"><h4>{r.sheet} / fila {r.row}</h4><span className={`status-badge status-${r.resolution ? "info" : "warning"}`}>{r.resolution ? "Destino acreditado" : "Requiere correspondencia"}</span></div>
         <dl>{Object.entries(r.cells).map(([h, value]) => <div key={h}><dt>{h}</dt><dd>{value ?? "Ausente"}</dd></div>)}</dl>
         {r.errors.map((e, i) => <p key={i} role="status">{e.message ?? JSON.stringify(e)}</p>)}
         {r.resolution ? <p>Destino: <code>{r.resolution.account_id}</code> · Custodio {code(r.resolution.custodian_id)} · Comercial {r.resolution.advisor_id ?? "Sin asignar"} · Evidencia: {r.resolution.evidence}</p> : <p>Pendiente: sin cuenta UUID acreditada{detail.batch.source === "fa" ? "; FA no informa custodio" : ""}.</p>}
@@ -115,7 +119,7 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
         <Button variant="soft" disabled={busy || (detail.page + 1) * 25 >= detail.batch.rows} onClick={() => void run(() => reload(detail.batch.id, detail.page + 1))}>Siguiente</Button>
       </div>
       {["needs_resolution", "ready"].includes(detail.batch.status) && <form className="import-form" onSubmit={(e) => void review(e)} key={`${detail.batch.id}-${detail.batch.review?.token ?? "pending"}`}>
-        <h3>Revisar alcance completo</h3>
+        <h3 className="form-heading">Revisar alcance completo</h3>
         <label>Mes<input type="month" name="month_display" value={detail.batch.period.slice(0, 7)} readOnly /></label>
         <input type="hidden" name="period" value={detail.batch.period} />
         <input type="hidden" name="custodian_id" value={detail.batch.custodian_id} />
@@ -130,7 +134,7 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
         <label><input type="checkbox" name="complete_scope" required disabled={busy} /> Confirmo que revisé el archivo completo para este mes y custodio, incluidas omisiones y el alcance del reemplazo.</label>
         <Button disabled={busy || !!detail.batch.blocking_errors}>Conciliar y dejar lista</Button>
       </form>}
-      <h3>Conciliación por período y custodio</h3>
+      <div className="section-heading reconciliation-heading"><div><p className="eyebrow">ANTES DE PUBLICAR</p><h3>Conciliación por período y custodio</h3></div><ShieldCheck size={20} aria-hidden="true" /></div>
       <p>{detail.comparison.source.toUpperCase()} · {detail.comparison.period} · {code(detail.comparison.custodian_id)}. Importes exactos en USD. FA no tiene total monetario.</p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Comparación de publicación">
         <Table.Root className="data-table"><Table.Header><Table.Row><Table.ColumnHeaderCell>Versión</Table.ColumnHeaderCell><Table.ColumnHeaderCell align="right">Filas</Table.ColumnHeaderCell><Table.ColumnHeaderCell align="right">Valores</Table.ColumnHeaderCell><Table.ColumnHeaderCell align="right">Total USD</Table.ColumnHeaderCell></Table.Row></Table.Header>
@@ -140,7 +144,7 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
       <p>Comparación de filas por contenido conservando multiplicidad: {detail.comparison.row_changes.added} nuevas, {detail.comparison.row_changes.removed} retiradas del alcance activo. La versión anterior se conserva.</p>
       <p>Sin asignación comercial al cierre: {detail.comparison.candidate.unassigned_accounts} cuentas / {detail.comparison.candidate.unassigned_rows} filas · USD {detail.comparison.candidate.unassigned_total ?? "N/D"}. Permanecen en el total global. Antes de conciliar, la candidata todavía no tiene hechos.</p>
       {detail.comparison.same_file && <p role="status">Mismo archivo que la versión activa. Publicarlo como otra versión reemplaza el alcance; no agrega sus filas a la versión anterior.</p>}
-      {detail.batch.status === "ready" && <form className="import-form" onSubmit={(e) => { e.preventDefault(); void run(async () => { await api(detail.batch.id, "publish", { token: detail.batch.review?.token }); await reload(); setNotice("Publicación confirmada. La versión anterior y su auditoría se conservan."); }); }}>
+      {detail.batch.status === "ready" && <form className="import-form publish-confirmation" onSubmit={(e) => { e.preventDefault(); void run(async () => { await api(detail.batch.id, "publish", { token: detail.batch.review?.token }); await reload(); setNotice("Publicación confirmada. La versión anterior y su auditoría se conservan."); }); }}>
         <label><input type="checkbox" required disabled={busy} /> Revisé esta comparación y autorizo publicar{detail.comparison.active ? " y reemplazar exclusivamente la versión activa de este alcance" : " este alcance"}.</label>
         <Button disabled={busy}>Publicar versión revisada</Button>
       </form>}

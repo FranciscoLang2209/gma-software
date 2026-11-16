@@ -578,3 +578,69 @@ No se probaron datos reales, despliegue, sesión real de negocio, lector de pant
 ni auditoría WCAG completa. La instalación informó siete avisos moderados existentes;
 no se ejecutaron upgrades forzados ni se afirma auditoría limpia. Pendiente revisar
 el resultado con el dueño antes de ampliar el rediseño a otras secciones.
+
+## Push de UI/UX 1–2 y continuación 3–7 — 2026-11-16
+
+### Publicación del conjunto aprobado
+
+- Commit `2475ab14be828b3c9323700aceeb4de53645d9f8`, incorporación fast-forward
+  a `main` y `git push origin main`: correctos, sin force. Hooks de secretos
+  informaron commit/push sin secretos encontrados.
+- `git ls-remote origin refs/heads/main`: mismo SHA.
+- `get_commit_combined_status` de GitHub: contexto `Vercel`, estado `success`.
+  No se automatizó sesión real ni se afirma conciliación de fuentes por ese estado.
+
+### Continuación implementada localmente
+
+Rama `codex/ui-ux-sections`; etapas 3–7 de `ui-ux.md`. Sin cambios en contratos,
+RPC, APIs, SQL, Auth o RLS. Sin cambios de dependencias. Revisión de React: sin
+nuevos efectos ni fetch en componentes de visualización; componentes existentes
+conservan su ejecución y guardas. Iconos decorativos, labels, estados y controles
+nativos conservados. Los indicadores de etapa no sustituyen validaciones.
+
+Checks ejecutados con Node 24.22.1 y binarios locales:
+
+- ESLint, `next typegen` y TypeScript sin errores.
+- 23/23 tests existentes correctos.
+- Prebuild local y build Next correctos, todas las rutas compiladas.
+- `scripts/test-auth-http.mjs`: correcto contra el build local; proveedor HTTP
+  sintético. Permisos anónimo/lector/admin, JSON/CSV, revisión, origen, login,
+  preparación, publicación y modelo con los contratos existentes.
+- `git diff --check`: correcto.
+
+### Navegador y flujos
+
+Chrome headless/Playwright; copia aislada `/private/tmp/gma-sections-review`.
+Sin variables reales ni conexión Supabase. Solo esa copia usa un proveedor
+sintético y omite el proxy; Playwright intercepta los endpoints de escritura y
+retorna respuestas identificadas. No se guardaron registros reales ni se probó
+persistencia real con estas interacciones.
+
+| Límite comprobado | Evidencia |
+| --- | --- |
+| Render y datos → UI | Seis dimensiones comerciales, KPIs de todas las páginas, tooltip con `120,123456789123456789` exacto y gráficos por grupo. |
+| Filtros/enlaces → URL | Cambiar a Equipos conserva rango; aplicar equipo conserva agrupación; exportación conserva ambos. |
+| Búsqueda → detalle → listado | `0001` se conserva como texto; link de regreso mantiene búsqueda y filtros. |
+| Preparación → correspondencias | Envío de archivo sintético y validación muestran el estado y acceso al lote, sin publicar. |
+| Conciliación → confirmación | Revisar alcance no envía publish. Clic en publicar sin checkbox no envía publish; con confirmación envía una sola operación. |
+| Editor → preview → save | Revisión muestra antes/después; save no se envía hasta confirmar explícitamente. |
+| Rol lector → UI | Sin editor ni botón de cambios en Configuración y sin Importaciones en navegación. Autorización real de servidor cubierta separadamente por test HTTP sintético. |
+| Error → UI | Consulta fallida de análisis muestra error sin renderizar KPIs. |
+| Responsive | Sin desbordamiento del documento en 24 combinaciones: análisis, directorio, detalle, importaciones, correspondencias y configuración × 320/390/768/1440 px. |
+
+Sin excepciones de página ni errores de consola en el recorrido final.
+Revisión visual de capturas desktop/móvil, incluyendo confirmación de publicación y
+preview de configuración. Se uniformaron botones principales navy, tipografía de
+secciones y dominio del eje de distribución para incluir valores negativos.
+
+Capturas y `checks.json` en carpeta privada:
+`/Users/franciscolang/Documents/ChatGPT/App Papa/ui-ux-sections-review/`.
+Incluye `commercial-desktop.png`, `accounts-desktop.png`, `account-detail-desktop.png`,
+`imports-desktop.png`, `resolution-ready-desktop.png`, `settings-preview-desktop.png`
+y versiones móviles. Arnés conservado fuera del repositorio. Todas las capturas
+incluyen la franja de datos sintéticos.
+
+No se ejecutaron test:db/test:dashboard ni pruebas con fuentes reales; permanecen
+las limitaciones de PostgreSQL del registro anterior. Tampoco auditoría completa
+WCAG/lector de pantalla. El push verificado corresponde a etapas 1–2;
+esta continuación 3–7 no se ha enviado ni desplegado.

@@ -82,3 +82,43 @@ y cobertura. El error de consulta retorna antes de renderizar KPIs.
 
 Revisar estas dos primeras etapas antes de autorizar nuevas secciones.
 Evidencia y límites: [validation.md](validation.md), último registro UI/UX.
+
+## Continuación autorizada — etapas 3 a 7, 2026-11-16
+
+El dueño aprobó las etapas 1 y 2 y solicitó subirlas a `main` y continuar las
+secciones siguientes. Commit `2475ab14be828b3c9323700aceeb4de53645d9f8` publicado en
+`main`, verificado con `git ls-remote`; GitHub informa estado Vercel `success`.
+Esto reemplaza el pendiente de escritura Git de los registros anteriores.
+No acredita una sesión real ni una conciliación financiera del despliegue.
+
+La continuación se implementa en `codex/ui-ux-sections`; todavía no se publica
+este segundo conjunto. Numeración de esta continuación:
+
+| Etapa | Resultado |
+| --- | --- |
+| 3 · Análisis comercial | Filtros compactos, exportación, selector de seis dimensiones, dos KPIs globales y gráficos horizontales por grupo. Ranking completo en tabla y cobertura expandible. |
+| 4 · Cuentas | Búsqueda destacada, conteo filtrado y tabla; detalle con navegación por secciones, KPIs, gráficos, historia mensual, vigencias y procedencia. Volver conserva filtros y búsqueda. |
+| 5 · Importaciones | Etapas visibles, ayuda de formatos expandible, estados semánticos, historial legible y acceso a correspondencias. Conserva carga, pausa, reanudación, validación y originales privados. |
+| 6 · Correspondencias | Etapas, estado del lote y filas, identidad/destino/evidencia, conciliación destacada y bloque de confirmación de publicación. Mismos controles y operaciones. |
+| 7 · Configuración | Navegación de catálogos, catálogo y editor separados, motivo, revisión antes/después y auditoría expandible. El lector sigue sin editor. |
+
+### Componentes y límites
+
+Se añaden `CommercialOverview`, `CoverageDisclosure`, `WorkflowSteps` y `StatusBadge`.
+Se reutilizan `MetricCard`, `ReportFilters`, `ReportTable`, `ReportChart` y las
+operaciones existentes. Cambios de composición en `account-screen.tsx`,
+`import-preparation.tsx`, `import-resolution.tsx` y `model-manager.tsx`; estilos en
+`globals.css`. Sin dependencias nuevas, sin modificar `src/lib`, API, SQL ni acceso.
+
+Los gráficos comerciales muestran hasta ocho grupos de la página visible en el
+orden del desglose, siempre identificado. No se recalculan totales, participaciones
+ni rankings sobre una página parcial; la tabla conserva todos sus grupos y
+paginación. Revenue usa el mismo orden del desglose, sin presentarlo como un
+ranking propio de Revenue. Los tooltips muestran el decimal original; solo la
+geometría del gráfico usa Number. Los gráficos del detalle de cuenta provienen del
+reporte filtrado existente; la tabla mensual conserva las filas de contexto fuera
+del filtro comercial. Los pasos son indicadores de estado, no controles que salten
+validaciones. Ante un estado desconocido no se inventa una etapa actual.
+
+Próximo paso: revisar esta continuación y, si se solicita, incorporarla a `main`.
+No ampliar a métricas financieras, usuarios, integraciones ni cambios de acceso.

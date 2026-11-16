@@ -5,10 +5,10 @@ import { exact, exportHref, monthLabel, reportHref, usd } from "@/lib/queries/pr
 import { MetricCard } from "./metric-card";
 import { ReportChart } from "./report-chart";
 
-export function SummaryActions({ report, params }: { report: Report; params: URLSearchParams }) {
+export function SummaryActions({ report, params, commercial = false }: { report: Report; params: URLSearchParams; commercial?: boolean }) {
   return <div className="summary-toolbar">
     <div><span className="semantic-badge">Datos publicados</span><span className="toolbar-period">{monthLabel(report.period.from)} — {monthLabel(report.period.to)} · USD</span></div>
-    <a className="button-outline" href={exportHref(params, report)}><ArrowDownToLine size={16} aria-hidden="true" /> Exportar resumen · CSV</a>
+    <a className="button-outline" href={exportHref(params, report)}><ArrowDownToLine size={16} aria-hidden="true" /> {commercial ? "Exportar tabla comercial · CSV" : "Exportar resumen · CSV"}</a>
   </div>;
 }
 

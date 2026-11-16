@@ -1,5 +1,9 @@
 "use client";
 import { useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { Upload, ArrowRight, History } from "lucide-react";
+import { WorkflowSteps } from "./workflow-steps";
+import { StatusBadge } from "./status-badge";
 import { Button, Table } from "@radix-ui/themes";
 import type {
   Issue,
@@ -15,15 +19,6 @@ type BatchLink = {
   status: string;
   custodian_id: string;
 };
-const statusLabels: Record<string, string> = {
-  uploaded: "Original registrado",
-  validating: "Validando",
-  needs_resolution: "Pendiente de resolución",
-  failed: "Con errores",
-  ready: "Lista para publicar",
-  published: "Publicada (ver vigencia en correspondencias)",
-};
-const statusLabel = (value: string) => statusLabels[value] ?? "Revisar estado";
 type Detail = {
   batch: BatchLink & {
     file_name_original: string;
@@ -171,9 +166,10 @@ export function ImportPreparation({
   const frozen = !!detail?.batch.parsing_conventions.configuration;
   return (
     <>
+      <WorkflowSteps status={detail?.batch.status} />
       <section className="panel import-panel">
-        <h2>Cargar archivo privado</h2>
-        <p>
+        <div className="section-heading"><div><p className="eyebrow">PASO 1 · FUENTE Y ALCANCE</p><h2><Upload size={18} aria-hidden="true" /> Cargar archivo privado</h2></div><span className="semantic-badge">Solo administrador</span></div>
+        <details className="format-help"><summary>Formatos admitidos y límites del archivo</summary><p>
           Máximo 2 MiB, 5.000 filas por hoja, 64 columnas y 10 hojas; XLSX hasta
           12 MiB descomprimidos. Guardamos como máximo 250 filas por petición.
           Podés pausar y retomar desde el historial.
@@ -182,7 +178,7 @@ export function ImportPreparation({
           Solo .xlsx sin macros o CSV UTF-8. Para .xls, .xlsm o .xlsb: recalculá
           en Excel y guardá una copia .xlsx sin macros o CSV UTF-8. Headers en
           la primera fila, sin celdas combinadas.
-        </p>
+        </p></details>
         {!custodians.length && (
           <p role="status">
             Falta registrar un custodio autorizado en la configuración de la
@@ -270,7 +266,7 @@ export function ImportPreparation({
         </p>
       </section>
       {error && (
-        <p role="alert" className="import-error">
+        <p role="alert" className="import-error feedback feedback-error">
           {error}
         </p>
       )}
@@ -280,14 +276,11 @@ export function ImportPreparation({
           <p role="status">
             {detail.batch.source.toUpperCase()} · {detail.batch.period} ·
             Custodio {detail.batch.parsing_conventions.options.custodianCode} ·{" "}
-            {statusLabel(detail.batch.status)} · Filas guardadas:{" "}
+            <StatusBadge status={detail.batch.status} /> · Filas guardadas:{" "}
             {detail.batch.totals.processed ?? 0} /{" "}
             {detail.batch.row_count || "pendiente"}
           </p>
-          <p className="import-hash">SHA-256: {detail.batch.file_sha256}</p>
-          <a href={`/api/fuentes/${detail.batch.id}`}>
-            Descargar original privado
-          </a>
+          <details className="format-help"><summary>Archivo original y trazabilidad</summary><p className="import-hash">SHA-256: {detail.batch.file_sha256}</p><a href={`/api/fuentes/${detail.batch.id}`}>Descargar original privado</a></details>
           {!!detail.repeatCount && (
             <p role="status">
               Advertencia: la misma huella aparece en {detail.repeatCount}{" "}
@@ -496,17 +489,17 @@ export function ImportPreparation({
             </Button>
           </div>
           <p>
-            <a href={`/correspondencias?lote=${detail.batch.id}`}>Resolver correspondencias, revisar y publicar</a>
+            <Link className="button-outline" href={`/correspondencias?lote=${detail.batch.id}`}>Resolver correspondencias, revisar y publicar <ArrowRight size={16} aria-hidden="true" /></Link>
           </p>
         </section>
       )}
       <section className="panel import-panel">
-        <h2>Preparaciones recientes</h2>
+        <h2><History size={18} aria-hidden="true" /> Preparaciones recientes</h2>
         <p>
           Últimas 50 al abrir esta página. Una carga nueva se muestra arriba;
           recargá para actualizar el historial.
         </p>
-        <ul>
+        <ul className="import-history-list">
           {batches.map((b) => (
             <li key={b.id}>
               <button
@@ -517,7 +510,7 @@ export function ImportPreparation({
                 {b.source.toUpperCase()} · {b.period} ·{" "}
                 {custodians.find((c) => c.id === b.custodian_id)?.code ??
                   "Custodio pendiente"}{" "}
-                · {statusLabel(b.status)}
+                <StatusBadge status={b.status} />
               </button>
             </li>
           ))}

@@ -1,6 +1,6 @@
 # App Papá — Progreso
 
-**Estado vigente — 2026-11-16:** rediseño UI/UX, etapas 1 y 2 implementadas localmente en `codex/ui-ux-dashboard`. Sistema visual y navegación compartida, Resumen ejecutivo renovado. Diagnóstico, archivos y plan de siguientes secciones en [ui-ux.md](ui-ux.md). Sin push ni despliegue de este rediseño. Los registros anteriores se conservan como historia.
+**Estado vigente — 2026-11-16:** UI/UX 1–2 aprobadas y publicadas en `main` (`2475ab1`), remoto verificado y Vercel success según GitHub. Continuación UI/UX 3–7 implementada localmente en `codex/ui-ux-sections`, pendiente de revisión. Ver último registro y [ui-ux.md](ui-ux.md).
 
 Actualizado: 2026-11-15, Buenos Aires. **Etapa 10: GitHub/Vercel conectados; Supabase Free/São Paulo con ocho migraciones; Preview READY y controles anon/lector reales verificados.** El dueño dejó SMTP pendiente: sin invitación ni primer administrador operativo. Publicación remota, datos reales, producción y recuperación completa pendientes. Los apartados anteriores son registros históricos.
 
@@ -658,3 +658,26 @@ No se modificaron modelo, RPC, acceso, RLS ni reglas financieras. Sin push ni de
 Ajustá lo observado dentro de ese alcance; no avances a otras secciones sin indicarlo».
 Los pendientes operativos históricos de GitHub, región, muestras y conciliación
 permanecen independientes de este rediseño.
+
+## Push y continuación UI/UX — etapas 3 a 7, 2026-11-16
+
+El dueño aprobó las etapas iniciales y pidió push a `main` y continuar. Commit
+`2475ab1` incorporado mediante fast-forward y enviado sin force. `git ls-remote`
+confirma igualdad con `main` remoto; el estado combinado de GitHub indica Vercel
+`success`. Resuelto el bloqueo de push histórico; no se modificaron credenciales.
+
+Implementadas en `codex/ui-ux-sections`: Análisis comercial con dimensiones/gráficos,
+Cuentas con búsqueda y detalle/historia, Importaciones con etapas y estados,
+Correspondencias con conciliación y confirmación destacadas, Configuración con
+catálogos/editor/revisión/auditoría. Componentes comunes sin cambiar lógica del
+servidor ni precisión financiera; detalle en `ui-ux.md`.
+
+Checks locales: lint, tipos, 23 tests, prebuild/build y regresión HTTP sintética por
+rol correctos. Navegador sintético: cambio de dimensión/filtros y exportación,
+búsqueda/detalle/regreso, carga/preparación, conciliación/publicación explícita,
+preview/save de modelo, restricciones lectoras y 24 combinaciones de ruta/ancho
+(320/390/768/1440). Sin PostgreSQL real ni fuentes de negocio; límites en validation.
+
+**Próximo prompt:** «Revisemos las etapas UI/UX 3–7; ajustá lo observado y, cuando
+lo indique, incorporá esta continuación a main». La continuación permanece local;
+no confundirla con las etapas 1–2 ya publicadas.
