@@ -298,3 +298,13 @@ el arnés anterior (sus selectOption/fill nativos requieren adaptación).
 El dueño autorizó publicar a main todos los cambios locales, incluido el cierre
 anterior de accesibilidad. Próximo paso: verificar despliegue y revisar en sesión
 real, sin confundir estos checks con conciliación financiera real.
+
+
+## Presentación del login — 2026-11-16
+
+Se extiende la identidad visual existente al login: Inter, navy, Radix y Lucide,
+con ilustración SVG local abstracta sin cifras de negocio. El SVG se importa
+estáticamente para emitirse bajo `_next/static` y estar disponible sin sesión,
+sin ampliar excepciones del proxy. Estado local solo para visibilidad de contraseña;
+useFormStatus para el envío. Credenciales y autorización siguen en la acción de
+servidor existente. Sin proveedores visuales externos ni dependencias nuevas.

@@ -749,3 +749,37 @@ anterior de accesibilidad. Próximo paso: verificar despliegue y revisar en sesi
 real, sin confundir estos checks con conciliación financiera real.
 
 Verificación adicional: calendario de vigencias y controles a 390 px sin overflow del documento; corregida la especificidad CSS de los inputs internos de validación.
+
+
+## Login alineado con la UI — 2026-11-16
+
+Solicitud vigente: mejorar el login con iconos y assets nuevos. Completado
+localmente: composición de dos paneles con marca GMA, paleta navy/Inter,
+ilustración SVG abstracta propia, iconos Lucide, mensajes de sesión/error,
+ayuda de acceso y versión móvil compacta. Formulario con mostrar/ocultar
+contraseña y botón deshabilitado durante el envío mediante useFormStatus.
+Se conserva la Server Action de ingreso y la validación existente.
+Sin nuevas dependencias ni cambios en autorización, SQL o datos financieros.
+
+Verificado: ESLint, generación de tipos/TypeScript, 23 tests, prebuild/build,
+regresión HTTP sintética y navegador Chrome/Playwright con backend HTTP sintético.
+320/390/768/1440 px sin overflow; SVG cargado, campos obligatorios, teclado,
+contraseña visible/oculta, pending y error de credenciales correctos. axe sin
+violaciones detectadas en esas cuatro vistas; sin afirmar conformidad integral.
+Capturas desktop/móvil revisadas en la carpeta privada `login-review`.
+No se probó una sesión real ni se ejecutó push o despliegue.
+
+**Próximo prompt:** «Revisemos el nuevo login y, si lo apruebo, publiquemos los
+cambios en main y verifiquemos el despliegue».
+
+
+## Publicación del login autorizada — 2026-11-16
+
+El dueño aprobó el rediseño y solicitó push a main. `git fetch origin`
+confirmó que la rama de trabajo parte de `ff286bb`, igual a origin/main,
+sin commits remotos pendientes de incorporar. Se conserva la validación local
+del registro anterior y se prepara un commit con el login, su asset, prueba HTTP
+y documentación, para integrar por fast-forward y enviar sin force.
+
+Próximo paso: verificar el SHA remoto después del push. La validación de una
+sesión real y del despliegue permanece separada de las pruebas sintéticas.

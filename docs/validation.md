@@ -763,3 +763,35 @@ anterior de accesibilidad. Próximo paso: verificar despliegue y revisar en sesi
 real, sin confundir estos checks con conciliación financiera real.
 
 Verificación adicional: calendario de vigencias y controles a 390 px sin overflow del documento; corregida la especificidad CSS de los inputs internos de validación.
+
+
+## Login con iconos y asset vectorial — 2026-11-16
+
+Checks locales con Node 24.22.1: ESLint sin warnings, next typegen, tsc --noEmit,
+23/23 tests, prebuild y build Next correctos. Regresión `test-auth-http.mjs`
+correcta contra el build final y proveedor HTTP sintético, incluido ingreso,
+roles, CSRF, logout y endpoints existentes. Se actualizó únicamente la expectativa
+del título visible del login en ese script.
+
+Navegador Chrome headless/Playwright contra build real local, con variables
+sintéticas y backend HTTP temporal en localhost; no se omitió el proxy ni se
+modificó el proveedor del producto. Comprobados cuatro anchos 320/390/768/1440:
+sin overflow del documento y carga correcta del asset SVG. axe (WCAG 2 A/AA,
+2.1 AA, 2.2 AA y best-practice) sin violaciones detectadas en esas vistas de salida.
+Sin excepciones de página. Capturas desktop y móvil revisadas visualmente.
+
+Verificados en navegador: salto al contenido con teclado; required bloquea envío
+vacío; mostrar/ocultar conserva contraseña y no envía; pendiente deshabilita botón;
+credenciales sintéticas rechazadas envían una sola solicitud al backend y muestran
+error genérico mediante la acción real. La primera revisión visual detectó SVG
+bloqueado por proxy: se resolvió con import estático y se añadió comprobación
+`complete && naturalWidth > 0` al arnés. El selector del error se acotó al aviso
+para diferenciarlo del anunciador de rutas de Next.
+
+Evidencia privada: `/Users/franciscolang/Documents/ChatGPT/App Papa/login-review/`,
+con `login-1440.png`, `login-390.png`, `login-error.png`, `checks.json`, `server.log`
+y copia del arnés `gma-login-review.mjs`. Solo credenciales/datos sintéticos.
+Los primeros intentos de escuchar localhost fueron bloqueados por sandbox;
+las ejecuciones con permiso ampliado finalizaron correctamente.
+No se probaron credenciales reales, base remota, conciliación financiera,
+lector de pantalla ni todos los estados con axe. Sin push ni despliegue.

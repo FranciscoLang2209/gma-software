@@ -379,7 +379,7 @@ try {
     ...loginHtml.matchAll(/name="\$ACTION_ID_([^"]+)"/g),
   ].map((match) => match[1]);
   assert.equal(loginActions.length, 1);
-  assert.match(loginHtml, /Ingresar a gma-software/);
+  assert.match(loginHtml, /Ingresá a tu espacio/);
   assert.match(loginHtml, /Ingresar \| gma-software/);
   assert.ok(!loginHtml.includes("Solicitar código"));
   async function postAction(path, action, fields, requestOrigin = origin) {
