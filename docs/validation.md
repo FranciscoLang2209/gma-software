@@ -795,3 +795,25 @@ Los primeros intentos de escuchar localhost fueron bloqueados por sandbox;
 las ejecuciones con permiso ampliado finalizaron correctamente.
 No se probaron credenciales reales, base remota, conciliación financiera,
 lector de pantalla ni todos los estados con axe. Sin push ni despliegue.
+
+
+## Corrección de acceso y login — 2026-11-16
+
+- Local: ESLint, Next typegen/TypeScript, check-deployment/prebuild y build correctos
+  con Node 24.22.1; `git diff --check` correcto. Sin cambios de dependencias.
+- Chrome/Playwright con proveedor HTTP sintético aislado: login y Sin acceso a
+  320/390/768/1440 px sin overflow ni violaciones detectadas por axe. Foco del
+  correo externo al input y padding >=4 px comprobados por estilos calculados;
+  captura con texto sintético completo revisada. Se conservan teclado, campos
+  obligatorios, mostrar/ocultar contraseña, pending y error de Server Action.
+  Sin acceso conserva título, acciones y alerta de fallo de logout; sin errores
+  de página. Evidencia privada en `App Papa/access-review`.
+- Regresión `scripts/test-auth-http.mjs` correcta: rutas y permisos sintéticos,
+  ingreso, salida, CSRF, APIs y privacidad. No sustituye una sesión Auth real.
+- Remoto: cuenta existente expresamente autorizada comprobada por UUID/correo,
+  confirmación y contraseña presente. Alta de perfil admin habilitado mediante
+  transacción con verificación de identidad y reintento idempotente. Consulta
+  posterior confirmó `role=admin`, `enabled=true` y evento de auditoría.
+  Identidad personal y payload de auditoría no incorporados al repositorio.
+- No se probó ingreso real de esa cuenta ni despliegue de estos estilos.
+  Sin nuevas pruebas financieras, importaciones ni conciliación de Excel.

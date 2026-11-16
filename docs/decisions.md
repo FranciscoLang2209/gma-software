@@ -308,3 +308,13 @@ estáticamente para emitirse bajo `_next/static` y estar disponible sin sesión,
 sin ampliar excepciones del proxy. Estado local solo para visibilidad de contraseña;
 useFormStatus para el envío. Credenciales y autorización siguen en la acción de
 servidor existente. Sin proveedores visuales externos ni dependencias nuevas.
+
+
+## Alta administrativa puntual — 2026-11-16
+
+El dueño autorizó explícitamente habilitar como admin una cuenta Auth existente
+indicada en el chat. Se verificó identidad/UUID, confirmación y contraseña, y se
+creó el perfil habilitado en el Supabase dedicado, con auditoría existente.
+No se registra correo/UUID personal en Git. Se mantiene la regla de `auth.md`:
+altas o cambios de rol solo por operación explícita del dueño/operador, sin
+autoasignación ni escritura de perfiles desde la aplicación.

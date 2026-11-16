@@ -1037,9 +1037,10 @@ footer { color: var(--gma-muted); }
 .login-input { display: flex; align-items: center; gap: 11px; min-height: 48px; padding-left: 14px; border: 1px solid #bdcad7; border-radius: 7px; color: var(--gma-muted); background: #fff; }
 .login-input:focus-within { border-color: #286896; box-shadow: 0 0 0 3px #2868961a; }
 .login-input > svg { flex-shrink: 0; }
-.login-input input { width: 100%; min-width: 0; min-height: 46px; border: 0; border-radius: 7px; background: transparent; color: var(--gma-text); padding: 10px 12px 10px 0; font-size: 14px; }
+.login-input input { flex: 1; width: 100%; min-width: 0; min-height: 46px; border: 0; border-radius: 7px; background: transparent; color: var(--gma-text); padding: 10px 12px 10px 4px; font-size: 14px; }
 .login-input input::placeholder { color: #68798c; opacity: 1; }
-.login-input input:focus-visible { outline-offset: -3px; }
+.login-input:has(input:focus-visible) { outline: 3px solid #286896; outline-offset: 3px; }
+.login-input input:focus-visible { outline: none; }
 .login-password-toggle { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border: 0; border-radius: 5px; color: #596a7e; background: transparent; cursor: pointer; margin-right: 2px; }
 .login-password-toggle:hover { background: #edf3f8; color: var(--gma-navy); }
 .login-form .login-submit { width: 100%; min-height: 48px; margin-top: 4px; justify-content: center; gap: 12px; font-size: 13px; cursor: pointer; }
@@ -1053,6 +1054,14 @@ footer { color: var(--gma-muted); }
 .login-access-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 38px 0 0; color: var(--gma-muted); font-size: 9px; line-height: 1.6; }
 .login-access-note svg { flex-shrink: 0; }
 .login-footer { display: flex; justify-content: space-between; width: 100%; max-width: 1080px; margin: 22px auto 0; padding: 0 4px; border: 0; color: var(--gma-muted); font-size: 10px; }
+.access-denied-card { width: 100%; max-width: 560px; margin: auto; border: 1px solid var(--gma-border); border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 20px 70px #1739520c; }
+.access-denied-brand { padding: 24px 32px; background: linear-gradient(145deg, #173952, #244d69); color: #fff; }
+.access-denied-brand small { color: #c2d4e2; }
+.access-denied-brand .brand-monogram { background: #ffffff14; border: 1px solid #ffffff30; }
+.access-denied-content { padding: clamp(24px, 5vw, 40px); }
+.access-denied-content h1 { font-size: clamp(24px, 4vw, 30px); line-height: 1.25; letter-spacing: -.8px; }
+.access-denied-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.access-denied-actions .rt-Button { min-height: 44px; }
 @media (max-width: 800px) {
   .login-page { padding: 24px 20px; }
   .login-story { padding: 30px 28px; }

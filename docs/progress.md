@@ -783,3 +783,47 @@ y documentación, para integrar por fast-forward y enviar sin force.
 
 Próximo paso: verificar el SHA remoto después del push. La validación de una
 sesión real y del despliegue permanece separada de las pruebas sintéticas.
+
+
+## Sin acceso, foco del login y alta admin — 2026-11-16
+
+Solicitud del dueño: alinear Sin acceso con el estilo del producto, corregir las
+primeras letras tapadas en el login y habilitar como administrador una cuenta
+existente indicada expresamente. Sin acceso usa tarjeta con marca GMA, paleta
+navy, iconos, acciones accesibles y mensaje de fallo de logout conservado.
+El foco del input se dibuja en el contenedor, fuera del texto; se añadió espacio
+interior y flex para ambos campos, conservando el foco del botón de contraseña.
+
+Operación remota completada solo en Supabase dedicado `zwdqnrbqqszjrtkhyqnz`:
+identidad/UUID, confirmación y contraseña comprobadas; perfil antes ausente,
+ahora `admin`, `enabled=true`. Operación atómica e idempotente con auditoría
+existente, verificada por consulta posterior. La identidad personal permanece
+en el chat y la base privada, fuera del repositorio. Sin cambio de políticas,
+metadatos de Auth, credenciales ni permisos de otras cuentas.
+
+Verificado con Node 24.22.1: ESLint, generación de tipos/TypeScript, prebuild y
+build; regresión HTTP sintética por roles y Chrome/Playwright. Login y Sin acceso
+a 320/390/768/1440 px sin overflow ni violaciones detectadas por axe. Foco externo,
+padding del texto, teclado, campos requeridos, mostrar/ocultar contraseña, pending
+y error de ingreso sintético correctos; sin excepciones de página. Capturas
+desktop del login enfocado y Sin acceso revisadas. Evidencia privada en
+`access-review`, junto a las anteriores de `login-review`.
+
+Sin nueva sesión real con la cuenta, importaciones ni conciliación financiera.
+Cambios visuales locales, sin commit/push/despliegue de esta corrección.
+**Próximo prompt:** «Publicá las correcciones de Sin acceso y login en main y
+verificá el despliegue». El usuario habilitado puede volver al Resumen o ingresar
+nuevamente para verificar su acceso real.
+
+
+## Publicación autorizada de las correcciones de acceso — 2026-11-16
+
+El dueño aprobó los cambios y pidió push a main. `git fetch origin` confirmó
+HEAD y origin/main iguales en `b457935`, sin divergencia. Se incorporan las
+correcciones visuales y su documentación en un commit sobre main; se conservan
+los checks locales/sintéticos registrados arriba. La asignación admin ya fue
+verificada por separado en la base dedicada y no requiere migración ni datos
+personales en Git.
+
+Próximo paso: confirmar el SHA remoto después del push y verificar el despliegue
+de Vercel; una sesión real sigue pendiente de comprobación por el usuario.
