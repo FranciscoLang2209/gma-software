@@ -114,3 +114,39 @@ para las cuatro vistas/CSV, agregación numeric por base y evidencia trazable.
 Reutiliza el motor anterior, sin modificar hechos, historial ni publicación.
 Grants/RLS y propietario sin SUPERUSER se verifican en `test:db`. Migración
 exclusivamente local en esta etapa; no aplicada a ningún proyecto remoto.
+
+### Aplicación remota autorizada — 2026-11-17
+
+Actualización posterior a los cierres locales anteriores: por confirmación expresa
+del dueño se aplicaron las tres migraciones del 17/11 a `gma-software-prueba`
+(`zwdqnrbqqszjrtkhyqnz`). Las once versiones remotas coinciden con los archivos
+locales; no se modificó su SQL. Se alinearon sólo los IDs de las tres entradas
+nuevas que MCP registró con timestamp de ejecución; contenido y versiones previas
+conservados. Verificación de permisos/RLS, consultas SQL y advisors registrada en
+[validation.md](../../docs/validation.md). Sin importaciones financieras ni despliegue
+de aplicación. Los avisos documentados no se consideran resueltos por aplicar DDL.
+
+
+`20261117200819_restore_executor_auth_usage.sql`: primer intento de restaurar USAGE
+auth al ejecutor. Registrado en GMA, pero sin efecto: postgres no tiene grant option
+sobre auth. Se conserva como historia aplicada, no acredita corrección del bloqueo.
+
+`20261117201233_prebind_session_identity.sql`: corrección local probada con auth
+USAGE ausente: helper SQL estándar invoker preenlazado y sustitución de auth.uid en
+nueve funciones compartidas, sin cambiar controles ni privilegios de datos. Pendiente
+de aplicación remota: revisión automática rechazó el alcance sin autorización explícita.
+
+
+Actualización posterior: prebind_session_identity aplicada con autorización del dueño
+como 20261117201233. Se renombró el archivo local a la versión MCP sin cambiar SQL
+ni editar historia remota. Controles de permisos y cuerpo de las nueve funciones
+comparados antes/después; ver validation.md. Ya no está pendiente de autorización.
+
+
+`20261117224406_multicustodian_history.sql`: extiende el padre/guards existentes a
+AUM/Revenue y período + custodio. Manifiestos v2 compatibles, v3 con catálogo y
+particiones por custodio, máximo 1.024 alcances/25.000 filas/8 MiB RPC. Catálogo,
+coordenadas, exclusiones, resumen y publicación conjunta validados. No crea tablas
+financieras ni permite publicar hijos sueltos. SQL probado con operador sin SUPERUSER,
+reintentos, 130 alcances, fallo/rollback entre custodios y permisos. Aplicado a GMA
+como 20261117224406; archivo local alineado al timestamp MCP sin cambiar contenido.

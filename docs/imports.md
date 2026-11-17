@@ -176,3 +176,47 @@ volver a conciliar los períodos afectados y revisar el padre. Ausencia de una
 cuenta no es saldo cero: el operador debe completar un archivo parcial antes de
 confirmar que sustituye una foto mensual completa. La aplicación muestra retiros
 y exige confirmación; no puede acreditar por sí sola la completitud del Excel.
+
+## Histórico con varios custodios — 2026-11-17
+
+Implementación nueva sobre el padre histórico existente. En **Importación histórica**
+la opción de varios custodios está marcada inicialmente. Elegir AUM o Revenue:
+
+- **AUM**: adjuntar archivo financiero completo y REF completo. Confirmar que Broker
+  es custodio y que ACC # Addepar / ACCOUNT acreditan los dos números de AUM.
+  Se exige coincidencia literal de ambos números y un custodio único registrado.
+  REF original se guarda privado con hash/tamaño/hoja y sus pares congelados en la
+  operación. No genera clientes/comerciales/asignaciones ni fechas históricas.
+- **Revenue**: CUSTODIO, MES y AÑO de cada fila determinan el alcance. No requiere
+  REF ni un custodio global. Se mantienen cuentas sólo Revenue y filas repetidas.
+- Encabezado autodetectado en las primeras 20 filas por contrato completo, o fila
+  explícita 1–100. Si es ambiguo se rechaza. Preámbulo y auxiliares permanecen en
+  el original/manifiesto. Anotaciones sin cuenta/período/importes se pueden excluir
+  indicando fila y motivo en una nueva carga; no se pueden excluir datos financieros.
+- Si falta un código de custodio, las filas quedan sin alcance en el padre y el
+  conjunto no se publica. Registrar el código y volver a analizar como nueva carga.
+  No se crea/fusiona/desactiva catálogo silenciosamente desde un Excel.
+
+Límites del modo nuevo: 2 MiB por original/REF, 4 MiB + 64 KiB de multipart total,
+25.000 filas por hoja (incluye encabezados), 32 MiB expandidos del financiero,
+1.024 alcances mes/custodio y 5.000 filas por alcance; 8 MiB de entrada RPC del
+manifiesto. REF mantiene el lector acotado de 5.000 filas / 12 MiB expandidos.
+Modo mensual y lectura histórica heredada mantienen sus límites anteriores.
+
+La migración multicustodian_history extiende los guards existentes a período +
+custodio + fuente y conserva versiones, idempotencia, transacción conjunta y rechazo
+de publicación individual. Manifiestos heredados versión 2 siguen funcionando.
+Nuevo manifiesto versión 3 conserva custodio por partición, encabezado, preámbulo,
+exclusiones/motivo y errores sin alcance. Configuración de catálogo congelada para
+recuperación aunque después se registren custodios nuevos. No se recalculan fórmulas.
+
+El navegador prepara bloques secuenciales con opciones acotadas por hijo, nunca
+reenvía el REF completo en cada bloque. Progreso local tras cada confirmación y
+recarga del estado al terminar/pausar. Original financiero y REF se verifican por
+hash antes de procesar; recuperación requiere los mismos bytes y configuración.
+Ambos se pueden descargar sólo como administrador, también antes de publicar.
+
+Los identificadores numéricos, errores Excel e importes faltantes siguen siendo
+bloqueantes. Ampliar capacidad/enrutamiento no acredita que el archivo sea publicable.
+Se conserva la revisión de correspondencias y de mes/custodio completo antes de
+publicar. El cambio no importa ni publica automáticamente las muestras reales.

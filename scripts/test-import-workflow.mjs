@@ -196,6 +196,55 @@ export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, ad
     assert.equal((await request(`/api/fuentes/${child.batch.id}`, false)).status, 403);
     return historyAccounts;
   };
+  // Un único original por fuente con varios custodios; REF como evidencia privada de AUM.
+  const multiAccounts = Object.fromEntries(custodians.map((c) => [c.id, {}]));
+  const referencesRaw = csv("fa", custodians.map((c, i) => ({ "ACC # Addepar": "000MULTI", ACCOUNT: `MULTI-REV-${i}`, Broker: c.code })));
+  const multi = async (source) => {
+    const options = { source, multiCustodian: true, sheet: "CSV", numericFormat: "dot", delimiter: ",", excludedRows: [7], exclusionReason: "Anotación SINTETICA sin datos" };
+    const financialRows = custodians.flatMap((c, i) => ["1", "2"].map((m) => source === "aum"
+      ? { "Top Level Holding Account": "SINTETICO", "Holding Account Number": "000MULTI", "Account Number bd_REV": `MULTI-REV-${i}`, "Value (USD)": m === "1" ? "100" : "120", mes: m, año: "2029" }
+      : { CUSTODIO: c.code, ACCOUNT: `MULTI-REV-${i}`, "Payout broker": m === "1" ? "2" : "3", MES: m, AÑO: "2029" }));
+    const raw = Buffer.concat([Buffer.from('"Título SINTETICO"\r\n'), csv(source, financialRows), Buffer.from('\r\n"NOTA SINTETICA"')]);
+    const requestId = randomUUID(), endpoint = "/api/importaciones/historicas";
+    const form = () => { const f = new FormData(); f.set("file", new File([raw], "SINTETICO-multi.csv"));
+      f.set("options", JSON.stringify(options)); f.set("requestId", requestId);
+      if (source === "aum") f.set("references", new File([referencesRaw], "SINTETICO-REF.csv")); return f; };
+    assert.equal((await request(endpoint, false, { method: "POST", headers: { Origin: appOrigin }, body: form() })).status, 403);
+    await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() }));
+    if (source === "aum") await model("custodians", { code: "SYN-E2E-RETRY-ADDED", name: "Custodio SINTETICO posterior", active: true });
+    await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() }));
+    let state = await json(await request(`${endpoint}/${requestId}`, true));
+    assert.equal(state.children.length, 4);
+    assert.equal(state.upload.manifest.headerRow, 2);
+    assert.equal(state.upload.manifest.excludedRows[0].number, 7);
+    assert.equal(state.upload.manifest.unroutable.length, 0);
+    assert.equal(new Set(state.children.map((c) => c.custodian_id)).size, 2);
+    for (const child of state.children) {
+      const p = state.upload.manifest.partitions.find((p) => p.period === child.period && p.custodianId === child.custodian_id);
+      const result = await json(await post(`/api/importaciones/${child.id}`, { options: { source, sheet: "CSV", numericFormat: "dot", delimiter: ",", period: child.period, custodianId: p.custodianId, custodianCode: p.custodianCode } }));
+      assert.ok(result.done);
+      if (source === "revenue") {
+        const i = custodians.findIndex((c) => c.id === child.custodian_id);
+        multiAccounts[child.custodian_id][`MULTI-REV-${i}`] = multiAccounts[child.custodian_id]["000MULTI"];
+      }
+      await resolve(child.id, multiAccounts[child.custodian_id]); await review(child.id);
+    }
+    assert.notEqual(multiAccounts[custodians[0].id]["000MULTI"], multiAccounts[custodians[1].id]["000MULTI"]);
+    state = await json(await post(`${endpoint}/${requestId}`, { operation: "review", input: { confirm_all: true } }));
+    const token = state.upload.review.token;
+    await json(await post(`${endpoint}/${requestId}`, { operation: "publish", input: { token } }));
+    await json(await post(`${endpoint}/${requestId}`, { operation: "publish", input: { token } }));
+    if (source === "aum") {
+      const response = await request(`${endpoint}/${requestId}?original=1&reference=1`, true);
+      assert.equal(response.status, 200); assert.deepEqual(Buffer.from(await response.arrayBuffer()), referencesRaw);
+      assert.equal((await request(`${endpoint}/${requestId}?original=1&reference=1`, false)).status, 403);
+    }
+    const total = await json(await request("/api/consultas?desde=2029-01&hasta=2029-02"));
+    assert.equal(total.total.aum_usd, "240");
+    assert.equal(total.total.revenue_usd, source === "aum" ? null : "10");
+  };
+  await multi("aum"); await multi("revenue");
+  console.log("OK multi HTTP/SQL SINTETICO: AUM+REF y Revenue, headers desplazados, dos custodios, catálogo congelado, revisión/publicación conjunta, originales por rol y cierre 240 / Revenue 10.");
   const historicalA = await history(custodians[0]);
   const historicalB = await history(custodians[1]);
   assert.notEqual(historicalA["00001"], historicalB["00001"], "custodios mantienen identidades diferentes");

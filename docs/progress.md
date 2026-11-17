@@ -1,5 +1,62 @@
 # App Papá — Progreso
 
+## Última etapa: carga de varios custodios habilitada — 2026-11-17
+
+Implementación terminada y habilitada en Supabase/Vercel de GMA por el pedido de
+eliminar el bloqueo de un custodio y su continuación expresa. La pestaña histórica
+admite AUM+REF o Revenue completos; no requiere separar por custodio. Header
+revisable, referencia privada congelada, padres/particiones, capacidad ampliada,
+excepciones y publicación conjunta conservan las reglas financieras. Ver imports.md.
+
+Verificado localmente: 37 unitarias, lint/typecheck/build, suite SQL completa y HTTP
+integral con Next/PostgreSQL reales y transportes Auth/Storage sintéticos. Chrome:
+formulario multi, preparación sin errores, REF privado, móvil/escritorio. Diagnóstico
+real sólo lectura: todos los datos AUM se enrutan con REF/catálogo completo y se
+mantienen los errores de tipo/datos sin autorizar publicación.
+
+Migración remota 20261117224406 aplicada, funciones/ACL/membresía verificadas; cero
+cargas y scopes publicados antes/después. Despliegue dpl_6gT2MXhKVy1NsWn3YVoJVq7JNvWi
+READY en gma-software.vercel.app. Publicado desde snapshot explícito de 85 archivos
+de runtime (651.827 bytes), sin .env, fuentes financieras, tests o docs. Huella:
+d98a9aacd8eba923739cb150267c173454865e3a35a32cb91837daeb8e04e8cd.
+El despliegue inicial se hizo desde el workspace sobre fa2c8f4, antes de commit/push;
+no equivale a ese commit limpio. El dueño pidió después sincronizar los cambios a
+main: esta entrega incorpora código, migraciones ya aplicadas, pruebas y continuidad
+documental para que los siguientes despliegues desde Git conserven la funcionalidad.
+
+Smoke remoto de /importaciones retornó login español sin error interno; no se usó
+sesión del dueño. Intento adicional de API bloqueado por Vercel Authentication al
+reusar share link: no se declara prueba remota de autorización API o de upload.
+Los guards y la historia se verificaron en SQL remoto y circuito sintético local.
+Clúster y servidores locales de QA cerrados. Fuentes originales sin modificar/importar.
+
+Próximo paso para el dueño: recargar Importaciones → histórica → AUM y adjuntar
+bd_AUM + bd_REF, o elegir Revenue y adjuntar bd_REV. Registrar códigos faltantes
+mostrados por el análisis y revisar las incidencias; identificadores numéricos,
+importes ausentes y errores Excel siguen bloqueando publicación. No pedir elegir
+un único custodio para esos archivos. Master/comisiones queda fuera de este cambio.
+
+## Última etapa: análisis privado de fuentes reales — 2026-11-17
+
+El dueño confirmó que pudo crear custodios tras la corrección remota. Luego entregó
+los cuatro Excel para analizar estructura/correspondencias, sin pedir importarlos.
+Se inspeccionaron en modo de sólo lectura, sin fórmulas, cambios de libros ni remotos.
+REF acredita pares consistentes para todas las cuentas de AUM; Broker es custodio
+por confirmación expresa. Corte Master confirmado 30/09/2026. Encabezados desplazados,
+auxiliares/notas, catálogo incompleto, capacidad y excepciones documentados en
+[source-import-analysis.md](source-import-analysis.md). Informe detallado privado
+entregado fuera de Git, sin publicar montos, cuentas o nombres reales en el repositorio.
+
+Verificados recuentos y cruces con XML/Decimal y lector independiente; conservación
+de filas/totales AUM al particionar. Importador actual confirmado insuficiente para
+estos archivos. No se modificó aún la aplicación ni se validó una importación real.
+
+Próximo prompt: «Implementá localmente el flujo de source-import-analysis.md:
+referencias REF primero y carga histórica AUM/Revenue completos con varios
+custodios, encabezados revisables, excepciones, capacidad medida y publicación
+atómica versionada; verificá con fixtures sintéticos, sin desplegar ni importar
+los archivos financieros reales». Master permanece como snapshot separado.
+
 > Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
 > El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
 > local revisada. Supera para este motor las restricciones de sólo planificación
@@ -1059,3 +1116,86 @@ de comisiones sobre el contrato revisado, con original privado, correspondencias
 explícitas, revisión/publicación atómica del archivo y correcciones versionadas.
 Completá los pasos 6–8 del QA con fixtures sintéticos y mantené las definiciones de
 base/fecha/tasa documentadas, sin desplegar ni cargar información financiera real».
+
+## Aplicación autorizada de migraciones en Supabase GMA — 2026-11-17
+
+Tras el push `fa2c8f4` a main, el dueño autorizó expresamente aplicar las tres
+migraciones creadas localmente al Supabase de GMA. Se aclaró el destino porque
+no hay Supabase local/Docker activo. Destino único: `gma-software-prueba`,
+`zwdqnrbqqszjrtkhyqnz`, sa-east-1, PostgreSQL 17.11.0.019, ACTIVE_HEALTHY.
+
+Aplicadas por el conector Supabase, en orden, sin modificar el contenido SQL:
+`20261117133211_historical_aum_uploads`,
+`20261117175338_commission_reconciliation` y
+`20261117181230_commission_dashboard`. Las ocho anteriores estaban aplicadas y
+no se reejecutaron. El conector asignó timestamps de ejecución nuevos; se alinearon
+únicamente las tres claves de versión del registro de migraciones con las
+versiones originales del repositorio, mediante transacción con precondiciones.
+Se conservaron nombre/statements y los ocho registros previos. Lista remota final:
+11/11 versiones coincidentes; no se renombraron ni modificaron archivos SQL.
+
+Verificación remota: ambas tablas nuevas con RLS habilitado y forzado; wrappers
+públicos invoker; implementaciones bajo ejecutor NOLOGIN/NOBYPASSRLS, sin membresías
+activas INHERIT/SET. Anon/service_role sin EXECUTE, authenticated sólo con chequeo
+de sesión/rol; sin INSERT directo de eventos ni UPDATE directo de uploads.
+Pruebas SQL transaccionales rechazaron anon y authenticated sin sesión. Una prueba
+de lectura bajo rol authenticated y claims de una sesión admin existente (selección
+interna, sin exponer IDs) ejecutó el reporte completo vacío y rechazó trimestre 9;
+rollback posterior. Esto valida SQL remoto, no login HTTP/JWT ni UI desplegada.
+
+Antes/después: cero AUM, Revenue, lotes y scopes publicados; tablas nuevas vacías.
+No se importaron muestras ni datos reales, no se alteraron usuarios/sesiones ni
+se ejecutó despliegue de aplicación. Advisors: un WARN de protección de contraseñas
+filtradas desactivada; rendimiento: 14 auth_rls_initplan y 16 multiple_permissive_policies
+WARN, más 38 FK sin índice y 17 índices sin uso INFO. Documentados, sin ajustes de
+Auth/planes/índices fuera de esta solicitud; no se declara advisors limpio.
+
+Pendientes funcionales anteriores sin cambios: adaptador Excel/Storage y publicación
+de archivo completo de comisiones, muestras/conciliación de negocio, pruebas HTTP
+con servicios efectivos y capacidad real. Próximo paso sugerido: completar el
+adaptador y QA 6–8 en local con fixtures; esta habilitación de esquema remoto no
+acredita importaciones financieras reales ni autoriza a cargarlas.
+
+
+## Bloqueo de alta de custodios — 2026-11-17
+
+Diagnóstico remoto de sólo lectura: `current_access` reconoce admin, pero los logs
+registran `permission denied for schema auth`. El ejecutor no tiene USAGE de auth;
+postgres tampoco tiene grant option sobre ese esquema de Supabase. La migración
+`20261117200819_restore_executor_auth_usage` se registró remotamente, pero su GRANT
+no tuvo efecto (verificado). No se crearon custodios ni datos financieros.
+
+Corrección local lista: `20261117201233_prebind_session_identity.sql`. Helper SQL
+estándar BEGIN ATOMIC, SECURITY INVOKER, que resuelve auth.uid al crearse; reemplaza
+sólo esa referencia en nueve funciones privadas compartidas, conservando dueños,
+ACL, comprobaciones de rol/sesión, RLS y auditoría. Membresía/CREATE transitorios se
+retiran en la transacción. No cambia permisos de tablas Auth ni reglas financieras.
+
+Suite SQL local completa correcta, con USAGE auth revocado al ejecutor, incluyendo
+crear/revisar/guardar custodio, auditoría, lectores, publicaciones y concurrencia.
+Aplicación remota de esta segunda migración RECHAZADA por revisión automática:
+alcance compartido de funciones y roles excede autorización específica del alta.
+No reintentar ni eludir sin autorización del dueño. Próximo prompt:
+«Autorizo aplicar en gma-software-prueba la migración prebind_session_identity,
+que ajusta la identidad de sesión en las funciones compartidas de custodios,
+importaciones, publicación y auditoría; verificar permisos y resultado».
+Después, reintentar alta desde la sesión real del dueño; aún no verificada por HTTP.
+
+
+## Corrección de custodios aplicada — 2026-11-17
+
+Con autorización explícita posterior del dueño, aplicada prebind_session_identity
+en GMA (`zwdqnrbqqszjrtkhyqnz`), versión remota 20261117201233. Archivo local
+renombrado para coincidir con la versión asignada por MCP, SQL idéntico al probado.
+El rechazo anterior quedó resuelto por esta autorización; no se usaron sesiones reales.
+
+Verificado remotamente: nueve cuerpos sólo sustituyen auth.uid por el helper;
+OID, owner, ACL, SECURITY DEFINER/INVOKER y search_path conservados. Helper invoker
+con cuerpo preanalizado y EXECUTE exclusivo del ejecutor/owner. Ejecutor sin login,
+BYPASSRLS, lectura de usuarios/sesiones ni CREATE; cero membresías transitorias.
+Prueba de helper como ejecutor SIN sesión devuelve null y termina en rollback.
+Cero custodios antes/después: no se crearon registros por cuenta del dueño.
+
+Próximo paso: recargar Configuración → Custodios, revisar efecto y confirmar GWM
+desde la sesión real del dueño. Alta remota por UI aún pendiente de verificación.
+No fue necesario desplegar la aplicación. Ver evidencia y límites en validation.md.

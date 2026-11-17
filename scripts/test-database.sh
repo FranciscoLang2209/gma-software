@@ -31,11 +31,14 @@ for migration in supabase/migrations/*.sql; do
   echo "Aplicando $migration"
   "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f "$migration"
 done
+# Reproducir Supabase: el operador no puede conceder USAGE de auth al ejecutor.
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -c 'revoke usage on schema auth from app_papa_executor;'
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/schema.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/auth.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/imports.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/publication.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/historical-imports.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/multicustodian-history.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/queries.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/accounts.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/commissions.test.sql

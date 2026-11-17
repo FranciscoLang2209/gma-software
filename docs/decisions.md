@@ -1,5 +1,14 @@
 # App Papá — Decisiones y pendientes
 
+## Confirmaciones de fuentes reales — 2026-11-17
+
+El dueño confirmó en esta conversación que `Account Number bd_REV` de AUM se
+corresponde con `ACCOUNT` de Revenue; que `Broker` de REF identifica al custodio;
+y que el balance de Master Owners es al 30/09/2026. Broker ya no es candidato a
+campo comercial en este contrato. No se acreditaron vigencias históricas ni una
+unidad universal de tasa. Análisis y propuesta en [source-import-analysis.md](source-import-analysis.md).
+Solicitud de esta etapa: analizar, sin implementar ni cargar datos reales.
+
 > Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
 > El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
 > local revisada. Supera para este motor las restricciones de sólo planificación
@@ -439,3 +448,52 @@ No se implementó importador gráfico/XLSX ni liquidación; no se tocaron remoto
 - QA de comisiones vía API/RPC no certifica carga Excel/publicación de snapshot:
   adaptador/Storage y revisión del archivo completo siguen pendientes. QA real y
   habilitación remota permanecen como etapa separada expresamente no ejecutada.
+
+## Autorización de esquema remoto GMA — 2026-11-17
+
+El dueño confirmó aplicar al Supabase de GMA las tres migraciones locales de historia
+AUM y comisiones. Alcance: sólo `gma-software-prueba` (`zwdqnrbqqszjrtkhyqnz`), sin
+carga de datos financieros ni despliegue de aplicación. Aplicadas y verificadas,
+11 versiones remotas coincidentes con el repositorio. Se alinearon los timestamps
+nuevos del conector con los IDs canónicos de esos tres archivos mediante reparación
+acotada del registro; no se modificó su SQL ni las ocho versiones previas.
+Los avisos de Auth/rendimiento quedan registrados en `validation.md`; esta solicitud
+no incluye cambiar planes, contraseñas/usuarios o rediseñar índices/políticas.
+
+
+## Identidad SQL del ejecutor — diagnóstico 2026-11-17
+
+No confundir SQLSTATE 42501 con rol de usuario incorrecto: también cubre permisos
+internos ausentes. En Supabase GMA, postgres no puede conceder USAGE de auth al
+rol ejecutor. Propuesta técnica probada localmente: helper SQL estándar invoker
+preenlazado a auth.uid, sin SECURITY DEFINER adicional ni lectura de auth.users o
+auth.sessions. Funciones compartidas conservan autorización existente. Aplicación
+remota pendiente de autorización por rechazo de revisión automática; ver progress.md.
+
+
+Actualización posterior, 2026-11-17: dueño autorizó aplicar la corrección compartida.
+Migración prebind_session_identity aplicada en GMA (20261117201233), con permisos
+y controles conservados y helper invoker comprobado bajo ejecutor sin sesión.
+La pendiente anterior de autorización queda resuelta; falta verificar alta por UI.
+
+
+## Carga de varios custodios implementada — 2026-11-17
+
+Pedido posterior del dueño: eliminar el bloqueo que exige un custodio para un Excel
+que contiene todos; continuó expresamente la implementación. AUM admite REF como
+original acompañante por operación, sin un catálogo nuevo de referencias ni fechas
+comerciales. Debe corroborar ambos identificadores, usar Broker y exigir custodio
+único registrado. Revenue histórico usa CUSTODIO por fila, sin necesitar REF/AUM.
+Se preserva el modo AUM de custodio único y los manifiestos anteriores.
+
+REF queda congelado por hash/bytes y pares en la carga, privado y descargable para
+admin. Las fórmulas/errores de Grupo de REF no intervienen en identidad; los tres
+campos de identidad/custodio sí deben ser literales utilizables. No se aplican
+Owner/Grupo/clientes a historia. Reutilizar referencias entre cargas futuras como
+catálogo independiente queda fuera de esta ampliación.
+
+Encabezados detectados/revisables, preámbulo conservado y exclusión explícita con
+motivo sólo de anotaciones sin campos financieros. Identificadores numéricos,
+importes faltantes y errores Excel de la fuente financiera continúan bloqueantes:
+no se infieren ceros ni se relajan reglas para publicar las muestras reales.
+Límites/uso en imports.md; pruebas e implementación efectiva en validation.md.

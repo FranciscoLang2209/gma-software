@@ -1,5 +1,30 @@
 # Validación — evidencia local y pendientes
 
+## Análisis de fuentes reales, sólo lectura — 2026-11-17
+
+Lectura local de los cuatro libros proporcionados: ZIP/XML sin evaluar fórmulas,
+valores numéricos originales como texto y Decimal con precisión 80 para controles.
+Sin macros en los libros; vínculo externo REF no seguido. Resultados guardados de
+fórmulas inspeccionados como caché, nunca recalculados. Originales sin modificar.
+
+Recuentos de filas y cruces AUM/REF/REV corroborados independientemente con
+openpyxl 3.1.5 del runtime: read_only=True, data_only=True, keep_links=False.
+Assertions de pares únicos REF, correspondencia de ambos identificadores AUM,
+acuerdo de custodios compartidos, conservación de filas/suma exacta AUM por
+mes/custodio y unicidad cuenta/mes. Evidencias por coordenadas y controles privados
+fuera del repositorio; documento técnico sin cuentas/nombres/montos reales.
+
+Lectura con readBook/prepare actuales: AUM rechaza límite de filas, Revenue rechaza
+límite expandido; REF se lee y bloquea identificadores numéricos/error de fórmula.
+Primera llamada del arnés tuvo argumentos bytes/filename invertidos; se corrigió
+y se registraron sólo los resultados finales con la firma correcta. Sin cambios
+de implementación, instalación de paquetes, build, base remota o publicación.
+
+Se revisó consistencia documental y git diff --check. Esta etapa no certifica
+completitud ni importación financiera real. Falta implementar el flujo propuesto,
+resolver/acreditar excepciones, confirmar unidades de tasas, medir capacidad y
+conciliar con revisión del dueño antes de publicar. Ver source-import-analysis.md.
+
 > Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
 > El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
 > local revisada. Supera para este motor las restricciones de sólo planificación
@@ -1069,3 +1094,171 @@ conserva año/trimestre/base. Capturas sintéticas finales en
 [qa-comisiones-2026-11-17](</Users/franciscolang/Documents/ChatGPT/App Papa/qa-comisiones-2026-11-17>).
 Repetición final satisfactoria de lint/typecheck/test/build/test:db/test:dashboard;
 `git diff --check` sin errores. Servidores y clústeres de esta etapa cerrados.
+
+## Migraciones en Supabase GMA — autorización posterior, 2026-11-17
+
+Destino confirmado por el dueño: `gma-software-prueba` (`zwdqnrbqqszjrtkhyqnz`),
+PostgreSQL 17.11.0.019, sa-east-1, ACTIVE_HEALTHY. Antes: ocho migraciones aplicadas,
+cero filas AUM/Revenue/lotes y cero scopes publicados. Aplicadas en orden las
+versiones `20261117133211`, `20261117175338` y `20261117181230`, sin cambiar su SQL.
+MCP asignó inicialmente `20261117183722`, `20261117183733`, `20261117183743`;
+se alinearon sólo esas claves de `supabase_migrations.schema_migrations` con las
+versiones canónicas locales, en transacción que exigía los tres pares versión/nombre
+y ausencia de las claves destino. No se cambió contenido/nombre ni historia previa.
+Listado remoto final coincide con las 11 versiones del repositorio.
+
+Verificaciones ejecutadas remotamente:
+
+- `import_uploads` y `commission_events`: RLS habilitado/forzado.
+- Wrappers públicos invoker; funciones privadas del ejecutor con search_path vacío;
+  ejecutor NOLOGIN/NOBYPASSRLS, cero membresías con INHERIT o SET.
+- EXECUTE denegado a anon/service_role, permitido a authenticated con comprobación
+  interna de admin/sesión. INSERT directo de eventos y UPDATE directo de cargas
+  denegados a authenticated.
+- SQL transaccional bajo anon y authenticated sin sesión: consulta/comandos
+  rechazados por insufficient_privilege, sin crear perfiles o datos para probar.
+- SQL de lectura bajo authenticated con claims de una sesión admin existente,
+  elegida internamente sin devolver identificadores: `commission_dashboard` ejecuta
+  el cuerpo completo, retorna row_count 0/summary vacío y rechaza trimestre 9.
+  Rollback de toda la prueba. No equivale a autenticación HTTP/JWT de extremo a extremo.
+- Conteos finales: AUM, Revenue, lotes, scopes publicados, cargas históricas y eventos
+  de comisiones continúan en cero. No se cargaron datos, no se modificaron cuentas
+  Auth ni se ejecutó despliegue de aplicación.
+
+Advisors ejecutados, no limpios:
+
+| Categoría | Resultado | Seguimiento |
+| --- | --- | --- |
+| Seguridad | 1 WARN: protección de contraseñas filtradas desactivada | [Documentación de Auth](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection); configuración no cambiada. |
+| Rendimiento | 14 WARN auth_rls_initplan | [Guía](https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan); incluye commission_insert. |
+| Rendimiento | 16 WARN multiple_permissive_policies | [Guía](https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies); incluye import_uploads. |
+| Rendimiento | 38 INFO unindexed_foreign_keys | [Guía](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys); evaluar con volumen real. |
+| Rendimiento | 17 INFO unused_index | [Guía](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index); base sin hechos, no eliminar por falta de uso inicial. |
+
+No se ejecutaron pruebas sintéticas de escritura sobre el remoto ni se reejecutaron
+suites locales por esta aplicación del mismo SQL ya probado. Actualización documental
+revisada con `git diff --check`. El circuito Excel de comisiones y los datos reales
+siguen pendientes; esta comprobación sólo acredita aplicación del esquema y checks
+remotos específicos anteriores.
+
+
+## Alta de custodios / identidad de sesión — 2026-11-17
+
+Lecturas remotas GMA (`zwdqnrbqqszjrtkhyqnz`): log `permission denied for schema
+auth`; app_papa_executor tiene EXECUTE auth.uid pero no USAGE auth. postgres carece
+de USAGE WITH GRANT OPTION. Primer GRANT registrado como migración 20261117200819
+sin efecto, confirmado por has_schema_privilege=false. Cero custodios. Sin cambios
+de cuentas Auth, fuentes o datos financieros.
+
+Corrección preparada: SQL BEGIN ATOMIC invoker preenlaza auth.uid, sustitución
+acotada en nueve funciones privadas y retirada de membresía/CREATE temporales.
+`test:db` completa correcta con PostgreSQL 17 temporal/socket privado y USAGE auth
+revocado antes de TODAS las suites. Regresión crea custodio desde authenticated
+admin mediante preview/save, preview no persiste entidad y save conserva auditoría.
+Se ejecutaron suites de roles/RLS, preparación/publicación mensual e histórica,
+comisiones, concurrencia y restauración; cadena con operador sin SUPERUSER correcta.
+Primer intento del nuevo SQL falló por INHERIT false al reemplazar función de otro
+owner: corregido al patrón transitorio existente y suite completa repetida con éxito.
+No cambios de Next/UI/dependencias: no se ejecutaron build/lint ni navegador.
+
+Sandbox requirió ejecución ampliada sólo para memoria compartida del PostgreSQL
+local efímero; suite terminada y clúster eliminado. `git diff --check` correcto.
+Advisors remoto antes/después del GRANT: mismo WARN previo de [contraseñas filtradas]
+(https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection),
+sin cambio de configuración.
+
+Revisión automática rechazó prueba remota con sesión admin existente y luego la
+aplicación de prebind_session_identity por alcance de funciones compartidas/roles.
+No se eludieron rechazos. Segunda migración sólo local, pendiente de autorización.
+No se acredita creación remota exitosa ni autenticación HTTP real del dueño.
+
+
+## Corrección de identidad autorizada y aplicada — 2026-11-17
+
+Autorización explícita del usuario después del rechazo de revisión. Migración
+prebind_session_identity aplicada con éxito a GMA, versión 20261117201233. Se
+renombró archivo local a esa versión; sin cambios al SQL ya probado localmente.
+No se reejecutó suite local porque el contenido de implementación no cambió.
+
+Comparación programática remota de los nueve registros pg_proc antes/después:
+único cambio de cuerpo es auth.uid() → app_private.session_user_id(); coinciden
+OID, owner, ACL, prosecdef y proconfig en los nueve casos. Helper LANGUAGE SQL
+invoker con prosqlbody no nulo y search_path vacío; no ejecutable directamente
+por anon/authenticated/service_role. Ejecutor NOLOGIN/NOBYPASSRLS, sin CREATE,
+sin SELECT auth.users/auth.sessions y cero membresías con INHERIT/SET.
+Escritura directa de custodians sigue denegada a authenticated. Cero custodios.
+
+Prueba SQL remota del helper bajo rol ejecutor SIN claims/sesiones, con membresía
+transitoria contenida en BEGIN/ROLLBACK: retorna null, no error de esquema auth.
+No se leyó ni suplantó ninguna sesión administrativa real. Advisors de seguridad
+mantiene únicamente el WARN previo de [contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+Configuración Auth sin modificar. Sin datos financieros, pruebas UI/HTTP reales
+ni despliegue de aplicación. Próxima comprobación: dueño reintenta alta por web.
+Revisión documental y git diff --check correctos.
+
+
+## Varios custodios — implementación y QA del 17/11/2026
+
+Historia: formulario histórico AUM+REF / REV completo → validación Next → originales
+Storage privados/manifiesto padre → hijos por fuente/mes/custodio → correspondencias
+existentes → revisión y publicación conjunta → dashboards. Sólo sintéticos en SQL,
+HTTP y navegador; diagnósticos de las fuentes reales fueron exclusivamente lectura.
+
+Checks locales ejecutados: lint, typecheck, build y 37 unitarias correctas. Test:db
+completa con PostgreSQL 17 temporal/socket privado, operador sin SUPERUSER, guards,
+roles, concurrencia y restauración. Nuevo SQL verifica AUM y Revenue en ambos
+custodios, >120 alcances (130), retry, fallo inyectado entre custodios con rollback
+total, identidades separadas, catálogo/exclusión inválidos, publicación individual
+denegada y lector con metadata adulterada. Membresía/CREATE transitorios retirados.
+
+Capacidad sintética: 18.480 filas / 528 alcances AUM con sumas exactas y manifiesto
+<8 MiB; lectura/partición en ~148 ms en una ejecución (no SLA). Límites mensuales
+previos intactos. Unitarias adicionales: pares REF ambiguos, custodio desconocido,
+header desplazado, repetición Revenue, faltantes bloqueantes, notas con motivo y
+rechazo de excluir movimientos. Se preservan todas las pruebas previas.
+
+HTTP integral con Next compilado y PostgreSQL real local; Auth/PostgREST/Storage son
+transportes sintéticos explícitos del arnés. AUM+REF y REV de dos custodios, headers
+desplazados, catálogo nuevo entre alta y retry sin alterar el snapshot, originales
+privados byte a byte, permisos, revisión/publicación/retry y dashboard 240 AUM/10
+Revenue. También regresiones anteriores de historia 36 meses, FA, 120/22, cuentas,
+CSV y comisiones. Primera ejecución faltaba pg_config en PATH; segunda campaña
+visual detectó que un guard de notas AUM trataba su columna de título como dato:
+se acotó a identificadores/período/importe y se repitieron build/unitarias/HTTP.
+
+Chrome local headless: envío real del formulario AUM+REF sin selector global,
+preparación 2/2 sin errores hasta correspondencias; descarga REF idéntica, selector
+REV no exige REF. Anchos 1440/390 sin overflow del documento ni excepciones cliente;
+capturas sintéticas inspeccionadas en /tmp/gma-multi-ui. Primera captura mostró la
+convención CSV sin definir (bloqueo esperado); luego se seleccionó punto decimal.
+El arnés asumía v1 pese a reintentos anteriores: diagnóstico confirmó estado válido
+needs_resolution y se ajustó la aserción a la versión real. No cambio funcional por
+ese último timeout/assert. Sin navegador remoto autenticado con sesión del dueño.
+
+Lectura privada con el nuevo parser, SIN persistir/importar: AUM 18.800 filas, 434
+alcances, encabezado 4, cero filas sin custodio con catálogo REF completo, manifiesto
+2.508.650 bytes (~410 ms); Revenue 17.893 filas, 225 alcances, encabezado 3, una nota
+sin alcance, manifiesto 2.530.679 bytes (~927 ms). Se preservan 1.645 incidencias de
+identificadores numéricos en AUM y 597 incidencias en REV (tipos numéricos, faltantes,
+error Excel); este resultado NO acredita publicación. Sin datos originales en Git.
+
+Documentación oficial consultada: changelog Supabase y Standard Uploads, y CREATE
+FUNCTION PostgreSQL 17. Dependencias/lockfile sin cambiar. La nueva migración se
+generó con CLI existente y telemetry desactivada, se probó y luego aplicó a GMA.
+Versión MCP 20261117224406; archivo local renombrado sin alterar SQL. Comprobación
+remota: ejecutor propietario, anon sin EXECUTE, authenticated sujeto a admin/sesión,
+CREATE revocado, cero membresías transitorias, cero cargas y scopes publicados.
+Advisors conserva únicamente WARN previo de [contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+No se cambiaron usuarios, configuración Auth, planes, datos financieros o índices.
+
+
+Habilitación final: deployment dpl_6gT2MXhKVy1NsWn3YVoJVq7JNvWi READY y alias
+canónico gma-software.vercel.app actualizado. Snapshot de runtime allowlist (85
+archivos, sin fuentes/secretos) documentado en progress.md; no se hizo commit/push.
+GET remoto /importaciones mediante conector Vercel devuelve 200 con login español,
+sin error interno. API remota no verificable en este intento: share link reutilizado
+rechazado por Vercel Authentication (401 de protección, no evidencia del handler).
+No se eludió protección, ni se usó sesión real para probar carga/publicación.
+Captura móvil de viewport normal confirma un único main/encabezado y sin overflow;
+fullPage había repetido capas fijas al componer imagen, sin duplicación del DOM.
+Todos los servidores/clústeres locales terminados. Revisión git diff --check correcta.

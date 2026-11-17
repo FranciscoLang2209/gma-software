@@ -49,7 +49,9 @@ function xml(
   parser.on("text", (s, decode) => text(decode(s)));
   parser.parse(content);
 }
-function unzip(bytes: Uint8Array) {
+export type ReadLimits = { rows: number; expanded: number };
+export const HISTORICAL_LIMITS: ReadLimits = { rows: 25000, expanded: 32 * 1024 * 1024 };
+function unzip(bytes: Uint8Array, limits: ReadLimits) {
   const files: Record<string, string> = Object.create(null);
   let expanded = 0,
     entries = 0;
@@ -71,9 +73,9 @@ function unzip(bytes: Uint8Array) {
       if (error)
         throw failure ?? new Error("No se pudo descomprimir el libro.");
       expanded += data.length;
-      if (expanded > LIMITS.expanded) {
+      if (expanded > limits.expanded) {
         failure = new Error(
-          "El libro supera 12 MiB descomprimidos. Dividilo antes de importar.",
+          `El libro supera ${limits.expanded / 1024 / 1024} MiB descomprimidos. Dividilo antes de importar.`,
         );
         throw failure;
       }
@@ -100,7 +102,7 @@ function unzip(bytes: Uint8Array) {
     );
   return files;
 }
-function coordinates(ref: string) {
+function coordinates(ref: string, limits: ReadLimits) {
   const match = /^([A-Z]{1,3})([1-9]\d*)$/.exec(ref);
   if (!match) throw new Error("Coordenada de celda inválida.");
   const column = [...match[1]].reduce(
@@ -108,13 +110,13 @@ function coordinates(ref: string) {
     0,
   );
   const row = Number(match[2]);
-  if (column > LIMITS.columns || row > LIMITS.rows + 1)
+  if (column > LIMITS.columns || row > limits.rows + 1)
     throw new Error(
-      "Máximo 5.000 filas de datos y 64 columnas por hoja, incluyendo celdas vacías formateadas.",
+      `Máximo ${limits.rows.toLocaleString("es-AR")} filas y 64 columnas por hoja, incluyendo celdas vacías formateadas.`,
     );
   return { row, column };
 }
-function metadata(content: string) {
+function metadata(content: string, limits: ReadLimits) {
   const cells = new Map<string, Cell>();
   let ref = "",
     current: Cell | undefined,
@@ -123,15 +125,15 @@ function metadata(content: string) {
     content,
     (name, attrs) => {
       tag = name;
-      if (name === "row" && attrs.r && Number(attrs.r) > LIMITS.rows + 1)
-        throw new Error("La hoja supera 5.000 filas.");
+      if (name === "row" && attrs.r && Number(attrs.r) > limits.rows + 1)
+        throw new Error(`La hoja supera ${limits.rows.toLocaleString("es-AR")} filas.`);
       if (name === "mergeCell")
         throw new Error(
           "Celdas combinadas no admitidas: descombinalas y completá cada fila antes de importar.",
         );
       if (name === "c") {
         ref = attrs.r;
-        coordinates(ref);
+        coordinates(ref, limits);
         if (cells.has(ref)) throw new Error("Celda duplicada en el libro.");
         current = { value: null, kind: attrs.t ?? "n", style: attrs.s };
         cells.set(ref, current);
@@ -155,6 +157,7 @@ export async function readBook(
   bytes: Uint8Array,
   filename: string,
   delimiter: Options["delimiter"],
+  limits: ReadLimits = LIMITS,
 ): Promise<Book> {
   checkFile(filename, bytes.length);
   if (/\.csv$/i.test(filename)) {
@@ -175,7 +178,7 @@ export async function readBook(
         delimiter,
         cast: false,
         info: true,
-        to: LIMITS.rows + 2,
+        to: limits.rows + 2,
         relax_column_count: true,
         max_record_size: LIMITS.cell * LIMITS.columns,
       }) as unknown as typeof records;
@@ -184,8 +187,8 @@ export async function readBook(
         "CSV inválido: revisá delimitador, comillas y longitud de registros.",
       );
     }
-    if (records.length > LIMITS.rows + 1)
-      throw new Error("CSV supera 5.000 filas de datos.");
+    if (records.length > limits.rows + 1)
+      throw new Error(`CSV supera ${limits.rows.toLocaleString("es-AR")} filas de datos.`);
     let nextLine = 1;
     const rows = records.map(({ record, info }) => {
       const row = {
@@ -213,7 +216,7 @@ export async function readBook(
     );
   let files: Record<string, string>;
   try {
-    files = unzip(bytes);
+    files = unzip(bytes, limits);
   } catch (e) {
     if (e instanceof Error) throw e;
     throw new Error("Libro ZIP inválido.");
@@ -248,7 +251,7 @@ export async function readBook(
       sheets.length >= LIMITS.sheets
     )
       throw new Error("Máximo 10 hojas con nombres distintos.");
-    sheets.push({ name: a.name, cells: metadata(files[target]) });
+    sheets.push({ name: a.name, cells: metadata(files[target], limits) });
   });
   if (!sheets.length) throw new Error("El libro no contiene hojas de datos.");
   let parsed;
@@ -270,7 +273,7 @@ export async function readBook(
       const widths = new Map<number, number>();
       let lastRow = data.length;
       for (const ref of sheet.cells.keys()) {
-        const { row, column } = coordinates(ref);
+        const { row, column } = coordinates(ref, limits);
         lastRow = Math.max(lastRow, row);
         widths.set(row, Math.max(widths.get(row) ?? 0, column));
       }

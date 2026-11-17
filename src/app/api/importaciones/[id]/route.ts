@@ -1,5 +1,5 @@
 import { LIMITS, UUID, validateOptions } from "@/lib/imports/contracts";
-import { readBook, sha256 } from "@/lib/imports/read";
+import { HISTORICAL_LIMITS, readBook, sha256 } from "@/lib/imports/read";
 import { prepare } from "@/lib/imports/validate";
 import { prepareHistorical, reportSummary } from "@/lib/imports/historical";
 import { boundedBody, importAccess, reply } from "@/lib/imports/server";
@@ -37,6 +37,7 @@ async function getBook(
     bytes,
     batch.file_name_original,
     batch.parsing_conventions.options.delimiter,
+    batch.upload_id ? HISTORICAL_LIMITS : undefined,
   );
 }
 export async function GET(
@@ -158,9 +159,17 @@ export async function POST(
       if (batch.upload_id) {
         const { data: upload, error } = await supabase.from("admin_import_uploads").select("options,manifest").eq("id", batch.upload_id).single();
         if (error || !upload) throw new Error("Operación histórica no disponible.");
-        if (JSON.stringify(options) !== JSON.stringify(validateOptions({ ...upload.options, period: batch.period }))) throw new Error("La configuración histórica está congelada.");
-        const history = prepareHistorical(book, options);
-        report = history.partitions.find((p) => p.period === batch.period)?.report;
+        const parentOptions = validateOptions({ ...upload.options, period: batch.period, custodianId: batch.custodian_id, custodianCode: uploaded.custodianCode });
+        if (JSON.stringify(options) !== JSON.stringify(parentOptions)) throw new Error("La configuración histórica está congelada.");
+        if (upload.options.references) {
+          const reference = upload.options.references;
+          const path = `${batch.upload_id}/references.${reference.fileName.split(".").at(-1).toLowerCase()}`;
+          const original = await supabase.storage.from("app-papa-imports").download(path);
+          if (original.error || !original.data || original.data.size !== reference.fileSize || sha256(new Uint8Array(await original.data.arrayBuffer())) !== reference.fileHash)
+            throw new Error("REF original no disponible o diferente del revisado.");
+        }
+        const history = prepareHistorical(book, upload.options);
+        report = history.partitions.find((p) => p.period === batch.period && p.custodianId === batch.custodian_id)?.report;
         if (!report) throw new Error("El período ya no coincide con el manifiesto.");
       } else report = prepare(book, options);
     } catch (e) {

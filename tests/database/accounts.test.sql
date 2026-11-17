@@ -1,4 +1,14 @@
 \ir query-fixture.sql
+-- Regresión del remoto: resolver identidad sin USAGE de auth ni privilegios elevados.
+revoke usage on schema auth from app_papa_executor;
+select pg_temp.assert_true(not has_schema_privilege('app_papa_executor','auth','USAGE'),'reproduce restricción de esquema administrado');
+set local role authenticated;
+select public.manage_model('preview','custodians',input=>'{"name":"Custodio SINTETICO nuevo","code":"SYNTHETIC-NEW","active":true}',reason=>'Alta SINTETICA') custodian_preview \gset
+select pg_temp.assert_true(not exists(select 1 from public.admin_custodians where code='SYNTHETIC-NEW'),'revisión no crea custodio');
+select public.manage_model('save',review_id=>(:'custodian_preview'::jsonb->>'review_id')::uuid);
+select pg_temp.assert_true((select count(*)=1 from public.admin_custodians where code='SYNTHETIC-NEW'),'admin crea custodio sin USAGE de auth');
+reset role;
+select pg_temp.assert_true((select count(*)=1 from app_private.audit_events where entity_id=(:'custodian_preview'::jsonb->'after'->>'id')::uuid and reason='Alta SINTETICA'),'alta conserva auditoría');
 set local role authenticated;
 select public.account_directory('2026-01-01','2026-02-01',search_text=>'0001') directory \gset
 select pg_temp.assert_true(:'directory'::jsonb->>'row_count'='1' and :'directory'::jsonb->'rows'->0->>'identifier'='0001','buscar ceros exactos sin multiplicar aliases');
