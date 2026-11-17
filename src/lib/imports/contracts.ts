@@ -79,6 +79,22 @@ export type Cell = {
 export type RawRow = { number: number; cells: Cell[] };
 export type Book = { sheets: { name: string; rows: RawRow[] }[] };
 export type Issue = { code: string; column?: string; message: string };
+export type SourceReview = {
+  missingRevenueAsUnknown: boolean;
+  numericIdentifiersAsWritten: boolean;
+  metadataErrorsAsWarnings: boolean;
+  reason: string;
+};
+export function validateSourceReview(value: unknown): SourceReview | undefined {
+  if (value === undefined) return undefined;
+  const r = value as SourceReview;
+  if (!r || [r.missingRevenueAsUnknown, r.numericIdentifiersAsWritten, r.metadataErrorsAsWarnings].some((v) => typeof v !== "boolean") ||
+    typeof r.reason !== "string" || r.reason.length > 2000 ||
+    ((r.missingRevenueAsUnknown || r.numericIdentifiersAsWritten || r.metadataErrorsAsWarnings) && r.reason.trim().length < 3))
+    throw new Error("Revisá las excepciones y registrá un motivo de al menos 3 caracteres.");
+  return { missingRevenueAsUnknown: r.missingRevenueAsUnknown, numericIdentifiersAsWritten: r.numericIdentifiersAsWritten,
+    metadataErrorsAsWarnings: r.metadataErrorsAsWarnings, reason: r.reason.trim() };
+}
 export type PreparedRow = {
   sheet_name: string;
   row_number: number;

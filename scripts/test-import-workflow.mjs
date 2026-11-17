@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { parse } from "csv-parse/sync";
 import { historicalRows } from "../tests/fixtures/imports/historical.ts";
 import { HEADERS } from "../src/lib/imports/contracts.ts";
+import { xlsx } from "../tests/fixtures/imports/build.ts";
 
 export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage, interruptHistory }) {
   const json = async (response, status = 200) => {
@@ -251,6 +252,31 @@ export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, ad
     assert.equal(total.total.revenue_usd, source === "aum" ? null : "10");
   };
   await multi("aum"); await multi("revenue");
+  {
+    const id = randomUUID(), endpoint = "/api/importaciones/historicas";
+    const options = { source: "revenue", multiCustodian: true, sheet: "SINTETICO", numericFormat: "dot", delimiter: ",",
+      sourceReview: { missingRevenueAsUnknown: true, numericIdentifiersAsWritten: true, metadataErrorsAsWarnings: true, reason: "SINTETICO: literales acreditados y cobertura incompleta revisada" } };
+    const cells = (amount) => HEADERS.revenue.map((h) => ({ CUSTODIO: custodians[0].code, MES: "1", AÑO: "2030", ACCOUNT: { n: "12345" },
+      "Nacho GMA": { formula: "NA()", cached: "#N/A", type: "e" }, "Payout broker": amount }[h] ?? ""));
+    const raw = xlsx([{ name: "SINTETICO", rows: [[...HEADERS.revenue], cells("0.1"), cells("")] }]);
+    const form = (review = options.sourceReview) => { const f = new FormData(); f.set("file", new File([raw], "SINTETICO-revisado.xlsx"));
+      f.set("requestId", id); f.set("options", JSON.stringify({ ...options, sourceReview: review })); return f; };
+    await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() }));
+    assert.equal((await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form({ ...options.sourceReview, missingRevenueAsUnknown: false }) })).status, 409, "reintento no modifica decisiones congeladas");
+    let state = await json(await request(`${endpoint}/${id}`, true));
+    const child = state.children[0];
+    assert.equal(state.upload.manifest.partitions[0].summary.blockingErrors, 0);
+    assert.equal(state.upload.manifest.partitions[0].summary.missingValues, 1);
+    await json(await post(`/api/importaciones/${child.id}`, { options: { source: "revenue", sheet: "SINTETICO", numericFormat: "dot", delimiter: ",", period: child.period, custodianId: child.custodian_id, custodianCode: custodians[0].code } }));
+    await resolve(child.id); await review(child.id);
+    state = await json(await post(`${endpoint}/${id}`, { operation: "review", input: { confirm_all: true } }));
+    await json(await post(`${endpoint}/${id}`, { operation: "publish", input: { token: state.upload.review.token } }));
+    assert.equal(sql(asRole(adminSub, `select count(*)||'/'||count(payout_broker_usd)||'/'||sum(payout_broker_usd) from app_private.revenue_entries where batch_id='${child.id}'`)).trim(), "2/1/0.1");
+    const report = await json(await request("/api/consultas?desde=2030-01&hasta=2030-01"));
+    assert.equal(report.total.revenue_usd, "0.1");
+    assert.equal((await request(`${endpoint}/${id}?original=1`, false)).status, 403);
+    console.log("OK revisión HTTP/SQL SINTETICA: decisiones congeladas, cuenta numérica literal, error descriptivo conservado, 2 movimientos/1 importe conocido, publicación con NULL y suma 0.1 sin cero inventado.");
+  }
   console.log("OK multi HTTP/SQL SINTETICO: AUM+REF y Revenue, headers desplazados, dos custodios, catálogo congelado, revisión/publicación conjunta, originales por rol y cierre 240 / Revenue 10.");
   const historicalA = await history(custodians[0]);
   const historicalB = await history(custodians[1]);

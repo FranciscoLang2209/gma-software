@@ -1,4 +1,4 @@
-import { HEADERS, type Book, type Issue, type Options, type RawRow, type Report } from "./contracts.ts";
+import { HEADERS, validateSourceReview, type SourceReview, type Book, type Issue, type Options, type RawRow, type Report } from "./contracts.ts";
 import { prepare } from "./validate.ts";
 
 export type Custodian = { id: string; code: string; name?: string };
@@ -10,6 +10,7 @@ export type ReferenceFile = {
 export type HistoricalOptions = Omit<Options, "period"> & {
   multiCustodian?: boolean; headerRow?: number; excludedRows?: number[]; exclusionReason?: string;
   custodians?: Custodian[]; references?: ReferenceFile;
+  sourceReview?: SourceReview;
 };
 const normalize = (s: string) => s.trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
 export function historicalHeader(sheet: Book["sheets"][number], source: Options["source"], explicit = 0) {
@@ -36,6 +37,7 @@ export function referencePairs(book: Book, sheetName: string) {
   return { sheet: sheet.name, headerRow: header.number, pairs, errors };
 }
 export function prepareHistorical(book: Book, options: HistoricalOptions) {
+  const sourceReview = validateSourceReview(options.sourceReview);
   if (options.source !== "aum" && !(options.multiCustodian && options.source === "revenue")) throw new Error("La historia admite AUM, o Revenue con varios custodios.");
   const sheet = book.sheets.find((s) => s.name === options.sheet);
   if (!sheet) throw new Error("Elegí una hoja existente.");
@@ -88,11 +90,12 @@ export function prepareHistorical(book: Book, options: HistoricalOptions) {
   }
   const partitions = [...groups.values()].sort((a, b) => a.period.localeCompare(b.period) || a.custodian.id.localeCompare(b.custodian.id)).map(({ period, custodian, rows }) => ({
     period, custodianId: custodian.id, custodianCode: custodian.code,
-    report: prepare({ sheets: [{ ...sheet, rows: [header, ...rows] }] }, { ...options, period, custodianId: custodian.id, custodianCode: custodian.code }),
+    report: prepare({ sheets: [{ ...sheet, rows: [header, ...rows] }] }, { ...options, period, custodianId: custodian.id, custodianCode: custodian.code }, sourceReview),
   }));
   if (partitions.length > 1024 || partitions.some((p) => p.report.rows.length > 5000)) throw new Error("Máximo 1.024 alcances y 5.000 filas por mes/custodio. Dividí por alcances completos.");
   if (!partitions.length) errors.push({ code: "empty_history", message: "No hay alcances válidos. No se certifica ningún mes como cero." });
   const manifest = {
+    ...(sourceReview ? { sourceReview, exceptionSummary: summarizeExceptions(partitions) } : {}),
     parserVersion: options.multiCustodian ? 3 : 2,
     sheet: sheet.name, headerRow: header.number,
     preamble: sheet.rows.filter((r) => r.number < header.number),
@@ -106,6 +109,19 @@ export function prepareHistorical(book: Book, options: HistoricalOptions) {
     })),
   };
   return { partitions, manifest };
+}
+function summarizeExceptions(partitions: { custodianId: string; report: Report }[]) {
+  const groups = new Map<string, { severity: "error" | "warning"; code: string; column: string; message: string; count: number; accounts: Set<string>; rows: number[] }>();
+  for (const p of partitions) for (const row of p.report.rows) for (const severity of ["error", "warning"] as const) {
+    for (const issue of severity === "error" ? row.errors : row.cell_metadata.warnings) {
+      const key = JSON.stringify([severity, issue.code, issue.column]);
+      const group = groups.get(key) ?? { severity, code: issue.code, column: issue.column ?? "", message: issue.message, count: 0, accounts: new Set<string>(), rows: [] };
+      group.count++; group.accounts.add(JSON.stringify([p.custodianId, row.cell_metadata.account]));
+      if (group.rows.length < 25) group.rows.push(row.row_number);
+      groups.set(key, group);
+    }
+  }
+  return [...groups.values()].map(({ accounts, ...group }) => ({ ...group, accounts: accounts.size }));
 }
 export function reportSummary(report: Report, book: Book) {
   return {

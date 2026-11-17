@@ -1,6 +1,27 @@
 # App Papá — Decisiones y pendientes
 
+## Revisión de carga manual confirmada — 2026-11-17
+
+El dueño autorizó conservar Payout broker ausente como N/D y permitir publicación
+revisada mostrando suma conocida y cobertura incompleta. También acreditó usar
+las cuentas numéricas exactamente como están en Excel dentro de cada custodio,
+sin agregar ceros. La implementación exige decisión explícita y motivo por carga;
+solo admite enteros literales no negativos de hasta 15 dígitos, sin fórmulas ni
+notación científica. Se conservan tipo, valor original, archivo, fila y advertencia.
+
+En REV, los errores de Excel en columnas descriptivas pueden conservarse como
+advertencias mediante otra decisión explícita. No aplica a ACCOUNT, CUSTODIO,
+MES, AÑO ni Payout broker. No se evalúan fórmulas ni se inventan importes. Los
+errores bloqueantes restantes impiden publicación parcial; correspondencias,
+revisión completa, idempotencia y atomicidad siguen vigentes. No se altera el
+original ni se reinterpreta una carga antigua con decisiones nuevas.
+
 ## Confirmaciones de fuentes reales — 2026-11-17
+
+El dueño confirmó expresamente que el valor GMW de Broker en REF es un error
+de escritura y corresponde a GWM. No representa un custodio distinto. Esta
+confirmación no implementa un alias automático: el archivo debe corregirse
+explícitamente antes de volver a cargarlo; el original conservado no se alteró.
 
 El dueño confirmó en esta conversación que `Account Number bd_REV` de AUM se
 corresponde con `ACCOUNT` de Revenue; que `Broker` de REF identifica al custodio;

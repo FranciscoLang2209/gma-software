@@ -1,5 +1,41 @@
 # App Papá — Progreso
 
+## Revisión de excepciones de carga manual — 2026-11-17
+
+Implementadas opciones históricas explícitas con motivo congelado: aceptar cuentas
+numéricas literales acreditadas (hasta 15 dígitos), REV sin Payout broker como N/D
+y errores descriptivos de Excel como advertencias. Resumen agrupa incidencias por
+tipo/columna/severidad, cuenta cuentas por custodio e informa primeras filas y
+cobertura monetaria. El JSON de errores incluye resumen aun sin bloques persistidos.
+No se debilitan fechas, custodios, precisión, montos inválidos ni publicación atómica.
+
+Prueba local con el REV original: 17.893 movimientos/225 alcances, 597 bloqueos
+estrictos pasan a cero con las decisiones autorizadas; 584 avisos numéricos se
+agrupan en 21 cuentas, 12 importes siguen NULL y un error descriptivo se conserva.
+Comparados originales/fingerprints/importes fila por fila y huella de archivo intacta.
+Esto valida el análisis local; no declara resolución de cuentas ni publicación real.
+
+Próximo paso: desplegar la revisión verificada y crear una nueva carga REV con
+las decisiones expresas; conservar la preparación anterior. Resolver/conciliar
+cuentas y revisar todos los alcances antes de publicar. No se completan importes
+desconocidos ni se unen cuentas por nombre.
+
+## Alta operativa de custodios — 2026-11-17
+
+Por pedido del dueño se crearon CS, JPM, PICTET, RJ y UBS desde Configuración
+en la sesión administrativa autenticada del navegador, con revisión y confirmación
+individual y motivo auditado. La interfaz confirmó cada guardado y finalmente
+12 registros activos en el catálogo. No se importaron ni publicaron cifras.
+
+El dueño confirmó que GMW en REF es un error de escritura de GWM. No se creó
+un custodio GMW ni se modificó el Excel original. Antes de una nueva carga AUM+REF,
+corregir esa celda de Broker a GWM. La carga pendiente conserva su catálogo
+congelado; las altas nuevas no reparan retroactivamente esa preparación.
+
+Próximo paso: nueva carga histórica AUM+REF corregido o REV, revisar los errores
+reales y las correspondencias antes de publicar. Alta de catálogo no certifica
+una importación financiera completa.
+
 ## Última corrección: timeout al registrar el histórico — 2026-11-17
 
 El dueño reportó POST histórico REV 409. Logs reales a las 22:58:56 UTC muestran

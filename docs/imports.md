@@ -231,3 +231,14 @@ revisar de nuevo. La revisión individual y la publicación mantienen sus contro
 Timeout/espera de base de datos devuelve 503 reintentable con la solicitud conservada:
 reintentar con los mismos archivos/formulario evita duplicar operaciones. No se amplió
 el timeout administrado de 8 segundos para resolver el problema.
+## Revisión de excepciones de archivos manuales (2026-11-17)
+
+Las cargas históricas nuevas permiten decisiones explícitas con motivo: cuentas
+numéricas literales acreditadas por el dueño (enteros de hasta 15 dígitos, sin
+fórmulas/científica/ceros inventados); Payout broker ausente como NULL con suma
+conocida y cobertura incompleta; errores de Excel en columnas descriptivas de REV
+como advertencias. Cuenta, custodio, período e importe siguen siendo críticos.
+Las opciones quedan congeladas con la preparación y se reutilizan al procesar
+bloques. Reintentar con decisiones diferentes requiere una carga nueva. Originales,
+tipo de celda, warnings, motivo y coordenadas se conservan. No cambia el circuito
+de correspondencias/revisión/publicación conjunta ni se publica parcialmente.

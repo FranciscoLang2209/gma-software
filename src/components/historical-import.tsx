@@ -55,6 +55,9 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
         form.set("options", JSON.stringify({ source, custodianId: custodian?.id, custodianCode: custodian?.code,
           ...(multiple ? { multiCustodian: true, headerRow: Number(form.get("headerRow") || 0), referenceSheet: form.get("referenceSheet"),
             excludedRows: String(form.get("excludedRows") || "").split(",").filter((n) => n.trim()).map(Number), exclusionReason: form.get("exclusionReason") } : {}),
+          ...(multiple ? { sourceReview: { missingRevenueAsUnknown: form.get("missingRevenueAsUnknown") === "on",
+            numericIdentifiersAsWritten: form.get("numericIdentifiersAsWritten") === "on",
+            metadataErrorsAsWarnings: form.get("metadataErrorsAsWarnings") === "on", reason: String(form.get("reviewReason") || "") } } : {}),
           sheet: form.get("sheet"), numericFormat: form.get("numericFormat"), delimiter: form.get("delimiter") }));
       }
       const data = await api("/api/importaciones/historicas", { method: "POST", body: form });
@@ -93,7 +96,8 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
   }
   async function downloadErrors() {
     if (!detail) return;
-    const errors: unknown[] = [...detail.upload.manifest.errors, ...detail.upload.manifest.unroutable];
+    const errors: unknown[] = [...detail.upload.manifest.errors, ...detail.upload.manifest.unroutable,
+      ...(detail.upload.manifest.exceptionSummary ?? []).filter((e) => e.severity === "error")];
     for (const child of detail.children) {
       if (!child.errors && !detail.upload.manifest.partitions.find((p) => p.period === child.period && p.custodianId === child.custodian_id)?.summary.blockingErrors) continue;
       let page = 0, count = 1;
@@ -132,6 +136,15 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
         <label>Filas a excluir, separadas por coma<input name="excludedRows" maxLength={1000} placeholder="Ej.: 200, 201" disabled={busy} /></label>
         <label>Motivo de exclusión<textarea name="exclusionReason" maxLength={2000} disabled={busy} /></label>
       </details>}
+      {multiple && <details><summary>Revisión de datos cargados a mano</summary>
+        <p>Las decisiones se conservan con esta carga y requieren publicación revisada. El original no cambia y no se descartan movimientos.</p>
+        <label><input type="checkbox" name="numericIdentifiersAsWritten" disabled={busy} /> Confirmo las cuentas numéricas tal como están escritas, dentro de cada custodio, sin agregar ceros. Solo enteros de hasta 15 dígitos, sin fórmulas ni notación científica.</label>
+        {source === "revenue" && <>
+          <label><input type="checkbox" name="missingRevenueAsUnknown" disabled={busy} /> Conservar Payout broker vacío como N/D y publicar la suma conocida con cobertura incompleta.</label>
+          <label><input type="checkbox" name="metadataErrorsAsWarnings" disabled={busy} /> Conservar errores de Excel en columnas descriptivas de REV como advertencias. Cuenta, custodio, período e importe siguen protegidos.</label>
+        </>}
+        <label>Motivo de las decisiones<textarea name="reviewReason" maxLength={2000} disabled={busy} /></label>
+      </details>}
       <label>Formato de importes<Select name="numericFormat" defaultValue="undefined" disabled={busy}><option value="undefined">Sin definir</option><option value="dot">1,234.56 — punto decimal</option><option value="comma">1.234,56 — coma decimal</option></Select></label>
       <label>Delimitador CSV<Select name="delimiter" defaultValue="," disabled={busy}><option value=",">Coma</option><option value=";">Punto y coma</option><option value={"\t"}>Tabulación</option></Select></label>
       <label>Original XLSX sin macros o CSV UTF-8<input name="file" type="file" accept=".xlsx,.csv" required disabled={busy} /></label>
@@ -163,14 +176,22 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
         <ul>{[...new Set(manifest.unroutable.map((r) => r.errors[0].message))].slice(0, 50).map((message) => <li key={message}>{message}</li>)}</ul>
         <p>Primeras filas: {manifest.unroutable.slice(0, 25).map((r) => r.row).join(", ")}. Descargá los errores para revisar el detalle. Si falta un custodio, registralo en Configuración y volvé a analizar los mismos originales.</p>
       </details>}
-      {blocked && <p role="alert">Hay errores bloqueantes. Ningún período de este archivo se podrá publicar; corregí el original y creá otra carga.</p>}
+      {manifest.exceptionSummary && <section aria-label="Resumen de excepciones">
+        <h3>Excepciones agrupadas</h3>
+        <p>Importes conocidos: {manifest.partitions.reduce((n, p) => n + p.summary.valueCount, 0)} / {totalRows} movimientos. Importes N/D: {manifest.partitions.reduce((n, p) => n + p.summary.missingValues, 0)}. La suma de importes conocidos no representa un total completo si hay faltantes.</p>
+        {manifest.sourceReview && <p>Decisiones de esta carga: {manifest.sourceReview.reason || "Sin excepciones autorizadas."}</p>}
+        <ul>{manifest.exceptionSummary.map((e) => <li key={`${e.severity}/${e.code}/${e.column}`}>
+          {e.severity === "error" ? "Bloqueante" : "Advertencia"}: {e.column || "Fila"} · {e.count} incidencias · {e.accounts} cuentas por custodio. {e.message} Primeras filas: {e.rows.join(", ")}.
+        </li>)}</ul>
+      </section>}
+      {blocked && <p role="alert">Hay errores bloqueantes. Ningún período se publicará parcialmente. Revisá el resumen y volvé a analizar con decisiones explícitas o con una copia corregida del original.</p>}
       <p role="status">Preparación persistida: {processed} / {totalRows} filas · {detail.children.length} alcances mes/custodio detectados.</p>
       <progress value={processed} max={Math.max(totalRows, 1)} aria-label="Filas preparadas" />
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Períodos y comparación histórica">
         <Table.Root className="data-table"><Table.Header><Table.Row>{["Año / mes", "Custodio", "Cuentas", "Importe USD (archivo)", "Errores", "Duplicados de cuenta", "Progreso", "Estado / versión", "Versión activa / USD", "Comparación / correspondencias"].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header>
           <Table.Body>{detail.children.map((child) => {
             const p = manifest.partitions.find((p) => p.period === child.period && (p.custodianId ?? detail.upload.options.custodianId) === child.custodian_id)!;
-            return <Table.Row key={child.id}><Table.Cell>{child.period.slice(0, 7)}</Table.Cell><Table.Cell>{p.custodianCode ?? detail.upload.options.custodianCode}</Table.Cell><Table.Cell>{p.summary.distinctAccounts}</Table.Cell><Table.Cell>{p.summary.total ?? "N/D"}</Table.Cell><Table.Cell>{p.summary.blockingErrors}</Table.Cell><Table.Cell>{p.summary.duplicateAccounts}</Table.Cell><Table.Cell>{child.processed} / {p.summary.rowCount}</Table.Cell><Table.Cell>{states[child.status]} · v{child.version}</Table.Cell><Table.Cell>{child.comparison.active ? `v${child.comparison.active.version} · ${child.comparison.active.total ?? "N/D"}` : "Sin versión publicada"}{child.comparison.same_file && " · Mismo archivo"}</Table.Cell><Table.Cell><Link href={`/correspondencias?lote=${child.id}`}>Resolver y conciliar</Link>{child.comparison.pending ? <p>Comparación pendiente: revisá las correspondencias y conciliá este alcance. Si cambió la versión activa, volvé a revisarlo.</p> : <p>{child.comparison.row_changes.added} agregadas / {child.comparison.row_changes.removed} retiradas según revisión. Candidata: {child.comparison.candidate.total ?? "N/D"} USD.</p>}</Table.Cell></Table.Row>;
+            return <Table.Row key={child.id}><Table.Cell>{child.period.slice(0, 7)}</Table.Cell><Table.Cell>{p.custodianCode ?? detail.upload.options.custodianCode}</Table.Cell><Table.Cell>{p.summary.distinctAccounts}</Table.Cell><Table.Cell>{p.summary.total ?? "N/D"}{p.summary.missingValues > 0 && <p>Suma conocida · {p.summary.missingValues} importes N/D</p>}</Table.Cell><Table.Cell>{p.summary.blockingErrors}</Table.Cell><Table.Cell>{p.summary.duplicateAccounts}</Table.Cell><Table.Cell>{child.processed} / {p.summary.rowCount}</Table.Cell><Table.Cell>{states[child.status]} · v{child.version}</Table.Cell><Table.Cell>{child.comparison.active ? `v${child.comparison.active.version} · ${child.comparison.active.total ?? "N/D"}` : "Sin versión publicada"}{child.comparison.same_file && " · Mismo archivo"}</Table.Cell><Table.Cell><Link href={`/correspondencias?lote=${child.id}`}>Resolver y conciliar</Link>{child.comparison.pending ? <p>Comparación pendiente: revisá las correspondencias y conciliá este alcance. Si cambió la versión activa, volvé a revisarlo.</p> : <p>{child.comparison.row_changes.added} agregadas / {child.comparison.row_changes.removed} retiradas según revisión. Candidata: {child.comparison.candidate.total ?? "N/D"} USD.</p>}</Table.Cell></Table.Row>;
           })}</Table.Body>
         </Table.Root>
       </div>

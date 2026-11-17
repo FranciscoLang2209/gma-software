@@ -1,4 +1,4 @@
-import { UUID, validateOptions } from "@/lib/imports/contracts";
+import { UUID, validateOptions, validateSourceReview } from "@/lib/imports/contracts";
 import { prepareHistorical, referencePairs, type HistoricalOptions } from "@/lib/imports/historical";
 import { checkFile, HISTORICAL_LIMITS, readBook, sha256 } from "@/lib/imports/read";
 import { boundedBody, importAccess, reply } from "@/lib/imports/server";
@@ -48,6 +48,8 @@ export async function POST(request: Request) {
       if (!Array.isArray(excludedRows) || excludedRows.length > 100 || excludedRows.some((n: unknown) => !Number.isInteger(n)) || typeof (raw.exclusionReason ?? "") !== "string" || (raw.exclusionReason?.length ?? 0) > 2000)
         throw new Error("Revisá filas excluidas y motivo (máximo 100 filas).");
       Object.assign(options, { multiCustodian: true, headerRow: raw.headerRow ?? 0, excludedRows, exclusionReason: raw.exclusionReason ?? "", custodians });
+      const sourceReview = validateSourceReview(raw.sourceReview);
+      if (sourceReview) options.sourceReview = sourceReview;
       if (options.source === "aum") {
         const references = form.get("references");
         if (!(references instanceof File) || !references.size) throw new Error("Adjuntá bd_REF para determinar los custodios de AUM.");

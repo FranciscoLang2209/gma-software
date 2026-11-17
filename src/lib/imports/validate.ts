@@ -6,6 +6,8 @@ import {
   type Options,
   type PreparedRow,
   type Report,
+  type SourceReview,
+  validateSourceReview,
 } from "./contracts.ts";
 import { decimal, sumDecimals } from "./decimal.ts";
 import { sha256 } from "./read.ts";
@@ -17,7 +19,8 @@ const issue = (code: string, message: string, column?: string): Issue => ({
   ...(column ? { column } : {}),
 });
 
-export function prepare(book: Book, o: Options): Report {
+export function prepare(book: Book, o: Options, sourceReview?: SourceReview): Report {
+  const review = validateSourceReview(sourceReview);
   const sheet = book.sheets.find((s) => s.name === o.sheet);
   if (!sheet) throw new Error("Elegí una hoja existente.");
   const errors: Issue[] = [],
@@ -100,6 +103,7 @@ export function prepare(book: Book, o: Options): Report {
         kind: "empty",
       };
     const text = (header: string) => get(header).value;
+    const criticalColumns = o.source === "revenue" ? ["CUSTODIO", "MES", "AÑO", "ACCOUNT", "Payout broker"] : [...HEADERS[o.source]];
     for (let i = 0; i < raw.cells.length; i++) {
       const cell = raw.cells[i],
         col = headers[i]?.canonical ?? headers[i]?.original ?? String(i + 1);
@@ -110,7 +114,7 @@ export function prepare(book: Book, o: Options): Report {
           cell.value === "" ||
           cell.kind === "e"
         )
-          rowErrors.push(
+          (o.source === "revenue" && review?.metadataErrorsAsWarnings && headers[i]?.canonical && !criticalColumns.includes(col) ? rowWarnings : rowErrors).push(
             issue(
               "formula_no_result",
               "Fórmula sin resultado utilizable: recalculá y guardá desde Excel o exportá sus valores. No se usa cero.",
@@ -126,7 +130,7 @@ export function prepare(book: Book, o: Options): Report {
             ),
           );
       } else if (cell.kind === "e")
-        rowErrors.push(
+        (o.source === "revenue" && review?.metadataErrorsAsWarnings && headers[i]?.canonical && !criticalColumns.includes(col) ? rowWarnings : rowErrors).push(
           issue(
             "excel_error",
             "La celda contiene un error de Excel; corregilo y recalculá.",
@@ -151,14 +155,17 @@ export function prepare(book: Book, o: Options): Report {
         !["s", "str", "inlineStr", "text"].includes(cell.kind) ||
         /^[+-]?\d+(?:[.,]\d+)?[eE][+-]?\d+$/.test(cell.value) ||
         cell.formula !== undefined
-      )
-        rowErrors.push(
+      ) {
+        // El dueño acredita el literal; nunca se recuperan ceros ni dígitos perdidos.
+        const accepted = review?.numericIdentifiersAsWritten && cell.kind === "n" && cell.formula === undefined && /^(0|[1-9]\d{0,14})$/.test(cell.value);
+        (accepted ? rowWarnings : rowErrors).push(
           issue(
-            "identifier_loss",
-            "Cuenta numérica, científica o calculada: puede haber perdido ceros o precisión. Recuperá el texto original; no se inventan ceros.",
+            accepted ? "numeric_identifier_reviewed" : "identifier_loss",
+            accepted ? "Número de cuenta aceptado expresamente tal como está escrito, dentro de su custodio. Original conservado; no se agregan ceros." : "Cuenta numérica, científica o calculada: puede haber perdido ceros o precisión. Recuperá el texto original; no se inventan ceros.",
             h,
           ),
         );
+      }
     }
     const account = text(identifiers[0]);
     row.cell_metadata.account = account;
@@ -183,7 +190,7 @@ export function prepare(book: Book, o: Options): Report {
       const cell = get(h);
       if (!cell.value?.trim()) {
         missingValues++;
-        rowErrors.push(
+        (o.source === "revenue" && review?.missingRevenueAsUnknown ? rowWarnings : rowErrors).push(
           issue(
             "missing_amount",
             "Importe ausente; se conserva como faltante.",

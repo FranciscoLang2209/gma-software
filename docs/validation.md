@@ -1,5 +1,37 @@
 # Validación — evidencia local y pendientes
 
+## Excepciones revisadas de carga manual — 2026-11-17
+
+40 pruebas unitarias correctas, typecheck/lint de archivos modificados y build
+Next correctos. Regresiones nuevas conservan original/repetidos/NULL, agrupan
+cuentas por custodio y rechazan decisiones mal tipadas/sin motivo, cuentas de
+16 dígitos/científicas/calculadas, períodos incorrectos y montos con error. AUM
+sin importe continúa bloqueado. Suite SQL completa correcta en clúster temporal,
+incluyendo roles, concurrencia y restauración. El sandbox impidió inicialmente
+memoria compartida de PostgreSQL; ejecución local autorizada fuera del sandbox.
+
+REV real solo en memoria/local, sin subirlo: 17.893 filas/225 alcances conservados,
+597 bloqueos antes y cero después de decisiones autorizadas, 12 montos NULL;
+comparación de originales, fingerprints e importes exactos de todas las filas,
+huella del Excel sin cambios. 584 avisos numéricos corresponden a 21 cuentas;
+error descriptivo y repeticiones siguen conservados. Sin fixtures financieros en Git.
+
+HTTP Next→PostgreSQL sintético completo correcto: nueva prueba registra decisiones,
+rechaza cambiarlas en retry, prepara y publica un XLSX con cuenta numérica literal,
+error descriptivo conservado y 2 movimientos/1 importe conocido; la tabla final
+conserva un NULL y la consulta agrega 0.1, sin transformarlo en cero. Original
+denegado a lector. Auth/Storage del arnés simulados; SQL y servidor Next reales.
+
+## Alta de catálogo en la aplicación real — 2026-11-17
+
+Se completó desde Chrome autenticado el flujo revisar/confirmar de cinco altas
+de custodios solicitadas por el dueño: CS, JPM, PICTET, RJ y UBS. Cada revisión
+indicó cero cuenta-meses afectados; cada guardado mostró confirmación de
+auditoría y el listado terminó en 12 registros, con los cinco nuevos activos.
+GWM existente se conservó; GMW no se creó por confirmación del dueño de que es
+un error de escritura. Sin carga/publicación financiera ni modificación de Excel.
+Verificación operativa de interfaz, sin suite de código por no cambiar runtime.
+
 ## Análisis de fuentes reales, sólo lectura — 2026-11-17
 
 Lectura local de los cuatro libros proporcionados: ZIP/XML sin evaluar fórmulas,
