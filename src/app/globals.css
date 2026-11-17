@@ -1079,3 +1079,23 @@ footer { color: var(--gma-muted); }
   .login-footer { max-width: 440px; font-size: 9px; gap: 12px; flex-wrap: wrap; }
   .login-input input { font-size: 16px; }
 }
+
+.commission-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.commission-metrics .metric-value { overflow-wrap: anywhere; }
+.commission-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.commission-pagination { margin-top: 18px; }
+.commission-review-form { display: grid; gap: 18px; max-width: 850px; }
+.commission-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.commission-review-form label { display: grid; gap: 8px; font-size: 12px; }
+.commission-review-form input:not([type=checkbox]), .commission-review-form select, .commission-review-form textarea { width: 100%; min-width: 0; min-height: 40px; padding: 9px; border: 1px solid var(--gma-border); border-radius: 6px; font: inherit; background: white; }
+.commission-review-form textarea { min-height: 80px; }
+.commission-review-form .commission-check { display: flex; align-items: flex-start; gap: 10px; line-height: 1.7; margin: 12px 0; overflow-wrap: anywhere; }
+.commission-check input { flex-shrink: 0; margin-top: 5px; }
+.commission-review-form fieldset { min-width: 0; border: 1px solid var(--gma-border); border-radius: 6px; }
+.commission-evidence p { overflow-wrap: anywhere; }
+.commission-evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 450px; overflow: auto; font-size: 11px; }
+@media (max-width: 1100px) { .commission-charts { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .commission-metrics, .commission-fields { grid-template-columns: minmax(0, 1fr); } }
+.commission-table table { min-width: 1100px; table-layout: auto; }
+.commission-table th { white-space: nowrap; overflow-wrap: normal; }
+.commission-table td { min-width: 100px; max-width: 340px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }

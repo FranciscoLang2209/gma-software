@@ -93,3 +93,24 @@ SUPERUSER y comprueba propietario/limpieza de permisos, además de sus suites pr
 Para migraciones futuras que modifiquen funciones del ejecutor, usar y retirar
 explícitamente el permiso temporal del operador dentro del alcance revisado;
 no dar LOGIN/BYPASSRLS al ejecutor ni membresía a usuarios de la aplicación.
+
+`20261117133211_historical_aum_uploads.sql`: operación padre AUM, manifiesto,
+asociación inmutable de hijos/versiones con original único, RLS admin, auditoría,
+RPC agrupada y trigger contra publicación individual. Mantiene el publicador y
+las vistas vigentes. Una transacción publica todas las particiones; fallo revierte
+todos los punteros. Grants del ejecutor se fijan antes de transferir propiedad y
+se retira la membresía temporal del operador. No se aplicó a destinos remotos.
+
+`20261117175338_commission_reconciliation.sql`: motor trimestral local sobre
+entradas revisadas. Eventos inmutables con originales/actor/versiones, RLS forzado,
+clasificación de Revenue vigente, reservas exclusivas con lock transaccional y
+consultas comparables con cobertura. RPC de comando y reporte bajo ejecutor acotado,
+permiso temporal del operador retirado. No cambia hechos/publicadores existentes.
+Ver `docs/commissions.md`. Probado sólo en clústeres sintéticos locales, sin aplicar
+remotamente ni acreditar muestras financieras reales.
+
+`20261117181230_commission_dashboard.sql` agrega consulta estable administrativa
+para las cuatro vistas/CSV, agregación numeric por base y evidencia trazable.
+Reutiliza el motor anterior, sin modificar hechos, historial ni publicación.
+Grants/RLS y propietario sin SUPERUSER se verifican en `test:db`. Migración
+exclusivamente local en esta etapa; no aplicada a ningún proyecto remoto.

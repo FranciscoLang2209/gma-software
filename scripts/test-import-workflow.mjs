@@ -2,9 +2,10 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { parse } from "csv-parse/sync";
+import { historicalRows } from "../tests/fixtures/imports/historical.ts";
 import { HEADERS } from "../src/lib/imports/contracts.ts";
 
-export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub }) {
+export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage }) {
   const json = async (response, status = 200) => {
     const data = await response.json(); assert.equal(response.status, status, JSON.stringify(data)); return data;
   };
@@ -145,5 +146,59 @@ export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, ad
   assert.equal(rows.filter((r) => r[4] === "0").length, 1);
   assert.ok(rows.some((r) => r[4] === "-0.05"));
   assert.equal(sql(asRole(adminSub, `select count(*) from public.admin_revenue_entries where batch_id='${repeated}'`)).trim(), "3", "versión anterior conserva todas sus filas");
+  // Historia real por Next → SQL; Auth y bytes Storage continúan siendo sintéticos.
+  const history = async (custodian) => {
+    const options = { source: "aum", custodianId: custodian.id, custodianCode: custodian.code, sheet: "CSV", numericFormat: "dot", delimiter: "," };
+    const raw = Buffer.from([HEADERS.aum, ...historicalRows()].map((row) => row.map((v) => `"${v.replaceAll('"', '""')}"`).join(",")).join("\r\n"));
+    const requestId = randomUUID();
+    const form = () => { const f = new FormData(); f.set("file", new File([raw], "SINTETICO-36-meses.csv")); f.set("options", JSON.stringify(options)); f.set("requestId", requestId); return f; };
+    const endpoint = "/api/importaciones/historicas";
+    assert.equal((await request(endpoint, false, { method: "POST", headers: { Origin: appOrigin }, body: form() })).status, 403);
+    interruptStorage();
+    const interrupted = await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() }), 502);
+    assert.equal(interrupted.id, requestId, "interrupción Storage conserva operación registrada");
+    const pending = await json(await request(`${endpoint}/${requestId}`, true));
+    const pendingChild = pending.children[0];
+    assert.equal((await post(`/api/importaciones/${pendingChild.id}`, { options: { ...options, period: pendingChild.period } })).status, 502, "original ausente deja bloque reintentable");
+    assert.equal((await post(`/api/importaciones/${pendingChild.id}`, { options: { ...options, period: pendingChild.period, sheet: "OTRA" } })).status, 409, "configuración histórica no se modifica desde hijo");
+    assert.ok((await json(await request(`${endpoint}/${requestId}`, true))).children.every((c) => c.status === "uploaded"));
+    const { id } = await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() }));
+    const retry = await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() })); assert.equal(retry.id, id);
+    const requestHistory = () => request(`${endpoint}/${id}`, true);
+    const historical = async (operation, input) => json(await post(`${endpoint}/${id}`, { operation, input }));
+    let state = await json(await requestHistory());
+    assert.equal(state.children.length, 36);
+    for (const child of state.children) {
+      const result = await json(await post(`/api/importaciones/${child.id}`, { options: { ...options, period: child.period } }));
+      assert.ok(result.done);
+    }
+    state = await json(await requestHistory());
+    assert.ok(state.children.every((c) => c.status === "needs_resolution"));
+    assert.equal((await post(`${endpoint}/${id}`, { operation: "review", input: { confirm_all: true } })).status, 409);
+    const historyAccounts = {};
+    for (const child of state.children) { await resolve(child.id, historyAccounts); await review(child.id); }
+    const child = await inspect(state.children[0].id);
+    assert.equal(child.batch.upload_id, id);
+    assert.equal((await manage(child.batch.id, "publish", { token: child.batch.review.token })).status, 409);
+    state = await historical("review", { confirm_all: true });
+    const reviewedToken = state.upload.review.token;
+    state = await historical("publish", { token: reviewedToken });
+    assert.equal(state.upload.status, "published");
+    await historical("publish", { token: reviewedToken });
+    const result = await json(await request(`/api/consultas?desde=2023-01&hasta=2025-12&custodio=${custodian.id}`));
+    assert.equal(result.total.aum_usd, "0.25"); assert.equal(result.total.revenue_usd, null);
+    assert.equal(result.months.length, 36);
+    assert.ok(result.months.every((m) => m.aum_usd === "0.25"));
+    assert.equal((await request(`${endpoint}/${id}`, false)).status, 403);
+    const parentOriginal = await request(`${endpoint}/${id}?original=1`, true); assert.equal(parentOriginal.status, 200); assert.deepEqual(Buffer.from(await parentOriginal.arrayBuffer()), raw);
+    assert.equal((await request(`${endpoint}/${id}?original=1`, false)).status, 403);
+    const original = await request(`/api/fuentes/${child.batch.id}`, true); assert.equal(original.status, 200); assert.deepEqual(Buffer.from(await original.arrayBuffer()), raw);
+    assert.equal((await request(`/api/fuentes/${child.batch.id}`, false)).status, 403);
+    return historyAccounts;
+  };
+  const historicalA = await history(custodians[0]);
+  const historicalB = await history(custodians[1]);
+  assert.notEqual(historicalA["00001"], historicalB["00001"], "custodios mantienen identidades diferentes");
+  console.log("OK histórico SINTÉTICO HTTP/SQL: 36 meses × 3 cuentas × 2 custodios, original privado, retry, resolución, bypass, publicación atómica y dashboard cierre 0.25 sin sumar meses.");
   console.log("OK integral SINTÉTICO: FA con vigencias, cargas CSV por Next, conciliación/publicación de dos meses, 120/22 en resumen/ranking/cuenta/exportación, retry/reimportación, corrección aislada/historia, archivo inválido, roles/RLS y CSV completo de 253 cuentas con faltantes/negativos.");
 }

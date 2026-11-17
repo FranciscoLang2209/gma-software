@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { DatePicker } from "./ui/date-picker";
 import { Select } from "./ui/select";
 import { useRef, useState, type FormEvent } from "react";
@@ -18,7 +19,7 @@ type Comparison = {
   row_changes: { added: number; removed: number };
 };
 type Inspection = {
-  batch: { id: string; source: string; period: string; custodian_id: string; status: string; rows: number; blocking_errors: number; errors: { message?: string }[]; filename: string; review: { token: string; commercial_column: string | null; valid_from: string | null; valid_to: string | null } | null };
+  batch: { upload_id?: string | null; id: string; source: string; period: string; custodian_id: string; status: string; rows: number; blocking_errors: number; errors: { message?: string }[]; filename: string; review: { token: string; commercial_column: string | null; valid_from: string | null; valid_to: string | null } | null };
   rows: { id: string; sheet: string; row: number; status: string; errors: { message?: string }[]; cells: Record<string, string | null>; originals: Record<string, string | null>; resolution: { account_id: string; custodian_id: string; advisor_id: string | null; evidence: string } | null; matches: { namespace: string; original: string; account_id: string; custodian_id: string; evidence: string }[] }[];
   comparison: Comparison;
   page: number;
@@ -146,7 +147,8 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
       <p>Comparación de filas por contenido conservando multiplicidad: {detail.comparison.row_changes.added} nuevas, {detail.comparison.row_changes.removed} retiradas del alcance activo. La versión anterior se conserva.</p>
       <p>Sin asignación comercial al cierre: {detail.comparison.candidate.unassigned_accounts} cuentas / {detail.comparison.candidate.unassigned_rows} filas · USD {detail.comparison.candidate.unassigned_total ?? "N/D"}. Permanecen en el total global. Antes de conciliar, la candidata todavía no tiene hechos.</p>
       {detail.comparison.same_file && <p role="status">Mismo archivo que la versión activa. Publicarlo como otra versión reemplaza el alcance; no agrega sus filas a la versión anterior.</p>}
-      {detail.batch.status === "ready" && <form className="import-form publish-confirmation" onSubmit={(e) => { e.preventDefault(); void run(async () => { await api(detail.batch.id, "publish", { token: detail.batch.review?.token }); await reload(); setNotice("Publicación confirmada. La versión anterior y su auditoría se conservan."); }); }}>
+      {detail.batch.upload_id && <p>Este período pertenece a una carga histórica. <Link href={`/importaciones?carga=${detail.batch.upload_id}`}>Volver a la carga histórica</Link> para revisar y publicar todos sus períodos juntos.</p>}
+      {detail.batch.status === "ready" && !detail.batch.upload_id && <form className="import-form publish-confirmation" onSubmit={(e) => { e.preventDefault(); void run(async () => { await api(detail.batch.id, "publish", { token: detail.batch.review?.token }); await reload(); setNotice("Publicación confirmada. La versión anterior y su auditoría se conservan."); }); }}>
         <label><input type="checkbox" required disabled={busy} /> Revisé esta comparación y autorizo publicar{detail.comparison.active ? " y reemplazar exclusivamente la versión activa de este alcance" : " este alcance"}.</label>
         <Button disabled={busy}>Publicar versión revisada</Button>
       </form>}

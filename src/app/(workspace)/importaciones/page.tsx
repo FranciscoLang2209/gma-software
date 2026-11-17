@@ -1,9 +1,9 @@
 import { requireAccess } from "@/lib/auth/access";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
-import { ImportPreparation } from "@/components/import-preparation";
+import { ImportModes } from "@/components/import-modes";
 export const metadata: Metadata = { title: "Importaciones" };
-export default async function ImportsPage() {
+export default async function ImportsPage({ searchParams }: { searchParams: Promise<{ carga?: string }> }) {
   const { supabase } = await requireAccess(true);
   const [custodians, batches] = await Promise.all([
     supabase
@@ -26,7 +26,8 @@ export default async function ImportsPage() {
         title="Importaciones"
         description="Preparación privada de AUM, Revenue y FA. Los archivos y sus filas no aparecen en el dashboard."
       />
-      <ImportPreparation
+      <ImportModes
+        initialHistoricalId={(await searchParams).carga}
         custodians={custodians.data ?? []}
         batches={batches.data ?? []}
       />

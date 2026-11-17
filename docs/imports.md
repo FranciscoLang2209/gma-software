@@ -88,3 +88,91 @@ No se cambiaron recursos Supabase/Vercel remotos. La seguridad de los servicios 
 Referencias verificadas para esta etapa: [changelog Supabase](https://supabase.com/changelog.md), [funciones y privilegios](https://supabase.com/docs/guides/database/functions) y [locks PostgreSQL](https://www.postgresql.org/docs/current/explicit-locking.html). Los checks ejecutados y los servicios reales pendientes están en [validation.md](validation.md).
 
 Etapa 9: reintentar la misma carga conserva su lote también después de preparar/publicar. La octava migración excluye de la comparación la configuración añadida por el parser, sin modificarla; cambios de hash/nombre/tamaño/opciones originales siguen rechazados. Nueva clave de solicitud crea otra versión para el alcance, nunca añade su importe al activo anterior. Verificado en PostgreSQL y por multipart HTTP con CSV sintéticos.
+
+## AUM histórico multiperíodo — 2026-11-17
+
+En `/importaciones`, elegir **Importación histórica**. Conserva el contrato largo de
+seis columnas de AUM: `mes` y `año` determinan cada período (1900–2200); el usuario
+declara **un custodio por archivo**. AUM no incluye una columna de custodio: no se
+infiere desde identificadores o nombres. Para varios custodios se cargan archivos
+separados. Una hoja elegida explícitamente por libro; si el libro tiene varias,
+se exige su nombre y se registran las hojas excluidas. CSV utiliza la hoja `CSV`.
+
+Flujo: guardar/analizar original → períodos detectados → validar bloques → abrir
+correspondencias de cada período → resolver UUID con evidencia y conciliar foto
+mensual completa → regresar a la carga → revisar todos los períodos/comparaciones
+→ confirmar publicación conjunta → resultado. Las referencias acreditadas se
+consultan en el circuito existente; no hay fusiones por nombre ni aprobación
+silenciosa de sugerencias. La conciliación de cada hijo no publica datos.
+
+La vista muestra año/mes, custodio, cuentas, total USD exacto de control, errores,
+filas con identificadores AUM duplicados, progreso persistido, versión candidata,
+versión activa/total y cambios de filas. El total de control puede incluir filas
+inválidas: no es AUM publicable mientras haya errores. Se descargan errores como
+JSON privado (incluidas coordenadas y originales), sin convertir texto en fórmulas.
+El original se descarga desde el padre (también sin períodos válidos), verificando
+tamaño/hash, o por la ruta privada existente de cualquiera de sus hijos.
+
+### Límites y segmentación
+
+Se mantienen 2 MiB de original, 12 MiB expandidos, 5.000 filas/hoja, 64 columnas,
+10 hojas y defensas ZIP/XML/macros existentes. Una carga histórica acepta hasta
+120 particiones mensuales y 5.000 filas de datos en total. No se amplía capacidad
+sin muestras/medición. Para más volumen, segmentar **por meses completos y custodio**:
+cada archivo es una unidad de publicación independiente. No dividir una misma
+foto mensual en archivos parciales destinados a reemplazarse entre sí. Si un mes
+completo supera el límite, requiere una futura ampliación del procesamiento;
+esta implementación lo rechaza y no promete importar toda la historia real.
+
+Preparación secuencial en bloques de hasta 250 filas/~1 MiB serializado mediante
+`prepare_import_chunk`. Relee el original acotado por petición, igual que el flujo
+mensual. El navegador muestra filas confirmadas por SQL, permite pausar después
+del bloque y retomar; cambiar de pestaña/desmontar el componente pausa el bucle.
+No hay worker en segundo plano. Conservar UUID o consultar cargas recientes
+(últimas 50); se puede abrir por UUID una carga anterior. Tras interrupción de red,
+recargar estado: cursores y tokens persistidos permiten retomar sin duplicación.
+Si falla Storage al subir, reintentar el mismo formulario sin cambiar archivo ni
+configuración conserva la clave de solicitud y verifica los bytes existentes.
+Tras recargar/abrir por UUID, «Recuperar una carga cuyo original no llegó a
+Storage» permite reponer exactamente los mismos bytes con la configuración fijada.
+
+### Manifiesto y publicación
+
+Nueva migración `20261117133211_historical_aum_uploads.sql`, **solo local, no aplicada
+remotamente**. `import_uploads` conserva solicitud/UUID, original único (nombre,
+hash, tamaño y path privado), opciones, actor, manifiesto inmutable y revisión.
+`import_batches.upload_id` enlaza hijos normales con sus versiones/scopes y el
+mismo objeto Storage. Los lotes mensuales previos conservan `upload_id = null`.
+
+El manifiesto fija períodos, coordenadas/huellas, conteos/totales decimales,
+headers, validaciones, filas vacías, hojas excluidas y filas sin período válido
+con sus celdas originales. Las filas no enrutables no reciben un mes ficticio y
+bloquean el conjunto. No se puede retirar una partición con errores. SQL valida
+unicidad de particiones/coordenadas, pertenencia de filas y archivo, igualdad
+exacta del conjunto preparado, resumen y suma decimal antes de publicar.
+
+`manage_historical(begin/inspect/review/publish)` usa el ejecutor existente,
+`NOLOGIN/NOBYPASSRLS`, RLS forzada, sesión/perfil administrador y auditoría. API
+Next usa SSR/JWT del usuario, límites de solicitud, verificación del custodio,
+hash de bytes y `no-store`; sin claves privilegiadas ni datos financieros en logs.
+Lectores no ven operación, manifiesto, preparación ni Storage original.
+
+La revisión padre exige hijos conciliados, todos los punteros esperados actuales
+y confirmación explícita de fotos mensuales completas/reemplazos. Congela los
+tokens de todos los hijos. La publicación toma el lock común `71482026` y cambia
+**todos** los punteros en **una transacción SQL**, invocando el publicador existente.
+Un error revierte estados, punteros y auditoría; queda la revisión recuperable.
+El estado transitorio `publishing` solo existe dentro de esa transacción. Un
+trigger impide publicar individualmente cualquier hijo por todas las entradas,
+incluidas `manage_import`, `public.publish_import` y el publicador interno.
+No usa flags de cliente ni GUC para autorizar una publicación agrupada.
+
+Reintentar una publicación terminada no duplica ni reactiva una versión histórica
+reemplazada. Otro archivo con los mismos bytes genera versiones nuevas únicamente
+tras revisión, conservando una sola versión vigente. Correcciones de un mes
+pueden usar también el flujo mensual existente; otros meses/custodios y versiones
+anteriores se conservan. Una revisión obsoleta se rechaza íntegramente y exige
+volver a conciliar los períodos afectados y revisar el padre. Ausencia de una
+cuenta no es saldo cero: el operador debe completar un archivo parcial antes de
+confirmar que sustituye una foto mensual completa. La aplicación muestra retiros
+y exige confirmación; no puede acreditar por sí sola la completitud del Excel.

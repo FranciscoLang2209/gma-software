@@ -1,5 +1,10 @@
 # Validación — evidencia local y pendientes
 
+> Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
+> El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
+> local revisada. Supera para este motor las restricciones de sólo planificación
+> y la fórmula ACT/365 anteriores; el helper aislado previo se conserva sin integrar.
+
 **Estado vigente, 2026-11-15 (Buenos Aires): etapa 10 con Supabase real y Preview READY parcialmente verificados; puesta en uso pendiente.** Hay pruebas reales anon/lector, Storage privado, consulta/exportación vacía y revocación; no publicación remota ni conciliación real. SMTP/invitación diferidos por el dueño. La evidencia nueva está al final; los apartados anteriores son registros históricos.
 
 ## Registro inicial — etapas 2 y 3
@@ -817,3 +822,250 @@ lector de pantalla ni todos los estados con axe. Sin push ni despliegue.
   Identidad personal y payload de auditoría no incorporados al repositorio.
 - No se probó ingreso real de esa cuenta ni despliegue de estos estilos.
   Sin nuevas pruebas financieras, importaciones ni conciliación de Excel.
+
+## AUM histórico multiperíodo — 2026-11-17 (local sintético)
+
+Solicitud de implementación posterior al plan documental. Se conservan las ocho
+migraciones anteriores y el flujo mensual. Nueva migración de padre/manifiesto,
+RLS y publicación transaccional; sin cambios de dependencias/lockfile ni destinos
+remotos. Documentación oficial consultada: [RLS de Supabase](https://supabase.com/docs/guides/database/postgres/row-level-security),
+[changelog](https://supabase.com/changelog.md) y [locks de PostgreSQL 17](https://www.postgresql.org/docs/17/explicit-locking.html).
+No se actualizó CLI ni se usó ninguna operación de base remota. CLI 3.1.0:
+`migration new --help` y `migration new historical_aum_uploads`, exclusivamente local.
+
+Entorno: Node 24.22.3 del runtime. PostgreSQL cliente/servidor 17.12 compilado
+desde fuente oficial en `/tmp/gma-pg17` (incluido `btree_gist`), porque el runtime
+solo tenía un servidor 18.6 sin psql/createdb. Clústeres propios efímeros, socket
+privado sin TCP. El sandbox requirió ejecución ampliada para memoria compartida y
+servidores HTTP en localhost; no se utilizó ningún secreto/URL de producción.
+
+Checks realizados con binarios equivalentes a los scripts de `package.json`:
+
+- Lint, `next typegen` + `tsc --noEmit`: correctos.
+- `test`: 27 pruebas, todas aprobadas. CSV y XLSX de 36 meses desordenados,
+  tres cuentas/mes, decimales `0.1 + 0.2 − 0.05 = 0.25`, coordenadas originales,
+  repetición entre meses permitida, duplicados de cuenta/mes bloqueantes,
+  mes inválido en manifiesto padre, cero explícito, archivo vacío y exceso.
+- Capacidad sintética CSV: 4.968 filas / 36 meses / 138 cuentas, 235.849 bytes,
+  lectura/partición/validación ~41 ms en una ejecución local. Totales 13.8 por mes,
+  sin redondeo; 5.002 filas rechazadas. No acredita duración/memoria de un Excel
+  financiero real ni publicación máxima de 120 períodos.
+- `test:db`: migraciones desde cero y con operador CREATEROLE/BYPASSRLS sin
+  SUPERUSER; membresía temporal retirada, propietario/grants del nuevo ejecutor,
+  RLS forzada y ausencia de escritura API directa. Suites anteriores completas.
+- SQL histórico: original compartido y clave idempotente; mismos identificadores
+  en custodios separados; bloqueos por correspondencias pendientes, coordenadas
+  repetidas/fuera de manifiesto y fila no enrutable; denegación por lector/anónimo;
+  bypass individual mediante ambas RPC de publicación rechazado. Fallo inyectado
+  después del segundo puntero: ningún mes ni auditoría se publica, padre conserva
+  `ready`. Retry recupera toda la carga; nueva importación conserva historia;
+  una revisión obsoleta se rechaza; retry de padre reemplazado no lo reactiva.
+- Concurrencia histórica real con dos sesiones SQL: una carga gana y la otra
+  se rechaza íntegramente; los tres punteros pertenecen al mismo padre. Dos
+  reintentos concurrentes de la ganadora tienen éxito sin duplicar auditoría.
+- Restauración de esquema desde dump sintético correcta. No constituye ensayo de
+  recuperación integral de datos + roles/ACL + bytes Storage de producción.
+- Prebuild y `build`: correctos.
+- `test:auth:http`: correcto con proveedor HTTP sintético; SSR, contraseña,
+  invitación heredada, roles, CSRF/origen, fuentes, preparación mensual 251 filas,
+  configuración fija, páginas, cursores y gestión/revisión/publicación.
+- `test:dashboard`/`test-import-workflow.mjs`: Next real → RPC → PostgreSQL local.
+  Regresión completa de dashboards/cuentas/CSV: AUM 120/Revenue 22; cobertura,
+  ajustes, faltantes, FA fechado, versiones y permisos anteriores. Circuito nuevo:
+  36 meses × 3 cuentas × 2 custodios, retry, resolución/revisión de todos los hijos,
+  bloqueo de publicación individual y publicación padre. Cada cierre 0.25 y AUM
+  del rango 0.25; Revenue ausente, sin sumar fotos mensuales. Originales privados
+  descargados byte a byte por administrador, lector rechazado. Auth y transporte
+  Storage simulados; SQL y aplicación reales locales.
+
+Fuera de esta evidencia: muestras privadas/conciliación real, servicios efectivos
+Supabase Auth/Storage, despliegue, migración remota, histórico con varios custodios
+en un único archivo, archivo/mes completo mayor al límite y comisiones. Los
+meses excluidos/ausentes no se certifican como cero. La confirmación explícita del
+operador acredita el alcance completo; el software no puede saber si el Excel
+contiene toda la foto real.
+
+Cierre de comprobaciones finales de esta etapa:
+
+- La suite integral se repitió con interrupción inyectada del POST Storage:
+  conserva padre/hijos registrados; intentar preparar sin original devuelve 502
+  y deja hijos `uploaded`, sin consumir cursor. Cambiar la hoja histórica desde
+  el hijo devuelve 409 sin invalidarlo. Reponer los mismos bytes con idéntica
+  solicitud recupera la operación y permite completar/publicar los 36 meses.
+- Chrome headless local con Playwright: pestaña histórica y apertura por UUID,
+  36 períodos y progreso 108/108, estado publicado sin botón de republicación,
+  vistas a 1440 y 390 px sin desborde horizontal del documento. Archivo sin
+  período válido: alerta bloqueante, cero hijos, errores JSON descargados con
+  fila/celdas/ceros conservados y original descargado byte a byte desde el padre.
+  Sin excepciones JavaScript del cliente. Capturas sintéticas inspeccionadas en
+  `/tmp/gma-historical-ui`; no se incluyeron en Git ni se revisaron datos reales.
+- Build, lint/typecheck y 27 unitarias correctos tras el ajuste final de recuperación.
+  `git diff --check` correcto. No se aplicaron migraciones ni despliegues remotos.
+
+
+## Advisory ACT/365 — validación local sintética, 2026-11-17
+
+Alcance nuevo: helper puro `src/lib/commissions/advisory.ts`, cuatro tests en
+`tests/advisory.test.ts` y actualización de diseño/continuidad. Se preservan los
+cambios locales preexistentes de AUM histórico. Sin migraciones de comisiones,
+cambios de dependencias, lockfile, integración, base remota ni datos reales.
+
+Ejecutado con Node 24.22.3 del runtime y npm local disponible en `/tmp/gma-npm`:
+
+- `npm test`: **31/31** correctas (27 anteriores + 4 nuevas). Vectores brutos de
+  90/91/92 días, Q1 bisiesto con días explícitos y divisor fijo 365, tasa cero,
+  faltantes simultáneos, negativos, importe >2^53 con centavos, presentación
+  ±1.005 y rechazo de convenciones/entradas inválidas. Repetición/corrección pura
+  no muta un resultado anterior; esto NO valida versionado persistido.
+- `npm run lint`, `npm run typecheck` y `npm run build`: correctos.
+- Revisión de fórmulas/modelo/migraciones propuestas/matriz y `git diff --check`.
+  El plan era archivo nuevo sin seguimiento al iniciar; se revisa su contenido
+  completo además de los diffs de documentación bajo seguimiento.
+
+El helper usa fracciones de enteros BigInt para conservar divisiones periódicas;
+solo redondea presentación bajo escala/modo explícitos, siempre `finalFee: null`.
+No valida fechas ni deriva días de calendario; recibe días acreditados por el
+llamador. No confirma equivalencia del balance de origen con Assets Billed On,
+ni la unidad de tasa recibida: exige valores canónicos semánticamente confirmados.
+No tiene consumidores en UI/importación ni escribe importes financieros.
+
+Preparados en el plan, **no ejecutados**: prorrateos, redondeo de final por cuenta,
+completitud integral, auditoría de correcciones de comisiones, doble flujo,
+reimportación SQL/HTTP y concurrencia. Requieren política financiera y M2/M2b.
+No se reejecutaron `test:db`, suites HTTP o navegador: no hay cambios en sus
+rutas/esquema/UI por esta actualización. No se acreditan Addepar ni cobros reales.
+
+## Motor trimestral y conciliación — 2026-11-17
+
+Implementación y pruebas sintéticas locales. Se preserva el trabajo preexistente
+de historia AUM/advisory; no se modifica base/despliegue remoto ni dependencias.
+
+- PostgreSQL 17.12 temporal, socket privado sin TCP: `test:db` completa correcta.
+  Cadena de migraciones con operador CREATEROLE/BYPASSRLS sin SUPERUSER, permisos
+  temporales retirados, RLS/admin-sesión y restauración de esquema desde cero.
+- `tests/database/commissions.test.sql`: 0.25%, 0.5%, 1%; variación de tasa entre
+  trimestres; cero/negativos/ausentes; decimales extensos >2^53; JSON Number/NaN
+  rechazados; corte obligatorio; varias filas Revenue, reales sin esperado,
+  esperado sin reales, base no histórica/fee desconocido, cinco estados, filtros
+  USD/porcentaje y totales comparables; base cero deja porcentaje null.
+- Originales y control anual Excel, rechazo de comparar neto contra bruto,
+  reimportación idempotente, cambio de payload con misma clave rechazado,
+  duplicado económico rechazado, corrección conserva historia e invalida cálculo;
+  clasificación corregida y reemplazo publicado de Revenue exigen revisar.
+- Doble entrada del mismo movimiento, reserva entre obligaciones y beneficiarios
+  incompatibles rechazados; lector con user_metadata admin y anónimo rechazados.
+- `scripts/test-commission-concurrency.sh`: dos sesiones PostgreSQL disputan el
+  mismo movimiento para obligaciones distintas; exactamente una confirma.
+  Dos retries simultáneos del ganador dejan un único evento. Regresiones previas
+  de concurrencia de publicaciones mensuales/históricas también correctas.
+- `npm test`: 31/31 anteriores correctas. Lint, TypeScript y build correctos;
+  sin cambios de dependencias/lockfile. Revisión React: consulta en servidor,
+  permisos antes de consultar, formulario con labels, tabla semántica, vacío/error
+  explícitos, datos financieros conservados como strings sin cálculo en JS.
+
+El sandbox no permite shmget para initdb: la suite SQL se ejecutó con permiso
+ampliado únicamente sobre clústeres locales efímeros. No se usó URL remota.
+Las primeras iteraciones fallaron por sintaxis/propiedad/nombres SQL y fixtures;
+se corrigieron y se repitió la suite completa antes de registrar éxito.
+
+Límites: no muestras privadas/conciliación de negocio, upload/parser XLSX de
+comisiones, bytes de origen reales, servicios efectivos Supabase Auth/Storage,
+publicación de comisiones para lectores ni liquidaciones. Ver supuestos abiertos
+en `commissions.md`. Fecha de corte es input acreditado, no una política de
+negocio inferida por el motor. Sin QA visual en navegador de la nueva bandeja.
+
+Integración completada: `scripts/test-dashboard.mjs` + `test-commissions-http.mjs`,
+Next compilado real → RPC → PostgreSQL local. Auth/PostgREST y Storage son transporte
+sintético explícito del arnés; la aplicación y las funciones SQL son reales.
+Verifica origen POST, lector sin consulta ni contenido SSR, tasa 0.25%, corte
+2025-12-31 para Q1 2026, control bruto anual Excel, reintento, clasificación de
+Payout broker, Matched, filtros inválidos y HTML con beneficiario/estado/corte.
+La suite integral también pasó con los escenarios previos de dashboard, cuentas,
+CSV, FA fechado, importación mensual e historia de 36 meses; clúster/servidores
+cerrados y eliminados al terminar. No es un test de servicios Supabase remotos.
+
+Cierre final SQL repetido: dos movimientos físicamente distintos con mismo importe
+0.1 conservan multiplicidad y suman 0.2; escrituras directas insert/update/delete
+del administrador API denegadas. Fechas de corte ambiguas como 01/02/2026
+rechazadas; sólo ISO con año. Una base/tasa normalizada no queda verificada si
+su celda original está vacía. Cadena, carreras y restauración completas correctas
+tras estas restricciones finales. `git diff --check` correcto.
+
+## Comisiones visuales y QA integral — 2026-11-17
+
+Historia verificada: navegación Comisiones → vistas/filtros → RPC administrativa
+→ PostgreSQL → KPIs/tablas/gráficos → API CSV; detalle → clasificación/revisión
+→ comando versionado → auditoría → consulta actualizada.
+
+Entorno: Node 24.22.3 y dependencias del lockfile existente; PostgreSQL 17 temporal
+con socket privado, sin conexiones remotas. Next real. En la suite HTTP, Auth,
+PostgREST y Storage usan transporte sintético hacia SQL real; no constituye prueba
+de los servicios efectivos de Supabase. Se consultó documentación oficial de
+[RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) y
+[changelog CLI v3](https://supabase.com/changelog/supabase-cli-v3). CLI 3.1.0 sólo
+creó el archivo de migración local con telemetry desactivada; sin push remoto.
+
+Checks ejecutados: lint, typecheck, 34 unitarias (3 nuevas de orden decimal,
+filtros y CSV injection), test:db, build y test:dashboard. PostgreSQL verifica
+migraciones desde cero con operador sin SUPERUSER, grants/owner, RLS forzada,
+lector con user_metadata adulterado, anónimo y rechazo de escrituras directas;
+comisiones nuevas heredan sesión/rol administrativo del motor. Suites anteriores
+de publicación/concurrencia/historia y restauración de esquema también ejecutadas.
+La primera ejecución SQL detectó una ambigüedad de nombre variable/columna en el
+nuevo agregador; se corrigió y la suite completa final pasó.
+
+Nueva evidencia SQL/HTTP: KPI esperado/comparable separados, importes exactos,
+UUID distintos de cuentas, multiplicidad Revenue, Balance N/D entre snapshots o
+componentes repetidos, originales/ceros iniciales, evidencia de ambos cobros,
+cuatro vistas SSR, filtros inválidos, CSV privado por vista y todas las páginas,
+27 beneficiarios/25 por página, 54 esperado vs 2 comparable/2 real, 26 pendientes,
+exportación obsoleta rechazada 409 y corrección que conserva el evento anterior e
+invalida el resultado hasta nueva revisión. El caso de paginación se corrigió en
+la prueba para aplicar el mismo filtro de base que su población esperada; sin
+él hay además movimientos de Revenue sin clasificar, correctamente conservados.
+
+| Paso solicitado | Evidencia local/sintética y límite |
+| --- | --- |
+| 1. Cargar histórico AUM | Parser XLSX en unitarias y carga CSV multiperíodo vía HTTP; original privado sintético. |
+| 2. Detectar períodos | 36 meses × 3 cuentas × 2 custodios; inválidos/omisiones bloqueantes sin fabricar meses. |
+| 3. Resolver cuentas | Alias/custodio explícitos; ceros originales; sin coincidencia por nombre. |
+| 4. Revisar/publicar | Revisión padre, transacción conjunta, rollback, concurrencia y retry. |
+| 5. Dashboards AUM | Cierre 0.25 en rango histórico, sin sumar fotos; regresión 120 AUM / 22 Revenue. |
+| 6. Importar comisiones | **No completo:** eventos de entrada revisada vía API; falta upload/parser/Storage de Excel. |
+| 7. Resolver beneficiarios | Referencia literal con evidencia y clasificación revisada; sin resolver homónimos por nombre ni catálogo de identidades nuevo. |
+| 8. Publicar snapshot | **No completo como importación:** evento expected auditado; falta preparación y publicación atómica de archivo completo. |
+| 9. Esperado | Balance × tasa anual / 4, evidencia por trimestre; falta conserva null. |
+| 10. Relacionar Revenue | Clasificación y vínculo explícitos por cuenta/custodio/trimestre/beneficiario/tipo/base; sin doble asignación. |
+| 11. Diferencias | Nominal/porcentual sólo comparables; expected cero → porcentaje N/D; cambios invalidan revisión. |
+| 12. Exportar | Cuatro variantes completas, precisión, faltantes, estados, revisión y procedencia; protección CSV injection. |
+| 13. Corregir | Histórico/mensual versionados; corrección de expected/classificación por comando. No hay corrección de archivo de comisiones todavía. |
+| 14. Conservar historia | Tests SQL/HTTP de versiones previas, aislamiento de alcance/custodio, rollback e inmutabilidad; no restaura backup financiero productivo. |
+
+No se declara importación financiera real validada. Pendientes: archivo privado y
+conciliación de negocio, volumen representativo, adaptador de comisiones,
+resolución de identidades ambiguas con evidencia, proyección publicada para
+lectores, Auth/Storage efectivos y habilitación remota separada. Sin despliegue,
+planes pagos ni importaciones reales. El test de esquema recuperado no equivale
+a recuperar un backup completo de datos/Storage productivo.
+
+Revisión de navegador adicional: Chrome headless local, cuatro vistas × anchos
+1440/768/390/320 sin desborde del documento ni excepciones cliente; navegación de
+beneficiario, orden/paginación, CSV descargado, formulario que guarda revisión con
+motivo/actor y estado posterior confirmado, vacío/error y lector sin acceso. Dos
+trimestres con expected/receipt/reconcile sintéticos vigentes renderizaron barras
+y evolución en 1440/390. Capturas inspeccionadas visualmente; tablas móviles se
+ajustaron a ancho mínimo y scroll local, sin comprimir palabras. Los primeros
+scripts de navegador requirieron esperar navegación/refresh asíncronos de Next,
+y esperar contenido en lugar de networkidle por las precargas; las verificaciones
+de estado final y guardado fueron satisfactorias. No se confunden esos timeouts
+del arnés con fallos confirmados de aplicación. Todos los servidores/clústeres
+creados por esta etapa se cierran al terminar.
+
+Cierre final: `test:db` también cruza dos páginas RPC con 501 movimientos sin
+clasificar: conserva las 501 filas/pendientes y no inventa cobro comparable.
+El build final se revisó en Chrome a 1440/390/320 con las cuatro vistas: tabla
+mínima de 1100 px, scroll propio y documento sin overflow; enlace trimestral
+conserva año/trimestre/base. Capturas sintéticas finales en
+[qa-comisiones-2026-11-17](</Users/franciscolang/Documents/ChatGPT/App Papa/qa-comisiones-2026-11-17>).
+Repetición final satisfactoria de lint/typecheck/test/build/test:db/test:dashboard;
+`git diff --check` sin errores. Servidores y clústeres de esta etapa cerrados.

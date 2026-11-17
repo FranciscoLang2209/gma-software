@@ -9,6 +9,7 @@ const sections = [
   ["/analisis-comercial", "Análisis comercial", ChartNoAxesCombined],
   ["/cuentas", "Cuentas", Wallet],
   ["/importaciones", "Importaciones", Upload],
+  ["/comisiones", "Comisiones", GitCompareArrows],
   ["/correspondencias", "Correspondencias", GitCompareArrows],
   ["/configuracion", "Configuración", Settings2],
 ] as const;
@@ -27,7 +28,7 @@ export function Navigation({ role }: { role: "admin" | "reader" }) {
         .filter(
           ([href]) =>
             role === "admin" ||
-            !["/importaciones", "/correspondencias"].includes(href),
+            !["/importaciones", "/correspondencias", "/comisiones"].includes(href),
         )
         .map(([href, label, Icon]) => (
           <Link

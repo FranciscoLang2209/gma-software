@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { once } from "node:events";
 import { createServerClient } from "@supabase/ssr";
+import { verifyCommissions } from "./test-commissions-http.mjs";
 import { verifyImportWorkflow } from "./test-import-workflow.mjs";
 
 const root = mkdtempSync(join(tmpdir(), "app-papa-dashboard-"));
@@ -17,6 +18,7 @@ const pg = (command, args, input) => execFileSync(join(bin, command), args, { en
 const sql = (input, variables = []) => pg("psql", ["-X", "-A", "-t", "-q", "-v", "ON_ERROR_STOP=1", ...variables], input);
 let app, backend, gate, cookieValues, adminCookies, appOrigin, failure = false;
 const files = new Map();
+let failNextStorageWrite = false;
 const asRole = (actor, statement) => `begin; set local request.jwt.claim.sub='${actor}'; set local request.jwt.claims='{"session_id":"${actor}"}'; set local role authenticated; ${statement}; commit;`;
 const stopped = new Promise((resolve) => { process.once("SIGINT", resolve); process.once("SIGTERM", resolve); });
 const sub = "00000000-0000-0000-0000-000000000002";
@@ -33,7 +35,11 @@ const signatures = {
   begin_import: "request_id uuid,source_type text,target_period date,custodian uuid,file_name text,file_hash text,file_size integer,conventions jsonb",
   prepare_import_chunk: "target_id uuid,expected_cursor integer,configuration jsonb,chunk jsonb,summary jsonb",
   manage_import: "target_id uuid,operation text,input jsonb",
+  manage_historical: "target_id uuid,operation text,input jsonb",
   source_file: "target_id uuid",
+  commission_report: "filters jsonb",
+  commission_dashboard: "filters jsonb",
+  manage_commission: "request_id uuid,operation text,target_id uuid,input jsonb",
 };
 const query = (rpc, actor) => `begin; set local request.jwt.claim.sub='${actor}'; set local request.jwt.claims='{"session_id":"${actor}"}'; set local role authenticated;
 select ${rpc === "source_file" ? "(select coalesce(jsonb_agg(f),'[]') from public.source_file(p.target_id) f)" : `to_jsonb(public.${rpc}(${signatures[rpc].split(",").map((f) => `p.${f.split(" ")[0]}`).join(",")}))`}
@@ -62,11 +68,10 @@ try {
       res.writeHead(302, { "Set-Cookie": (req.url.endsWith("-admin") ? adminCookies : cookieValues).map(({ name, value }) => `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`), Location: `${appOrigin}/?desde=2026-01&hasta=2026-02` });
       return res.end();
     }
-    if (["/auth/v1/otp", "/auth/v1/verify"].includes(req.url)) {
+    if (req.url === "/auth/v1/token?grant_type=password") {
       const chunks = []; for await (const c of req) chunks.push(c);
       const input = JSON.parse(Buffer.concat(chunks));
-      if (req.url.endsWith("/otp")) { assert.equal(input.create_user, false); return res.end("{}"); }
-      assert.equal(input.token, "123456"); assert.equal(input.type, "email");
+      assert.equal(input.email, "admin@synthetic.invalid"); assert.equal(input.password, "SYNTHETIC_PASSWORD_123");
       return res.end(JSON.stringify({ access_token: adminToken, refresh_token: "SYNTHETIC", expires_in: 3600, token_type: "bearer", user: { ...user, id: adminSub, email: "admin@synthetic.invalid" } }));
     }
     const isAdmin = req.headers.authorization === `Bearer ${adminToken}`;
@@ -75,7 +80,7 @@ try {
     if (req.url === "/auth/v1/user") return res.end(JSON.stringify({ ...user, id: actor }));
     if (req.url === "/rest/v1/rpc/current_access") return res.end(sql(asRole(actor, "select to_json(public.current_access())")).trim());
     const url = new URL(req.url, "http://synthetic.invalid");
-    if (["/rest/v1/admin_custodians", "/rest/v1/admin_import_batches", "/rest/v1/admin_import_rows"].includes(url.pathname)) {
+    if (["/rest/v1/admin_custodians", "/rest/v1/admin_import_batches", "/rest/v1/admin_import_rows", "/rest/v1/admin_import_uploads"].includes(url.pathname)) {
       const view = url.pathname.split("/").at(-1);
       const id = url.searchParams.get("id")?.replace(/^eq\./, "") ?? "";
       const batch = url.searchParams.get("batch_id")?.replace(/^eq\./, "") ?? "";
@@ -89,6 +94,7 @@ try {
       try {
         if (req.method === "POST") {
           const chunks = []; for await (const c of req) chunks.push(c);
+          if (failNextStorageWrite) { failNextStorageWrite = false; res.writeHead(503); return res.end('{"error":"SYNTHETIC STORAGE INTERRUPTION"}'); }
           if (files.has(path)) { res.writeHead(409); return res.end('{"error":"Duplicate"}'); }
           sql(asRole(actor, "insert into storage.objects(bucket_id,name) values('app-papa-imports',:'path')"), ["-v", `path=${path}`]);
           files.set(path, Buffer.concat(chunks)); return res.end(JSON.stringify({ Key: path }));
@@ -131,21 +137,16 @@ try {
   assert.ok(ready, appOutput);
   const login = await (await fetch(`${appOrigin}/ingresar`)).text();
   const actions = [...login.matchAll(/name="\$ACTION_ID_([^"]+)"/g)].map((m) => m[1]);
-  assert.equal(actions.length, 2);
-  for (const [index, fields] of [[0, { email: "admin@synthetic.invalid" }], [1, { email: "admin@synthetic.invalid", token: "123456" }]]) {
-    const form = new FormData(); form.set(`$ACTION_ID_${actions[index]}`, "");
-    for (const [key, value] of Object.entries(fields)) form.set(key, value);
-    const response = await fetch(`${appOrigin}/ingresar`, { method: "POST", headers: { Origin: appOrigin }, body: form, redirect: "manual" });
-    assert.equal(response.status, 303);
-    if (index === 1) {
-      assert.equal(response.headers.get("location"), "/");
-      adminCookies = response.headers.getSetCookie().map((cookie) => {
-        const pair = cookie.split(";")[0], separator = pair.indexOf("=");
-        return { name: pair.slice(0, separator), value: pair.slice(separator + 1) };
-      });
-      assert.ok(adminCookies.length > 0, "login emite cookies SSR usadas en todo el circuito admin");
-    }
-  }
+  assert.equal(actions.length, 1);
+  const loginForm = new FormData(); loginForm.set(`$ACTION_ID_${actions[0]}`, "");
+  loginForm.set("email", "admin@synthetic.invalid"); loginForm.set("password", "SYNTHETIC_PASSWORD_123");
+  const loginResponse = await fetch(`${appOrigin}/ingresar`, { method: "POST", headers: { Origin: appOrigin }, body: loginForm, redirect: "manual" });
+  assert.equal(loginResponse.status, 303); assert.equal(loginResponse.headers.get("location"), "/");
+  adminCookies = loginResponse.headers.getSetCookie().map((cookie) => {
+    const pair = cookie.split(";")[0], separator = pair.indexOf("=");
+    return { name: pair.slice(0, separator), value: pair.slice(separator + 1) };
+  });
+  assert.ok(adminCookies.length > 0, "login emite cookies SSR usadas en todo el circuito admin");
   const base = "desde=2026-01&hasta=2026-02";
   const account = "20000000-0000-0000-0000-000000000001";
   const report = await (await request(`/api/consultas?${base}&cuenta=${account}`)).json();
@@ -188,7 +189,8 @@ try {
   assert.equal((await postModel({ operation: "save", review_id: preview.review_id })).status, 200);
   const savedCatalog = await (await request("/configuracion?entidad=teams", true)).text();
   assert.ok(savedCatalog.includes("Equipo SINTETICO nuevo") && savedCatalog.includes("Alta SINTETICA de integración"));
-  await verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub });
+  await verifyCommissions({ request, appOrigin, sql });
+  await verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage: () => { failNextStorageWrite = true; } });
   failure = true;
   const failed = await (await request(`/?${base}`)).text(); assert.ok(failed.includes("Consulta no disponible") && !failed.includes("SYNTHETIC PRIVATE FAILURE")); failure = false;
   assert.ok(!appOutput.includes("Error:"), appOutput);

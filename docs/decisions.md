@@ -1,5 +1,10 @@
 # App Papá — Decisiones y pendientes
 
+> Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
+> El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
+> local revisada. Supera para este motor las restricciones de sólo planificación
+> y la fórmula ACT/365 anteriores; el helper aislado previo se conserva sin integrar.
+
 Actualizado: 2026-11-15. Distinguir reglas confirmadas por el usuario de propuestas de la guía. No presentar propuestas como negocio validado.
 
 ## Confirmadas
@@ -318,3 +323,119 @@ creó el perfil habilitado en el Supabase dedicado, con auditoría existente.
 No se registra correo/UUID personal en Git. Se mantiene la regla de `auth.md`:
 altas o cambios de rol solo por operación explícita del dueño/operador, sin
 autoasignación ni escritura de perfiles desde la aplicación.
+
+## Plan de historia AUM y comisiones — 2026-11-17
+
+Solicitud vigente: **solo planificación**, sin código funcional, migraciones ni
+cambios remotos. Documento: [historical-imports-and-commissions-plan.md](historical-imports-and-commissions-plan.md).
+La exclusión anterior de advisory/cobros se amplía únicamente para diseñar
+expectativas y comparación con Revenue; no autoriza liquidación, pagos o bancos.
+
+Confirmado en el pedido: conservar meses/años históricos de AUM; el saldo para
+comisiones procede del Excel de comisiones, nunca del AUM de la app;
+`Owner Name payout` identifica al beneficiario. Antecedente superado por la actualización Advisory posterior: Balance × tasa anual
+y división por cuatro eran **regla preliminar**, pendiente de validar base bruta/neta,
+unidad de tasa, elegibilidad, fechas, componentes y redondeo. No se sabe si existen
+archivos de tasas anteriores; no aplicar condiciones actuales a períodos pasados.
+
+Propuestas técnicas, todavía no implementadas: extender el importador existente
+con operación padre y lotes por fuente/período/custodio, publicación conjunta
+atómica y bloqueo de publicación individual de hijos; mantener scopes mensuales
+AUM. Comisiones como snapshots completos por trimestre/custodio, beneficiario
+independiente de comercial y conciliaciones reproducibles con versiones de origen.
+No hay decisión financiera de que `Payout broker`, `NET Payout REP`, `PAGO OK`
+u otro campo represente el cobro comparable de esa comisión. Métrica Revenue
+global vigente sigue siendo `SUM(Payout broker)`.
+
+Pendientes de negocio y condiciones para cada incremento en secciones 7–9 del
+plan. La documentación no autoriza ejecutar las etapas propuestas.
+
+## Implementación local autorizada: AUM histórico — 2026-11-17
+
+El pedido posterior al plan autoriza implementar AUM histórico; comisiones conserva
+su estado de planificación. Se implementa la etapa 1 y una estrategia acotada de
+segmentación de archivos, sin ampliar los topes generales ni declarar capacidad
+real validada. Una hoja/un custodio explícito por archivo conforme al contrato AUM
+sin custodio. Múltiples custodios se cargan en archivos separados; no se agregan
+columnas ni se infiere identidad. Hasta 120 períodos/5.000 filas y 2 MiB; preparación
+reanudable de 250 filas/~1 MiB y publicación padre transaccional conjunta.
+
+`import_uploads` es necesaria para vincular original, particiones/versiones,
+coordenadas no enrutables, revisión completa y recuperación. Los hijos reutilizan
+alcances, filas, correspondencias, comparación y publicador anteriores. Errores
+cualquier partición/globales bloquean todo; ninguna entrada publica hijos por
+separado. No se admite reemplazo mensual parcial: se muestran retiros y exige
+confirmación de foto completa por mes y de reemplazos, sin interpretar omisiones
+como cero ni intentar certificar la completitud real sin evidencia del operador.
+No se crean períodos ausentes. Totales exactos; dashboards conservan cierre del
+último mes, sin sumar fotos. Corrección versionada, sin borrar historia.
+
+La migración y comprobaciones se realizan exclusivamente en entornos temporales
+locales sintéticos. No se modifican Supabase/Vercel remotos, dependencias ni
+lockfile. Muestras reales, capacidad histórica efectiva y despliegue siguen
+pendientes de validación/autorización específica.
+
+
+## Advisory por días reales — 2026-11-17
+
+Pedido vigente reemplaza la fórmula simplificada anterior. Confirmado: tasas
+Addepar siempre anuales; bruto = Assets Billed On × tasa anual × días reales/365,
+incluso en bisiesto. Final = bruto + ajustes; un único redondeo al final por cuenta.
+`Owner Name payout` es beneficiario; Balance del Excel solo es Assets Billed On
+tras acreditar equivalencia semántica y fecha de corte. Nunca sustituir por AUM
+ni usar tasas actuales para períodos históricos. Conservar 14 columnas originales.
+
+Fórmula de ajuste informada: importe del flujo × applicable_rate × días restantes /
+días del período. **applicable_rate no está definida**; no equipararla con annual_rate.
+Pendientes: conversión/unidad de esa tasa, extremos del conteo de días, fees/signos,
+base bruta/neta, cobertura de movimientos, escala/modo del redondeo y comparación
+con Revenue por misma cuenta/período/tipo/beneficiario. Ausencia no certifica cero.
+Revenue continúa como fuente de reales, con métrica global SUM(Payout broker);
+no todo registro está acreditado como cobro comparable de Advisory. Diferencia
+USD/% no es deuda automática.
+
+Implementado únicamente helper bruto aislado con fracciones BigInt, inputs y
+salidas monetarias textuales y tasa proporcional explícita. Redondeo configurable
+de presentación half-away-from-zero, nunca insumo del final ni regla productiva
+por defecto. Sin final automático, integración, nuevas tablas o migraciones SQL.
+Plan M2/M2b/M3 y matriz de pruebas actualizados; no es autorización para sus etapas.
+Ver detalles, estados y pendientes en `historical-imports-and-commissions-plan.md`.
+
+## Motor trimestral y conciliación — solicitud vigente 2026-11-17
+
+Confirmado por el pedido: Balance del Excel, Adv Fee / Retro anual, Owner Name
+payout beneficiario, reales de Revenue; fórmula preliminar anual/4 y diferencias.
+Versión `balance_annual_div4_v1` reemplaza ACT/365 únicamente en este motor.
+Corte y trimestre explícitos con evidencia, sin trasladar fotos/tasas al pasado.
+Fee type, elegibilidad y base bruta/neta/payout requieren revisión individual;
+no hay regla universal validada por nombre. Toda incertidumbre queda Pending.
+
+Decisiones técnicas implementadas: eventos inmutables/idempotentes, correcciones
+con versión previa, clasificación explícita de movimientos vigentes y reserva
+exclusiva por movimiento completo, lock transaccional del módulo, invalidación
+por correcciones de cualquiera de las bases. Bandeja/API sólo admin al contener
+análisis en revisión; lectores requieren publicación futura específica. Totales
+únicamente comparables por base con cobertura; Missing actual no representa deuda.
+Contrato, uso y supuestos abiertos detallados en [commissions.md](commissions.md).
+No se implementó importador gráfico/XLSX ni liquidación; no se tocaron remotos.
+
+## Módulo visual de comisiones y QA — 2026-11-17
+
+- Solicitud vigente: cuatro vistas administrativas, exportación y validación
+  integral local; sin despliegue ni datos reales. Se preserva todo el trabajo
+  previo sin commit de historia AUM y motor de comisiones.
+- Se mantiene la fórmula/base/evidencia del motor documentado en `commissions.md`.
+  El módulo no cambia definiciones financieras ni considera Revenue completo como
+  cobro comparable por defecto. Esperado verificado y esperado comparable son
+  poblaciones explícitamente distintas; diferencia % usa este último.
+- Consulta consistente en una sola foto PostgreSQL, agrupada por base económica;
+  máximo explícito de 10.000 filas. Sin totales de balances de distintas fotos ni
+  multiplicación por componentes. Decimales exactos hasta CSV; Number sólo gráfico.
+- El permiso sigue siendo administrador porque las fuentes son análisis revisado
+  con originales; no se habilita lectura global de preparaciones. Nuevo formulario
+  de revisión llama al comando auditado existente. Sin roles desde user_metadata.
+- CSV completo filtrado con revisión, protección de fórmulas y procedencia;
+  resúmenes incluyen detalle para reconstruir las cifras.
+- QA de comisiones vía API/RPC no certifica carga Excel/publicación de snapshot:
+  adaptador/Storage y revisión del archivo completo siguen pendientes. QA real y
+  habilitación remota permanecen como etapa separada expresamente no ejecutada.

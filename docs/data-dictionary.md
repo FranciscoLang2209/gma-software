@@ -1,5 +1,10 @@
 # Diccionario de datos — etapa 2
 
+> Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
+> El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
+> local revisada. Supera para este motor las restricciones de sólo planificación
+> y la fórmula ACT/365 anteriores; el helper aislado previo se conserva sin integrar.
+
 Fecha: 2026-11-11. Migración `20261111174240_financial_schema.sql`, nombre generado por Supabase CLI 3.1.0. Esquema `app_private`, fuera de los esquemas expuestos por la API. PostgreSQL 17; prueba ejecutada en 17.11 nativo, con datos sintéticos. No hay base remota ni archivos reales validados.
 
 ## Convenciones comunes
@@ -191,3 +196,62 @@ Séptima migración `20261115174622_accounts_administration.sql`. `active` boole
 Políticas de identidad permiten al ejecutor consultar procedencia publicada, incluso versiones reemplazadas, sin otorgar tablas/payloads al lector. RLS de cuentas y asignaciones excluye cuentas exclusivas de preparación; aliases requieren origen publicado o equivalencia manual sin fila de origen.
 
 `account_months` agrega cada fuente independientemente por cuenta/mes y aplica `advisor_at`/membresía al cierre. `account_directory` proyecta todas las cuentas con filtros históricos, búsqueda literal, orden/UUID y revisión de página; no suma AUM mensual. `account_detail` expone series del rango, identidades, asignaciones manuales/FA activo, membresías y procedencia; pagina Revenue por mes/UUID, manteniendo cada registro legítimo. Admin recibe original_cells + headers del lote y archivo/hoja/fila; lector no recibe payload ni archivos. `manage_model` permite list/preview/save en siete tipos predefinidos, sin SQL arbitrario ni importes financieros. Wrappers invoker y funciones privadas de ejecutor NOLOGIN/NOBYPASSRLS, con search_path vacío y EXECUTE revocado a PUBLIC/anon/service_role.
+
+## Operación histórica AUM — 2026-11-17
+
+- `app_private.import_uploads`: UUID/clave de solicitud global; `file_name`,
+  `file_hash`, `file_size`, `storage_object_path`, `options`, `manifest` inmutables;
+  `created_by/created_at`; `status` (`preparing`, `ready`, `publishing` transaccional,
+  `published`), `review` (token + hijos/tokens/punteros + actor), `published_at`.
+  Sin borrado ni modificación del original/manifiesto; publicada inmutable.
+- `import_batches.upload_id`: FK restrictiva nullable, unique parcial
+  `(upload_id, scope_id)`. Un hijo AUM por período del manifiesto, mismo custodio
+  declarado y mismo original. Versionado/scopes/hechos financieros sin cambios.
+- `public.admin_import_uploads`: vista invoker solo SELECT; RLS solo admin vigente.
+  Escrituras únicamente por RPC del ejecutor; no grants de escritura al cliente.
+- `public.manage_historical(uuid,text,jsonb)`: wrapper invoker de operación padre.
+  Revisión/publicación recorre hijos persistidos y manifiesto, no una lista del
+  navegador. `public.manage_import(inspect)` añade `batch.upload_id` para regresar
+  desde correspondencias a la operación padre.
+
+El hash de fila/archivo sigue siendo diagnóstico/procedencia; no acredita una
+identidad de cuenta ni deduplica snapshots. Las coordenadas son únicas dentro del
+original y la publicación mantiene las FK/unicidad de `aum_monthly` existentes.
+
+
+## Comisiones Advisory — diseño actualizado, no migrado (2026-11-17)
+
+- `commission_periods`: fechas, días explícitos, ACT/365 fijo y evidencia del conteo.
+- `commission_snapshots`: reutiliza `import_rows`/lotes/UUID; conserva balance de
+  origen y fecha separados de Assets Billed On acreditado, tasa anual original y
+  proporcional, beneficiario independiente y período histórico. Sustituye el nombre
+  propuesto `commission_rows`, sin crear dos tablas para el mismo hecho.
+- `commission_flows`: depósitos/retiros/fees, fecha efectiva, importe/moneda/original,
+  período, días restantes, applicable_rate/política, ajuste nullable y procedencia.
+- `commission_calculations`: bruto, ajustes/final nullable, versión de fórmula y
+  política, revisión exacta de inputs, redondeo por cuenta, motivos/estado y actor.
+  Conservar previas, dependencias y fracciones para recomputación sin redondeo previo.
+- `commission_beneficiaries`: UUID auditado, resolución explícita; no fusionar por
+  nombre con comerciales. Cuentas/custodios/archivos/auditoría se reutilizan.
+
+Todas son entidades propuestas: no existen aún tablas/RPC/DTO públicos de comisiones.
+Fórmulas, estados, restricciones, migraciones M2/M2b/M3 y pruebas preparadas en
+`historical-imports-and-commissions-plan.md`. Solo el helper bruto aislado existe.
+
+## Comisiones trimestrales: implementación local vigente
+
+`app_private.commission_events`: una fila inmutable por comando revisado.
+`id` UUID idempotente; `operation` expected/receipt/reconcile; `target_id`
+obligación estable o movimiento Revenue; `previous_id` versión anterior;
+`revision` secuencial; `input` JSON con originales, coordenadas, hash, evidencia y
+motivo; `result` JSON con decimales **textuales**, bases, estados y referencias;
+`created_by`/`created_at` procedencia de operación. `commission_current` selecciona
+última versión por operación/target bajo RLS invoker. Tabla con RLS forzado,
+escritura por ejecutor admin; API/lectores sin acceso a preparación u originales.
+
+No se guarda AUM como Balance ni se altera `revenue_entries`. Una clasificación
+referencia UUID del movimiento y versión publicada; una conciliación referencia
+versión esperada y versiones de clasificación, preservando cada fila física.
+Resultados esperados/anuales, cobros y diferencias permanecen separados por
+base gross/net/representative_payout. Fórmula, precisión, controles Excel,
+contrato de entrada y límites en [commissions.md](commissions.md).

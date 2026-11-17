@@ -1,11 +1,12 @@
 import { LIMITS, UUID, validateOptions } from "@/lib/imports/contracts";
 import { readBook, sha256 } from "@/lib/imports/read";
 import { prepare } from "@/lib/imports/validate";
+import { prepareHistorical, reportSummary } from "@/lib/imports/historical";
 import { boundedBody, importAccess, reply } from "@/lib/imports/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 const fields =
-  "id,source,period,custodian_id,status,file_name_original,file_sha256,file_size_bytes,storage_object_path,parsing_conventions,totals,errors,row_count,blocking_error_count,preparation_only,created_at";
+  "id,source,period,custodian_id,status,file_name_original,file_sha256,file_size_bytes,storage_object_path,parsing_conventions,totals,errors,row_count,blocking_error_count,preparation_only,created_at,upload_id";
 async function getBatch(supabase: SupabaseClient, id: string) {
   const result = await supabase
     .from("admin_import_batches")
@@ -134,7 +135,9 @@ export async function POST(
         },
         400,
       );
-    const configuration = { ...options, parserVersion: 1 };
+    if (batch.upload_id && (options.sheet !== uploaded.sheet || options.numericFormat !== uploaded.numericFormat))
+      return reply({ error: "Hoja y formato históricos están fijados. Retomá desde la carga histórica." }, 409);
+    const configuration = { ...options, parserVersion: batch.upload_id ? 2 : 1 };
     const existing = batch.parsing_conventions.configuration;
     if (
       existing &&
@@ -152,8 +155,18 @@ export async function POST(
     let book;
     try {
       book = await getBook(supabase, batch);
-      report = prepare(book, options);
+      if (batch.upload_id) {
+        const { data: upload, error } = await supabase.from("admin_import_uploads").select("options,manifest").eq("id", batch.upload_id).single();
+        if (error || !upload) throw new Error("Operación histórica no disponible.");
+        if (JSON.stringify(options) !== JSON.stringify(validateOptions({ ...upload.options, period: batch.period }))) throw new Error("La configuración histórica está congelada.");
+        const history = prepareHistorical(book, options);
+        report = history.partitions.find((p) => p.period === batch.period)?.report;
+        if (!report) throw new Error("El período ya no coincide con el manifiesto.");
+      } else report = prepare(book, options);
     } catch (e) {
+      // El original ya fue analizado al crear el manifiesto; una indisponibilidad no invalida sus hijos.
+      if (batch.upload_id)
+        return reply({ error: "No se confirmó el bloque histórico. Verificá o reponé el original desde la carga y reintentá; se conservaron los cursores." }, 502);
       if (cursor)
         return reply(
           {
@@ -205,6 +218,7 @@ export async function POST(
       warnings: report.warnings,
       headers: report.headers,
       sheets: book.sheets.map((s) => s.name),
+      ...(batch.upload_id ? reportSummary(report, book) : {}),
     };
     const { data: processed, error } = await supabase.rpc(
       "prepare_import_chunk",

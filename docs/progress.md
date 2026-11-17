@@ -1,6 +1,11 @@
 # App Papá — Progreso
 
-**Estado vigente — 2026-11-16:** UI/UX 1–7 publicadas. Cierre de accesibilidad y reemplazo de selects/calendarios por componentes shadcn adaptados completados y verificados localmente; el dueño solicitó incluir todos los cambios en main. Ver último registro y validation.md.
+> Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
+> El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
+> local revisada. Supera para este motor las restricciones de sólo planificación
+> y la fórmula ACT/365 anteriores; el helper aislado previo se conserva sin integrar.
+
+**Estado vigente — 2026-11-17:** AUM histórico multiperíodo implementado localmente sobre el importador existente, con operación padre/manifiesto y publicación conjunta atómica. Validación sintética local; migración sin aplicar remotamente. Ver cierre de esta etapa y `validation.md`.
 
 Actualizado: 2026-11-15, Buenos Aires. **Etapa 10: GitHub/Vercel conectados; Supabase Free/São Paulo con ocho migraciones; Preview READY y controles anon/lector reales verificados.** El dueño dejó SMTP pendiente: sin invitación ni primer administrador operativo. Publicación remota, datos reales, producción y recuperación completa pendientes. Los apartados anteriores son registros históricos.
 
@@ -827,3 +832,230 @@ personales en Git.
 
 Próximo paso: confirmar el SHA remoto después del push y verificar el despliegue
 de Vercel; una sesión real sigue pendiente de comprobación por el usuario.
+
+## Plan de importación histórica y comisiones — 2026-11-17
+
+Etapa documental completada por solicitud expresa. Checkout local `main`,
+`4a25954`, origin configurado a `FranciscoLang2209/gma-software`, árbol inicialmente
+limpio; sin fetch ni comprobación nueva del estado remoto. Se inspeccionaron
+AGENTS/documentación, las ocho migraciones y el flujo real de carga, lectura,
+validación, resolución, revisión, publicación, versiones, reportes y permisos.
+
+Entregado: [historical-imports-and-commissions-plan.md](historical-imports-and-commissions-plan.md),
+con inventario por rutas, reutilización, cambios de esquema propuestos, AUM
+multiperíodo, modelo trimestral de comisiones, identidad/historia, candidatos de
+Revenue, riesgos, decisiones pendientes, etapas y matriz de aceptación.
+`decisions.md` registra el alcance documental y las confirmaciones del pedido;
+las propuestas de implementación y reglas preliminares no se presentan como aprobadas.
+
+Hallazgos principales: esquema ya versiona por fuente/mes/custodio pero carga
+actual exige mes único; falta operación que publique el archivo completo en una
+transacción y cierre las RPC de publicación individual para sus hijos. Solo
+Payout broker está tipado y confirmado como métrica Revenue, no como cobro de la
+comisión. La fecha del saldo y el trimestre aplicable deben separarse; no hay
+historia de tasas acreditada ni equivalencia automática beneficiario/comercial.
+Capacidad actual 2 MiB/5.000 filas no acredita importación de toda la historia.
+
+Verificado ahora: contenido/consistencia documental, rutas locales y
+`git diff --check`. Consultadas referencias oficiales de numeric/RLS y changelog
+Supabase; sin cambios de dependencias. No se ejecutaron suites, build, SQL,
+importaciones ni pruebas remotas; no se usaron muestras financieras reales.
+No se modificó código funcional, migraciones, bases o despliegues.
+
+**Próximo prompt propuesto, requiere nueva solicitud:** «Implementá únicamente la
+etapa 1 de `docs/historical-imports-and-commissions-plan.md`: AUM multiperíodo con
+el formato largo actual, un custodio declarado, operación padre, manifiesto y
+publicación conjunta atómica. Conservá el flujo mensual, versiones, precisión,
+permisos y trazabilidad; solo sintéticos, sin bases remotas. Comisiones queda en
+planificación». Antes de resultados reales siguen pendientes muestras privadas,
+capacidad representativa y definiciones financieras enumeradas en el plan.
+
+## AUM histórico multiperíodo — implementación local, 2026-11-17
+
+Solicitud expresa posterior al plan. Al comenzar: `docs/decisions.md` y este
+archivo tenían cambios; `historical-imports-and-commissions-plan.md` era nuevo.
+Se preservaron esos cambios y no se recrearon etapas anteriores. Comisiones
+permanece en planificación; no se cambió Supabase/Vercel remoto ni se publicó código.
+
+### Implementado
+
+- Pestaña **Importación histórica** en `/importaciones`, conservando mensual,
+  Radix y componentes existentes. XLSX/CSV con mes/año por fila; una hoja/custodio
+  explícito por archivo, períodos ordenados sin rellenar meses ausentes.
+- Previsualización por período: cuentas, AUM exacto, duplicados/errores,
+  progreso confirmado por bloques, versión existente y comparación. Resolución
+  y revisión mediante correspondencias existentes; retorno enlazado al padre.
+- Nueva `import_uploads` y `import_batches.upload_id`: original único privado,
+  manifiesto inmutable, coordenadas/huellas, conteos/totales, hojas excluidas,
+  errores no enrutables con originales, actores y revisión de todos los hijos.
+- Revisión padre y publicación en una transacción reutilizando el publicador;
+  todos los punteros o ninguno. Trigger bloquea publicación individual por
+  cualquier entrada. Revisión obsoleta, duplicados y errores bloquean el conjunto.
+  Reintentos no duplican ni reactivan historia reemplazada; correcciones versionadas.
+- RLS admin/sesión, ejecutor acotado, SSR/JWT, Storage sin upsert, auditoría,
+  protección de solicitudes y descargas privadas (también original sin períodos
+  válidos), errores JSON. Sin service_role en cliente ni logs financieros.
+- Pausa/retoma por cursores, recuperación de original con la misma operación y
+  configuración, sin marcar hijos fallidos por indisponibilidad temporal del archivo.
+  Conserva 2 MiB/5.000 filas, bloques 250/~1 MiB y hasta 120 períodos. Archivos
+  mayores se segmentan por meses completos/custodio; un mes mayor al tope requiere
+  otra ampliación, nunca publicación parcial ni reemplazos silenciosos.
+
+### Verificado
+
+Lint, typecheck, 27 unitarias, `test:db`, build y suites HTTP de Auth/importación y
+Next→RPC→PostgreSQL local. 36 meses × 3 cuentas × 2 custodios; dashboard de rango
+cierra en 0.25 sin sumar fotografías; regresión anterior 120 AUM / 22 Revenue,
+cuentas, rankings, FA y CSV. SQL con fallo después del segundo puntero, recuperación,
+bypass, reimportación/versiones, revisión obsoleta, lectores/anónimos, coordenadas
+repetidas/fuera de manifiesto y carreras entre padres con tres scopes comunes.
+Dos sesiones no mezclan meses y reintentos concurrentes no duplican auditoría.
+Operador administrado sin SUPERUSER, grants/propiedad/RLS y restauración de esquema.
+Detalle y límites de evidencia en [validation.md](validation.md).
+
+Capacidad sintética: 4.968 filas/36 meses en CSV de 235.849 bytes, todos los totales
+mensuales exactos; exceso rechazado. No equivale a importar una historia real ni
+a un benchmark máximo de publicación. Auth/transporte Storage son sintéticos en
+los recorridos HTTP; aplicación y PostgreSQL sí son reales locales.
+
+### Pendiente / próximo prompt
+
+Muestras privadas y conciliación de negocio, volumen de historia real y capacidad
+representativa; servicios efectivos Auth/Storage; aplicar migración y desplegar
+solo con autorización futura. Este pedido prohíbe tocar remotos y se respetó.
+No se verificó recuperación completa de un backup financiero/Storage productivo.
+
+Próximo prompt sugerido: «Validá localmente la importación histórica de AUM con
+una muestra privada y un volumen representativo, usando el contrato/límites
+implementados. Conciliá por mes/custodio, determiná si hace falta ampliar capacidad
+de la etapa 2 y documentá resultados, sin modificar remotos. Comisiones continúa
+fuera del alcance hasta aprobar sus definiciones».
+
+Cierre final: repetición integral con caída sintética de Storage, lectura sin
+original y recuperación de la misma operación aprobada; cambiar hoja del hijo
+no invalida la carga. Navegador Chrome 1440/390 px: 36 períodos/progreso 108/108,
+archivo inválido sin hijos bloqueado, JSON de errores y original descargados,
+sin desborde del documento ni excepciones cliente. Servidores de prueba cerrados
+al terminar; evidencia local/sintética detallada en `validation.md`.
+
+
+## Advisory real por días — cierre local, 2026-11-17
+
+Solicitud: actualizar plan y fórmulas, modelo/migraciones, pendientes y pruebas;
+implementar únicamente reglas suficientemente confirmadas. El árbol ya contenía
+el trabajo de AUM histórico y documentación sin commit: se conservó completo.
+
+Implementado: helper bruto aislado ACT/365 con decimales canónicos, fracciones
+BigInt exactas y bruto de presentación con escala explícita. Tasa ausente/base
+ausente conservan pendientes; tasa cero es válida; final siempre null. Sin ruta,
+pantalla, importador o tablas nuevas de comisiones ni integración al runtime.
+
+Actualizado `historical-imports-and-commissions-plan.md`: fórmula anterior retirada;
+tasas anuales y divisor fijo 365 incluso en bisiesto; política de applicable_rate
+pendiente sin equipararla con annual_rate; Assets Billed On acreditado separado
+del Balance original; períodos/snapshots/flujos/cálculos, estados, revisiones,
+M2/M2b/M3, desglose UI, Revenue comparable y matriz con todos los casos pedidos.
+Diccionario, producto y decisiones reflejan alcance vigente sin recrear M1.
+
+Verificado: 31 unitarias (4 nuevas), lint, typecheck, build y revisión documental/
+`git diff --check`. Node 24.22.3, solo sintéticos locales; detalle en validation.md.
+No se ejecutaron SQL/HTTP/navegador ni migraciones; no se modificaron remotos.
+
+Pendiente: unidad de tasa de celda, equivalencia de saldo, calendario/extremos,
+applicable_rate, tratamiento/cobertura de flujos y fees, escala/modo del redondeo
+final, elegibilidad/componentes y base comparable de Revenue. No hay final,
+prorrateo productivo, deuda ni ingreso definitivo calculados. La prueba de pureza
+del helper no acredita auditoría persistida, idempotencia o concurrencia SQL.
+
+Próximo prompt sugerido (requiere nueva solicitud): «Con las convenciones
+financieras documentadas y una muestra sintética aprobada, implementá únicamente
+preparación de comisiones (M2), reutilizando el importador y las 14 columnas.
+Separá Balance de Assets Billed On hasta confirmación; no actives prorrateo,
+publicación de fee final ni conciliación sin las reglas/evidencias pendientes.
+Sin cambios remotos». AUM histórico conserva sus validaciones/pendientes previos.
+
+## Motor trimestral y conciliación — cierre local 2026-11-17
+
+Solicitud vigente implementada sobre el trabajo local previo, conservado completo.
+Motor PostgreSQL `balance_annual_div4_v1` con Balance importado, tasa anual y corte
+explícito acreditado por trimestre. Bruto/neto/payout independientes; originales
+Excel y comparación propia con bases declaradas. No usa AUM ni extiende snapshots.
+
+Nueva migración `20261117175338_commission_reconciliation.sql`: eventos inmutables,
+idempotencia por solicitud, correcciones con revisión previa, clasificación de cada
+Revenue vigente y vínculo explícito cuenta/custodio/trimestre/tipo/beneficiario/base.
+Preserva multiplicidad, impide doble asignación, serializa revisión concurrente y
+marca Pending ante cambios de versión. Estados Matched, Variance, Pending,
+Missing expected y Missing actual; este último no acredita deuda del representante.
+
+API `/api/comisiones`, RPC de comando/reporte y bandeja `/comisiones` con todos los
+filtros pedidos, paginación, totales sólo comparables por base y conteos de cobertura.
+Sólo administradores acceden al análisis revisado/originales; sin proyección publicada
+para lectores. La bandeja consulta; la revisión se registra vía API/RPC. Contrato,
+fecha de corte y supuestos abiertos: [commissions.md](commissions.md).
+
+Verificado local/sintético: suite PostgreSQL integral con operador sin SUPERUSER,
+casos financieros/seguridad, dos conciliaciones concurrentes y reintentos simultáneos,
+restauración de esquema; 31 unitarias anteriores, lint, TypeScript y build. Integración
+Next→API→PostgreSQL y SSR registrada en `validation.md`. No remotos ni datos reales.
+
+Pendiente: confirmar catálogo Fee type, base económica, corte/fechas, formatos y
+métrica real de cobranza con muestras; adaptador XLSX/Storage de comisiones y editor
+gráfico no forman parte del motor implementado. No se acredita una importación real.
+El helper ACT/365 previo sigue aislado; no se mezcla con la regla solicitada.
+
+Próximo prompt sugerido: «Validá las bases, Fee type, fechas y métricas comparables
+con una muestra privada; conciliá un trimestre con el motor local y documentá los
+faltantes antes de conectar su adaptador al importador. Sin cambios remotos».
+
+## Comisiones visuales y QA integral — cierre local, 2026-11-17
+
+Implementado sobre el árbol previo sin commit, preservando AUM histórico, motor,
+API y documentos existentes. Sin dependencias nuevas ni cambios remotos.
+
+- Cuatro vistas en la navegación existente: Resumen con seis KPIs por base y dos
+  gráficos, Por representante con detalle, Por cuenta con snapshots existentes y
+  Conciliaciones con evidencia y formulario administrativo de clasificación/vínculo.
+- Filtros URL, orden decimal exacto, paginación de 25 filas, cobertura, faltantes,
+  vacío/error/loading/sin permisos y adaptación a notebooks/móviles. Balance no
+  suma fotos ni componentes repetidos; esperado verificado separado de comparable.
+- Migración local `20261117181230_commission_dashboard.sql`: una foto estable SQL
+  para agregados/filas/evidencia, mismos controles de sesión/rol/RLS, sin tocar
+  historia publicada. Máximo explícito de 10.000 registros, sin truncado silencioso.
+- CSV de las cuatro vistas completo con estados, diferencias y procedencia, no
+  sólo página visible; revisión obsoleta 409, decimales canónicos, N/D y protección
+  CSV injection. Esperados sin verificar se muestran/exportan N/D.
+- Revisión usa el comando auditado existente, evidencia y motivo explícitos,
+  versiones previas y UUID idempotente conservado ante reintento. Sin asignación
+  de beneficiarios por similitud de nombres ni acceso del lector a originales.
+
+Verificado: lint, typecheck, 34 unitarias, test:db con operador sin SUPERUSER,
+concurrencia/RLS/restauración de esquema, build y test:dashboard. Incluye cruce de
+páginas RPC con 501 movimientos, 27 beneficiarios en UI de 25 filas, CSV completo,
+revisión obsoleta, corrección que invalida conciliación y preserva el evento
+anterior; recorrido histórico 36 meses × 3 cuentas × 2 custodios, publicación
+atómica, regresión 120/22 y corrección aislada. Next/PostgreSQL son reales locales;
+Auth/PostgREST/Storage en las suites HTTP usan transporte sintético.
+
+Chrome: cuatro vistas a 1440/768/390/320 px sin desborde del documento ni errores
+cliente; navegación de beneficiario, orden/paginación, descarga, guardado auditado
+y estado posterior, vacío/error y lector rechazado. Dos trimestres comparables
+sintéticos renderizan ambos gráficos a 1440/390. Revisión visual detectó tablas
+comprimidas en móvil: corregidas con ancho mínimo/desplazamiento local y padding
+de ejes para etiquetas de cierre. Detalle de evidencia y matriz de 14 pasos en
+[validation.md](validation.md); contrato visual/CSV en [commissions.md](commissions.md).
+
+**No completo como circuito Excel de comisiones:** los pasos importar archivo y
+publicar snapshot sólo cuentan con entradas revisadas vía API/RPC. Falta adaptador
+XLSX/Storage y preparación/publicación atómica de archivo completo; también
+proyección publicada para lectores. La validación integral está documentada con
+estos huecos; no se declara un flujo de importación de comisiones completo ni
+una importación financiera real validada. Sin datos reales, despliegue ni aplicación
+remota de migraciones. Persisten muestras/conciliación de negocio, volumen real,
+identidades ambiguas y comprobación de Auth/Storage efectivos.
+
+Próximo prompt sugerido: «Implementá localmente el adaptador de importación Excel
+de comisiones sobre el contrato revisado, con original privado, correspondencias
+explícitas, revisión/publicación atómica del archivo y correcciones versionadas.
+Completá los pasos 6–8 del QA con fixtures sintéticos y mantené las definiciones de
+base/fecha/tasa documentadas, sin desplegar ni cargar información financiera real».

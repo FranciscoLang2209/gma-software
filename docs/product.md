@@ -1,5 +1,10 @@
 # App Papá — Producto
 
+> Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
+> El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
+> local revisada. Supera para este motor las restricciones de sólo planificación
+> y la fórmula ACT/365 anteriores; el helper aislado previo se conserva sin integrar.
+
 Estado: definición funcional vigente; circuito local sintético hasta etapa 9 y entorno de prueba remoto de etapa 10 con Supabase/Preview verificados parcialmente. Sin datos de negocio; SMTP/invitación y puesta en uso pendientes. Ver `operations.md`. Actualizado: 2026-11-15.
 
 ## Objetivo y usuarios
@@ -126,3 +131,26 @@ Auto Confirm User y asigna el perfil según [auth.md](auth.md); el bootstrap ini
 conserva bloqueo y rechazo de otro admin. SMTP ya no bloquea el login; recuperación
 asistida por operador hasta configurar correo. Site URL remota y primer usuario
 operativo aún requieren configuración y verificación efectivas.
+
+## AUM histórico local — 2026-11-17
+
+Implementado sobre el importador existente: modo histórico XLSX/CSV con mes/año
+por fila, una hoja/custodio declarado por archivo, vista previa mensual,
+correspondencias explícitas y publicación conjunta atómica de todos sus períodos.
+Original único y manifiesto inmutables, versiones previas conservadas, errores
+sin enrutamiento bloqueantes y preparación reanudable. Límites y segmentación por
+meses completos en [imports.md](imports.md). Ninguna omisión certifica cero y una
+foto parcial no sustituye otra completa sin revisión/confirmación del alcance.
+El cierre del último mes continúa siendo el AUM del rango. Implementación y
+pruebas sintéticas locales; migración sin aplicar remotamente, sin muestras
+financieras reales ni nueva funcionalidad de comisiones.
+
+
+## Advisory: ampliación acotada — 2026-11-17
+
+La solicitud posterior permite diseñar expectativas auditables y conciliación con
+Revenue, sin liquidación/pagos. Regla confirmada: Assets Billed On × tasa anual ×
+días reales/365; se descarta dividir por cuatro. Solo se implementa un helper bruto
+exacto aislado, sin módulo visible ni publicación. Final/prorrateo siguen bloqueados
+por las definiciones pendientes del plan; no reemplazar base de facturación por
+AUM ni saldo Excel sin acreditación. No extender condiciones actuales al pasado.

@@ -35,8 +35,11 @@ done
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/auth.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/imports.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/publication.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/historical-imports.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/queries.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/accounts.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/commissions.test.sql
+bash scripts/test-commission-concurrency.sh "$pg_bin" "$test_root"
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/concurrency.sql
 # Dos sesiones intentan publicar versiones diferentes con la misma revisión inicial.
 for version in 1 2; do
@@ -133,6 +136,7 @@ do $$ begin
 end $$;
 SQL
 echo 'OK: RPC pública concurrente, revisión obsoleta y doble publicación del mismo lote.'
+bash scripts/test-historical-concurrency.sh "$pg_bin" "$test_root"
 "$pg_bin/pg_dump" --schema-only --no-owner --no-privileges > "$test_root/schema.sql"
 "$pg_bin/createdb" app_papa_synthetic_restore
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -d app_papa_synthetic_restore -f "$test_root/schema.sql"
