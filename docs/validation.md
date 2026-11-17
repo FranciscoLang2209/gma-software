@@ -1262,3 +1262,47 @@ No se eludió protección, ni se usó sesión real para probar carga/publicació
 Captura móvil de viewport normal confirma un único main/encabezado y sin overflow;
 fullPage había repetido capas fijas al componer imagen, sin duplicación del DOM.
 Todos los servidores/clústeres locales terminados. Revisión git diff --check correcta.
+
+
+## Timeout de registro histórico — 2026-11-17
+
+Evidencia remota de sólo lectura: cuatro cancelaciones por statement timeout en la
+ventana 22:50–23:10 UTC; la de 22:58:56 identifica import_comparison → group by
+original_cells → current_access/RLS, invocada por cada hijo en manage_historical.
+Roles authenticated/authenticator tienen statement_timeout=8s. Estado: una carga
+AUM previa en preparación, sin scopes publicados; el REV fallido no dejó un padre.
+No se usaron claims/credenciales de una sesión existente para reproducirlo.
+
+No se elevaron timeouts globales ni se agregaron tablas/índices: la corrección sólo
+reemplaza la construcción del resumen final por comparación revisada + JOIN actual
+de versión activa. Se conserva el resto de manage_historical, guards, comparación
+por hijo, autorización y publicación. SQL generado con CLI existente (telemetry off).
+La primera versión local cortaba el bloque SQL equivocado al generar el archivo:
+falló en sintaxis, se corrigió antes de cualquier aplicación remota y se repitió.
+
+Test SQL nuevo, sintético: 18.080 coordenadas con huellas diferentes/226 alcances,
+configuración 8 s. Su stub transaccional rechaza cualquier llamada del padre a la
+conciliación completa: falla con la implementación anterior y pasa con la nueva;
+luego restaura la función original y prepara un bloque de 80 filas. Conserva un
+padre, 226 hijos, 80 filas y ningún publicado. Registro ~554 ms, retry ~32 ms e
+inspect ~16 ms en ejecución local. Antes (sin stub), ~692/162/145 ms; la velocidad
+de este equipo no reproduce la de Supabase y no se presenta como SLA productivo.
+
+Suite test:db completa correcta: operador sin SUPERUSER, permisos retirados,
+regresiones de identidad/publicación mensual/histórica, ambos custodios/fuentes,
+130 alcances, rollback, concurrencia, comisiones y restauración. Tests nuevos de
+pending inicial sin diferencias inventadas, comparación revisada exacta y revisión
+obsoleta marcada sin aceptar publicación. 37 unitarias, lint, typecheck y build
+correctos. HTTP integral Next real → SQL real local, transporte Auth/Storage
+sintético: inyección de 57014 devuelve 503/id/retryable, no filtra mensaje SQL privado,
+retry con misma solicitud registra una vez y permite completar el circuito. Resto
+de suites previas también correcto; servidores/clústeres terminados. Sin nueva QA
+visual: interfaz sólo cambia mensaje pendiente/deshabilitación ligados al estado.
+
+Remoto: migración 20261117231136 aplicada a GMA. Verificado owner app_papa_executor,
+SECURITY DEFINER y admin guard existentes, ausencia de llamada por hijo en resumen,
+ACL authenticated/anon, CREATE revocado, cero membresías y timeout 8s conservado.
+Conteos sin cambios: una operación previa y cero scopes publicados. Advisors conserva
+el WARN anterior de [contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+No se cambiaron datos/usuarios, ni se publicó el archivo del dueño. Documentación y
+git diff --check correctos. Reintento de carga real por web pendiente del dueño.

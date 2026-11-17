@@ -18,7 +18,7 @@ const pg = (command, args, input) => execFileSync(join(bin, command), args, { en
 const sql = (input, variables = []) => pg("psql", ["-X", "-A", "-t", "-q", "-v", "ON_ERROR_STOP=1", ...variables], input);
 let app, backend, gate, cookieValues, adminCookies, appOrigin, failure = false;
 const files = new Map();
-let failNextStorageWrite = false;
+let failNextStorageWrite = false, failNextHistoryRegistration = false;
 const asRole = (actor, statement) => `begin; set local request.jwt.claim.sub='${actor}'; set local request.jwt.claims='{"session_id":"${actor}"}'; set local role authenticated; ${statement}; commit;`;
 const stopped = new Promise((resolve) => { process.once("SIGINT", resolve); process.once("SIGTERM", resolve); });
 const sub = "00000000-0000-0000-0000-000000000002";
@@ -111,6 +111,10 @@ try {
       try {
         const defaults = rpc === "manage_model" ? { entity: null, target_id: null, input: {}, reason: null, review_id: null, page_offset: 0 } : {};
         const payload = { ...defaults, ...JSON.parse(Buffer.concat(chunks)) };
+        if (rpc === "manage_historical" && payload.operation === "begin" && failNextHistoryRegistration) {
+          failNextHistoryRegistration = false; res.writeHead(500);
+          return res.end(JSON.stringify({ code: "57014", message: "SYNTHETIC PRIVATE SQL TIMEOUT" }));
+        }
         const result = sql(query(rpc, actor), ["-v", `payload=${JSON.stringify(payload)}`]).trim();
         return res.end(result);
       }
@@ -190,7 +194,7 @@ try {
   const savedCatalog = await (await request("/configuracion?entidad=teams", true)).text();
   assert.ok(savedCatalog.includes("Equipo SINTETICO nuevo") && savedCatalog.includes("Alta SINTETICA de integración"));
   await verifyCommissions({ request, appOrigin, sql });
-  await verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage: () => { failNextStorageWrite = true; } });
+  await verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage: () => { failNextStorageWrite = true; }, interruptHistory: () => { failNextHistoryRegistration = true; } });
   failure = true;
   const failed = await (await request(`/?${base}`)).text(); assert.ok(failed.includes("Consulta no disponible") && !failed.includes("SYNTHETIC PRIVATE FAILURE")); failure = false;
   assert.ok(!appOutput.includes("Error:"), appOutput);

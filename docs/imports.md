@@ -220,3 +220,14 @@ Los identificadores numéricos, errores Excel e importes faltantes siguen siendo
 bloqueantes. Ampliar capacidad/enrutamiento no acredita que el archivo sea publicable.
 Se conserva la revisión de correspondencias y de mes/custodio completo antes de
 publicar. El cambio no importa ni publica automáticamente las muestras reales.
+
+
+### Resumen de cargas grandes y tiempos de espera
+
+El resumen inicial no ejecuta la conciliación completa de cada hijo. Antes de revisar
+un alcance muestra «Comparación pendiente», sin inventar altas/bajas. Después utiliza
+su comparación revisada y comprueba la versión activa actual. Si cambió, requiere
+revisar de nuevo. La revisión individual y la publicación mantienen sus controles.
+Timeout/espera de base de datos devuelve 503 reintentable con la solicitud conservada:
+reintentar con los mismos archivos/formulario evita duplicar operaciones. No se amplió
+el timeout administrado de 8 segundos para resolver el problema.

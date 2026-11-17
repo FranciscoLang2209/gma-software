@@ -39,6 +39,7 @@ done
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/publication.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/historical-imports.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/multicustodian-history.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/historical-capacity.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/queries.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/accounts.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/commissions.test.sql

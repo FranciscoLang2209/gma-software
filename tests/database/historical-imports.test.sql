@@ -105,6 +105,8 @@ select public.manage_historical(:'stale','begin',pg_temp.history_input('10000000
 select pg_temp.prepare_history(:'correction'); select pg_temp.review_history(:'correction');
 select pg_temp.prepare_history(:'stale'); select pg_temp.review_history(:'stale');
 select pg_temp.publish_history(:'correction');
+select public.manage_historical(:'stale','inspect','{}') stale_summary \gset
+select pg_temp.assert_true((select bool_and((c->'comparison'->>'pending')::boolean) from jsonb_array_elements(:'stale_summary'::jsonb->'children') c),'resumen marca revisión obsoleta sin recomputar ni aceptar publicación');
 select pg_temp.expect_error(format('select pg_temp.publish_history(%L)',:'stale'));
 reset role;
 select pg_temp.assert_true((select count(*)=6 and sum(value_usd)=27.6 from app_private.aum_current),'corrección exacta preserva otros custodios');

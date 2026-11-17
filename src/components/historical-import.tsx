@@ -11,7 +11,7 @@ type Detail = {
   upload: { id: string; file_name: string; status: string; options: HistoricalOptions; manifest: Manifest; review: { token: string } | null };
   children: { id: string; period: string; version: number; custodian_id: string; status: string; processed: number; rows: number; errors: number;
     comparison: { active: { id: string; version: number; rows: number; total: string | null } | null;
-      candidate: { rows: number; total: string | null }; same_file: boolean; row_changes: { added: number; removed: number } } }[];
+      candidate: { rows: number; total: string | null }; same_file: boolean; pending?: boolean; row_changes: { added: number | null; removed: number | null } } }[];
 };
 const states: Record<string, string> = { preparing: "Preparación", uploaded: "Original registrado", validating: "Validando", needs_resolution: "Correspondencias pendientes", ready: "Revisada", failed: "Errores bloqueantes", published: "Publicada", superseded: "Reemplazada" };
 async function api(url: string, init?: RequestInit) {
@@ -110,7 +110,7 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
   const totalRows = manifest?.partitions.reduce((n, p) => n + p.summary.rowCount, 0) ?? 0;
   const processed = detail?.children.reduce((n, c) => n + c.processed, 0) ?? 0;
   const blocked = !!manifest && (manifest.errors.length > 0 || manifest.unroutable.length > 0 || manifest.partitions.some((p) => p.summary.blockingErrors > 0));
-  const canReview = !!detail?.children.length && detail.children.every((c) => c.status === "ready") && !blocked;
+  const canReview = !!detail?.children.length && detail.children.every((c) => c.status === "ready" && !c.comparison.pending) && !blocked;
   return <section className="panel import-panel">
     <h2>Importación histórica de AUM y Revenue</h2>
     <p>Archivo → Análisis → Períodos detectados → Validación → Correspondencias → Comparación → Publicación → Resultado.</p>
@@ -170,7 +170,7 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
         <Table.Root className="data-table"><Table.Header><Table.Row>{["Año / mes", "Custodio", "Cuentas", "Importe USD (archivo)", "Errores", "Duplicados de cuenta", "Progreso", "Estado / versión", "Versión activa / USD", "Comparación / correspondencias"].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header>
           <Table.Body>{detail.children.map((child) => {
             const p = manifest.partitions.find((p) => p.period === child.period && (p.custodianId ?? detail.upload.options.custodianId) === child.custodian_id)!;
-            return <Table.Row key={child.id}><Table.Cell>{child.period.slice(0, 7)}</Table.Cell><Table.Cell>{p.custodianCode ?? detail.upload.options.custodianCode}</Table.Cell><Table.Cell>{p.summary.distinctAccounts}</Table.Cell><Table.Cell>{p.summary.total ?? "N/D"}</Table.Cell><Table.Cell>{p.summary.blockingErrors}</Table.Cell><Table.Cell>{p.summary.duplicateAccounts}</Table.Cell><Table.Cell>{child.processed} / {p.summary.rowCount}</Table.Cell><Table.Cell>{states[child.status]} · v{child.version}</Table.Cell><Table.Cell>{child.comparison.active ? `v${child.comparison.active.version} · ${child.comparison.active.total ?? "N/D"}` : "Sin versión publicada"}{child.comparison.same_file && " · Mismo archivo"}</Table.Cell><Table.Cell><Link href={`/correspondencias?lote=${child.id}`}>Resolver y conciliar</Link><p>{child.comparison.row_changes.added} agregadas / {child.comparison.row_changes.removed} retiradas. Candidata: {child.comparison.candidate.total ?? "N/D"} USD.</p></Table.Cell></Table.Row>;
+            return <Table.Row key={child.id}><Table.Cell>{child.period.slice(0, 7)}</Table.Cell><Table.Cell>{p.custodianCode ?? detail.upload.options.custodianCode}</Table.Cell><Table.Cell>{p.summary.distinctAccounts}</Table.Cell><Table.Cell>{p.summary.total ?? "N/D"}</Table.Cell><Table.Cell>{p.summary.blockingErrors}</Table.Cell><Table.Cell>{p.summary.duplicateAccounts}</Table.Cell><Table.Cell>{child.processed} / {p.summary.rowCount}</Table.Cell><Table.Cell>{states[child.status]} · v{child.version}</Table.Cell><Table.Cell>{child.comparison.active ? `v${child.comparison.active.version} · ${child.comparison.active.total ?? "N/D"}` : "Sin versión publicada"}{child.comparison.same_file && " · Mismo archivo"}</Table.Cell><Table.Cell><Link href={`/correspondencias?lote=${child.id}`}>Resolver y conciliar</Link>{child.comparison.pending ? <p>Comparación pendiente: revisá las correspondencias y conciliá este alcance. Si cambió la versión activa, volvé a revisarlo.</p> : <p>{child.comparison.row_changes.added} agregadas / {child.comparison.row_changes.removed} retiradas según revisión. Candidata: {child.comparison.candidate.total ?? "N/D"} USD.</p>}</Table.Cell></Table.Row>;
           })}</Table.Body>
         </Table.Root>
       </div>

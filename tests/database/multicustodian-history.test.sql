@@ -45,9 +45,12 @@ set local role authenticated;
 select gen_random_uuid() as aum \gset
 select public.manage_historical(:'aum','begin',pg_temp.multi_input('aum'));
 select public.manage_historical(:'aum','begin',pg_temp.multi_input('aum'));
+select public.manage_historical(:'aum','inspect','{}') initial_summary \gset
+select pg_temp.assert_true((select bool_and((c->'comparison'->>'pending')::boolean and c->'comparison'->'row_changes'->>'added' is null) from jsonb_array_elements(:'initial_summary'::jsonb->'children') c),'resumen inicial no inventa diferencias antes de conciliación');
 select pg_temp.assert_true((select count(*)=4 and count(distinct custodian_id)=2 from public.admin_import_batches where upload_id=:'aum'),'mismos meses en dos custodios sin duplicar retry');
 select pg_temp.populate_multi(:'aum');
 select public.manage_historical(:'aum','review','{"confirm_all":true}') as reviewed \gset
+select pg_temp.assert_true((select bool_and(not (c->'comparison'->>'pending')::boolean and c->'comparison'->'candidate'->>'total'='0.1') from jsonb_array_elements(:'reviewed'::jsonb->'children') c),'resumen conserva conciliación revisada por hijo');
 select pg_temp.expect_error(format($q$select public.publish_import(id,null) from public.admin_import_batches where upload_id=%L limit 1$q$,:'aum'));
 -- Bloqueo por manifiesto obsoleto, nota sin motivo y catálogo falso.
 select pg_temp.expect_error($q$select public.manage_historical(gen_random_uuid(),'begin',jsonb_set(pg_temp.multi_input('aum'),'{manifest,partitions,0,custodianCode}','"NO EXISTE"'))$q$);

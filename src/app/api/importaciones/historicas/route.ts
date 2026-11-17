@@ -64,6 +64,8 @@ export async function POST(request: Request) {
     const { data, error } = await supabase.rpc("manage_historical", { target_id: id, operation: "begin", input: {
       file_name: file.name, file_hash: sha256(bytes), file_size: bytes.length, options, manifest,
     } });
+    if (error && ["57014", "55P03", "PGRST003"].includes(error.code))
+      return reply({ id, retryable: true, error: "La base agotó el tiempo disponible al registrar la carga. Reintentá con los mismos archivos y formulario; se conserva la solicitud para evitar duplicados. No se publicaron datos." }, 503);
     if (error || !data) return reply({ error: "No se registró la carga. Revisá límites (1.024 alcances / 25.000 filas), configuración y solicitud; reintentá con los mismos datos." }, 409);
     const storage = supabase.storage.from("app-papa-imports");
     const path = data.upload.storage_object_path;

@@ -497,3 +497,13 @@ motivo sólo de anotaciones sin campos financieros. Identificadores numéricos,
 importes faltantes y errores Excel de la fuente financiera continúan bloqueantes:
 no se infieren ceros ni se relajan reglas para publicar las muestras reales.
 Límites/uso en imports.md; pruebas e implementación efectiva en validation.md.
+
+
+## Resumen histórico y timeout — 2026-11-17
+
+La vista padre no recalcula la conciliación completa de todos los hijos al registrar/
+inspeccionar un archivo. Muestra snapshot revisado de cada hijo y versión activa
+actual; si falta revisión o quedó obsoleta, marca pendiente y exige revisarla.
+Los cálculos/validaciones definitivos siguen en la revisión individual y publicación
+conjunta. Timeouts/esperas conocidos devuelven 503 reintentable, preservando UUID;
+no se atribuyen a límites del Excel ni se responde 409 genérico por cancelación SQL.

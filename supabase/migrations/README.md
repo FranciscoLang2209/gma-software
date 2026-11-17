@@ -150,3 +150,11 @@ coordenadas, exclusiones, resumen y publicación conjunta validados. No crea tab
 financieras ni permite publicar hijos sueltos. SQL probado con operador sin SUPERUSER,
 reintentos, 130 alcances, fallo/rollback entre custodios y permisos. Aplicado a GMA
 como 20261117224406; archivo local alineado al timestamp MCP sin cambiar contenido.
+
+
+`20261117231136_historical_summary_performance.sql`: corrige timeout del resumen
+padre que llamaba import_comparison por cada hijo. Reutiliza comparación revisada,
+JOIN con versión activa actual y estado pending; no altera cálculos, guards ni la
+transacción de publicación. Probado con 18.080 coordenadas/226 alcances y límite 8s,
+retry, revisión obsoleta y regresiones completas. Aplicado en GMA y renombrado al
+timestamp MCP conservando SQL. Sin cambios de timeouts, roles o datos financieros.

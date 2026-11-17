@@ -5,7 +5,7 @@ import { parse } from "csv-parse/sync";
 import { historicalRows } from "../tests/fixtures/imports/historical.ts";
 import { HEADERS } from "../src/lib/imports/contracts.ts";
 
-export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage }) {
+export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage, interruptHistory }) {
   const json = async (response, status = 200) => {
     const data = await response.json(); assert.equal(response.status, status, JSON.stringify(data)); return data;
   };
@@ -210,6 +210,13 @@ export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, ad
       f.set("options", JSON.stringify(options)); f.set("requestId", requestId);
       if (source === "aum") f.set("references", new File([referencesRaw], "SINTETICO-REF.csv")); return f; };
     assert.equal((await request(endpoint, false, { method: "POST", headers: { Origin: appOrigin }, body: form() })).status, 403);
+    if (source === "revenue") {
+      interruptHistory();
+      const timeout = await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() }), 503);
+      assert.equal(timeout.id, requestId); assert.equal(timeout.retryable, true);
+      assert.ok(timeout.error.includes("tiempo disponible") && !timeout.error.includes("SYNTHETIC PRIVATE"));
+      assert.equal(sql(asRole(adminSub, `select count(*) from public.admin_import_uploads where id='${requestId}'`)).trim(), "0");
+    }
     await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() }));
     if (source === "aum") await model("custodians", { code: "SYN-E2E-RETRY-ADDED", name: "Custodio SINTETICO posterior", active: true });
     await json(await request(endpoint, true, { method: "POST", headers: { Origin: appOrigin }, body: form() }));

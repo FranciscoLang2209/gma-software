@@ -1,5 +1,42 @@
 # App Papá — Progreso
 
+## Última corrección: timeout al registrar el histórico — 2026-11-17
+
+El dueño reportó POST histórico REV 409. Logs reales a las 22:58:56 UTC muestran
+SQLSTATE de cancelación por statement_timeout=8s, dentro de import_comparison al
+agrupar original_cells y resolver RLS/current_access por cada hijo en el resumen
+padre. No era límite de tamaño ni rechazo de los datos del Excel. El mensaje 409
+ocultaba la causa. Una operación AUM previa sigue en preparación; no se creó REV
+ni se publicó nada por esta corrección.
+
+Se eliminó únicamente la conciliación completa repetida del resumen padre. Se
+reutiliza la comparación auditada del hijo y se consulta la versión activa actual
+con JOIN; sin revisión válida se muestra pendiente. Cada hijo sigue conciliándose
+con la función original al revisar, y la publicación padre conserva todas sus
+validaciones/locks/transacción. Si cambió el puntero activo, el resumen marca revisión
+pendiente y la interfaz no permite confirmar la carga como revisada hasta resolverla.
+API distingue timeout/espera de bloqueo con 503 reintentable y mantiene la solicitud.
+No se elevaron timeouts, permisos, límites ni se relajaron errores de datos.
+
+Pruebas locales completas: 37 unitarias, lint/typecheck/build, SQL/roles/concurrencia/
+restauración y HTTP Next→SQL con transportes Auth/Storage sintéticos. Regresión nueva
+con 18.080 coordenadas/226 alcances y statement_timeout=8s: registro ~554 ms,
+retry ~32 ms, inspect ~16 ms en una ejecución local; no garantiza latencia remota.
+Prueba determinista falla con la implementación anterior si el padre invoca la
+conciliación completa. Control de revisión obsoleta/candidata auditada y timeout HTTP
+inyectado seguido de retry sin duplicados correctos. Ver validation.md.
+
+Migración historical_summary_performance aplicada a GMA como 20261117231136; archivo
+local alineado sin cambiar SQL. Verificado ejecutor propietario/admin guard, anon
+sin EXECUTE, CREATE revocado, cero membresías transitorias y timeout 8s intacto.
+Una carga previa, cero scopes publicados: sin importación/corrección de datos reales,
+sin borrar fuentes o lotes, sin usar sesiones reales del dueño para probar.
+
+Próximo paso: recargar Importaciones y reintentar el REV con la misma configuración.
+El registro debe mostrar sus alcances/errores antes de preparar o publicar. Los errores
+reales del archivo siguen bloqueantes. La prueba de upload remoto autenticado queda
+para la sesión del dueño; no se declara importación financiera real validada.
+
 ## Última etapa: carga de varios custodios habilitada — 2026-11-17
 
 Implementación terminada y habilitada en Supabase/Vercel de GMA por el pedido de
