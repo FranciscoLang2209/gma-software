@@ -8,7 +8,7 @@ export const ROA_STATUS: Record<RoaMetrics["calculation_status"], string> = {
 };
 export const FEE_STATUS: Record<RoaMetrics["advisory_fee_status"], string> = {
   not_applicable: "No aplicable a este conjunto", verified_reference: "Referencia publicada comparable",
-  obsolete: "Referencia obsoleta · requiere revisión", insufficient_coverage: "Cobertura de tasas insuficiente",
+  obsolete: "Referencia obsoleta · requiere revisión", insufficient_coverage: "Ponderación no disponible · revisar AUM y tasas",
 };
 export function roaScreenParameters(search: Search) {
   const params = new URLSearchParams();
@@ -31,13 +31,12 @@ export function roaHref(params: URLSearchParams, changes: Record<string, string 
   }
   return `/rentabilidad?${next}`;
 }
-export function previousRoaQuarters(parameters: RoaParameters) {
-  const index = parameters.report_year * 4 + parameters.report_quarter - 1;
-  return [3, 2, 1].filter(back => index - back >= 1900 * 4).map(back => ({
-    ...parameters, report_year: Math.floor((index - back) / 4), report_quarter: (index - back) % 4 + 1,
+export function roaYearQuarters(parameters: RoaParameters) {
+  return [1, 2, 3, 4].map(quarter => ({
+    ...parameters, report_quarter: quarter,
     group_by: "account" as const, page_size: 1, page_offset: 0, expected_revision: null,
   }));
 }
 export type RoaTrendPoint = {
-  label: string; total: RoaMetrics | null; error: string | null;
+  label: string; quarter: number; total: RoaMetrics | null; advisory: RoaMetrics | null; error: string | null;
 };

@@ -4,7 +4,7 @@ import { Table } from "@radix-ui/themes";
 import { requireAccess } from "@/lib/auth/access";
 import { queryQuarterlyRoa, roaFailure } from "@/lib/roa/server";
 import { queryReport } from "@/lib/queries/server";
-import { FEE_STATUS, ROA_STATUS, previousRoaQuarters, roaHref, roaScreenParameters, type RoaTrendPoint } from "@/lib/roa/presentation";
+import { FEE_STATUS, ROA_STATUS, roaYearQuarters, roaHref, roaScreenParameters, type RoaTrendPoint } from "@/lib/roa/presentation";
 import type { RoaParameters, RoaReport } from "@/lib/roa/contracts";
 import { dateLabel, exact, monthLabel, percent, usd, usdRounded, type Search } from "@/lib/queries/presentation";
 import { EmptyState } from "./empty-state";
@@ -12,27 +12,42 @@ import { MetricCard } from "./metric-card";
 import { RoaClassification, RoaCoverageFacts, RoaFilters, RoaMetricTable } from "./roa-view";
 import { RoaChart } from "./roa-chart";
 
-async function RoaEvolution({ parameters, report }: { parameters: RoaParameters; report: RoaReport }) {
+async function RoaEvolution({ parameters, report, params }: { parameters: RoaParameters; report: RoaReport; params: URLSearchParams }) {
   const { supabase } = await requireAccess();
-  const points: RoaTrendPoint[] = await Promise.all(previousRoaQuarters(parameters).map(async p => {
+  const points: RoaTrendPoint[] = await Promise.all(roaYearQuarters(parameters).map(async p => {
     const label = `T${p.report_quarter} ${p.report_year}`;
     try {
-      const { data, error } = await queryQuarterlyRoa(supabase, p);
-      return { label, total: error ? null : data?.total ?? null, error: error || !data ? roaFailure(error?.code).message : null };
-    } catch { return { label, total: null, error: "Consulta trimestral no disponible." }; }
+      const result = p.report_quarter === report.period.quarter ? { data: report, error: null } : await queryQuarterlyRoa(supabase, p);
+      const data = result.error ? null : result.data;
+      return { label, quarter: p.report_quarter, total: data?.total ?? null,
+        advisory: data?.services.find(m => m.key === "Advisory") ?? null,
+        error: result.error || !data ? roaFailure(result.error?.code).message : null };
+    } catch { return { label, quarter: p.report_quarter, total: null, advisory: null, error: "Consulta trimestral no disponible." }; }
   }));
-  points.push({ label: `T${report.period.quarter} ${report.period.year}`, total: report.total, error: null });
-  return <section aria-labelledby="roa-evolution-title"><h2 id="roa-evolution-title">Evolución trimestral</h2>
-    <p>Mismos filtros en hasta cuatro trimestres. Cada trimestre tiene su propia revisión; no constituye un snapshot conjunto. Cliente y servicio reflejan la clasificación actual.</p>
-    {points.some(p => p.error) && <p role="alert">No se pudieron consultar algunos trimestres. Revisá los errores de la tabla y reintentá la consulta.</p>}
+  return <section className="panel report-section roa-year" aria-labelledby="roa-evolution-title">
+    <div className="roa-section-heading"><div><span className="roa-eyebrow">COMPARACIÓN ANUAL</span><h2 id="roa-evolution-title">Los cuatro trimestres de {parameters.report_year}</h2></div><span className="roa-unit">USD · ROA anualizado</span></div>
+    <p>Mismos filtros, T1–T4. Cada trimestre conserva su propia revisión. Cliente y servicio reflejan la clasificación actual.</p>
+    <div className="roa-quarter-grid">{points.map(p => <article key={p.label} className={`roa-quarter-card${p.quarter === parameters.report_quarter ? " is-selected" : ""}`}>
+      <div className="roa-section-heading"><h3>{p.label}</h3><Link aria-current={p.quarter === parameters.report_quarter ? "page" : undefined} href={roaHref(params, { trimestre: String(p.quarter) }) + "#detalle"}>Ver detalle →</Link></div>
+      {p.error ? <p role="alert">{p.error}</p> : <>
+        <span className="roa-quarter-value">{percent(p.total?.roa_percent)}</span><span className="roa-quarter-caption">ROA anualizado · total filtrado</span>
+        {p.total && <RoaClassification metric={p.total} />}
+        <dl><div><dt>AUM promedio</dt><dd>{usd(p.total?.aum_average_usd)}</dd></div><div><dt>Revenue</dt><dd>{usd(p.total?.revenue_quarter_usd)}</dd></div>
+          <div><dt>Fee ponderado · Advisory</dt><dd>{percent(p.advisory?.advisory_fee_percent)}</dd></div>
+          <div><dt>ROA · Advisory</dt><dd>{percent(p.advisory?.roa_percent)}</dd></div>
+          <div><dt>Tasas vinculadas · Advisory</dt><dd>{p.advisory?.advisory_rate_accounts ?? "N/D"} / {p.advisory?.advisory_accounts ?? "N/D"}</dd></div></dl>
+      </>}
+    </article>)}</div>
+    <details className="roa-year-details"><summary>Ver gráficos y tabla comparativa</summary>
     <div className="roa-charts">{(["aum_average_usd", "revenue_quarter_usd", "roa_percent"] as const).map(source => <RoaChart key={source} source={source} points={points} />)}</div>
     <div className="table-scroll" role="region" tabIndex={0} aria-label="Evolución trimestral exacta"><Table.Root className="data-table"><Table.Header><Table.Row>
-      {["Trimestre", "AUM promedio · USD", "Revenue · USD", "ROA anualizado", "Fee anual", "Diferencia · pp", "Estado"].map(s => <Table.ColumnHeaderCell key={s}>{s}</Table.ColumnHeaderCell>)}
+      {["Trimestre", "AUM promedio · USD", "Revenue · USD", "ROA anualizado", "Fee Advisory ponderado", "ROA Advisory", "Diferencia Advisory · pp", "Estado"].map(s => <Table.ColumnHeaderCell key={s}>{s}</Table.ColumnHeaderCell>)}
     </Table.Row></Table.Header><Table.Body>{points.map(p => <Table.Row key={p.label}><Table.RowHeaderCell>{p.label}</Table.RowHeaderCell>
       <Table.Cell>{usd(p.total?.aum_average_usd)}</Table.Cell><Table.Cell>{usd(p.total?.revenue_quarter_usd)}</Table.Cell><Table.Cell>{exact(p.total?.roa_percent)}{p.total?.roa_percent != null ? " %" : ""}</Table.Cell>
-      <Table.Cell>{exact(p.total?.advisory_fee_percent)}{p.total?.advisory_fee_percent != null ? " %" : ""}</Table.Cell><Table.Cell>{exact(p.total?.advisory_difference_pp)}{p.total?.advisory_difference_pp != null ? " pp" : ""}</Table.Cell>
-      <Table.Cell>{p.error ?? (p.total ? `${ROA_STATUS[p.total.calculation_status]} · ${FEE_STATUS[p.total.advisory_fee_status]}` : "Sin datos")}</Table.Cell>
+      <Table.Cell>{exact(p.advisory?.advisory_fee_percent)}{p.advisory?.advisory_fee_percent != null ? " %" : ""}</Table.Cell><Table.Cell>{percent(p.advisory?.roa_percent)}</Table.Cell><Table.Cell>{exact(p.advisory?.advisory_difference_pp)}{p.advisory?.advisory_difference_pp != null ? " pp" : ""}</Table.Cell>
+      <Table.Cell>{p.error ?? (p.total ? `${ROA_STATUS[p.total.calculation_status]} · ${FEE_STATUS[p.advisory?.advisory_fee_status ?? "not_applicable"]}` : "Sin datos")}</Table.Cell>
     </Table.Row>)}</Table.Body></Table.Root></div>
+    <p>Leé el Fee junto al ROA Advisory de la misma población. Los importes faltantes permanecen N/D.</p></details>
   </section>;
 }
 
@@ -64,12 +79,14 @@ export async function RoaScreen({ search }: { search: Search }) {
   return <>
     <RoaFilters params={params} options={options} />
     {!options && <p role="status">No se pudieron cargar las opciones de entidades. Los resultados ROA conservan los filtros seleccionados; reintentá para cambiar entidades.</p>}
-    <section className="panel report-section" aria-labelledby="roa-basis-title"><h2 id="roa-basis-title">{period} · cálculo provisional sobre cobertura observada</h2>
+    <Suspense fallback={<section className="panel report-section" role="status">Cargando los cuatro trimestres…</section>}><RoaEvolution parameters={parameters} report={report} params={params} /></Suspense>
+    <section className="panel report-section roa-methodology" aria-labelledby="roa-basis-title"><h2 id="roa-basis-title">{period} · cálculo provisional sobre cobertura observada</h2>
+      <RoaClassification metric={t} /><details><summary>Metodología y límites del cálculo</summary>
       <p>El universo esperado no está confirmado. Payout broker y su periodización MES/AÑO están pendientes de validación económica para ambos servicios. Este cálculo no acredita un ROA de negocio certificado.</p>
       <p>ROA anualizado = Revenue trimestral × 4 / AUM promedio × 100. AUM promedio = suma de tres fotos mensuales / 3. No representa rendimiento de cartera ni ganancia neta.</p>
       <p>Comercial y equipo se atribuyen al cierre de cada mes; cliente y servicio son actuales, sin historia. No se imputan ceros ni saldos anteriores.</p>
-      <RoaClassification metric={t} />{!report.period.closed && <p>Trimestre abierto: el ROA y la clasificación permanecen N/D.</p>}
-      <p>Bajo: menos de 0,40%; OK: 0,40%–0,60% inclusive; Muy bien: más de 0,60%. Categorías calculadas en servidor antes del redondeo.</p>
+      {!report.period.closed && <p>Trimestre abierto: el ROA y la clasificación permanecen N/D.</p>}
+      <p>Bajo: menos de 0,40%; OK: 0,40%–0,60% inclusive; Muy bien: más de 0,60%. Categorías calculadas en servidor antes del redondeo.</p></details>
     </section>
     {t.calculation_status === "no_data" && <EmptyState title="Sin datos publicados para estos filtros">Una ausencia no equivale a cero. Cambiá el trimestre o limpiá los filtros.</EmptyState>}
     <div className="metric-grid roa-metrics">
@@ -78,8 +95,7 @@ export async function RoaScreen({ search }: { search: Search }) {
       <MetricCard title="ROA anualizado" value={percent(t.roa_percent)} period={period} note={<RoaClassification metric={t} />} />
     </div>
     <section className="panel report-section"><h2>Comparación Advisory Fee</h2><p>Referencia anual ponderada por AUM de la misma población y trimestre. Diferencia ROA menos Fee, en puntos porcentuales. No es conciliación de comisiones.</p>
-      <p>Fee: <strong>{percent(t.advisory_fee_percent)}</strong> · diferencia: <strong>{exact(t.advisory_difference_pp)}{t.advisory_difference_pp === null ? "" : " pp"}</strong> · {FEE_STATUS[t.advisory_fee_status]}.</p>
-      <p>En conjuntos mixtos el comparador global es N/D; revisá Advisory por separado.</p>
+      <p>Las tasas se vinculan por cuenta y trimestre. Una tasa publicada puede estar asociada aunque falte AUM para ponderarla. Los conjuntos mixtos se comparan por servicio, sin mezclar el ROA total con el Fee Advisory.</p>
       <RoaMetricTable rows={report.services} />
     </section>
     <section className="panel report-section" id="detalle"><h2>Desglose trimestral</h2><p>Orden estable por clave. Total sobre todas las páginas; nunca promedio de ratios. Importes exactos; Revenue conocido puede ser parcial.</p>
@@ -96,6 +112,5 @@ export async function RoaScreen({ search }: { search: Search }) {
       <details><summary>Publicaciones por mes y custodio</summary><ul>{report.coverage.map(c => <li key={`${c.period}-${c.custodian_id}-${c.source}`}>{monthLabel(c.period)} · custodio {c.custodian_id} · {c.source === "aum" ? "AUM" : "Revenue"}: {c.published ? "Publicada · completitud sin confirmar" : "Faltante · no equivale a cero"}</li>)}</ul>{!report.coverage.length && <p>Sin observaciones de custodios esperados.</p>}</details>
       <p>CSV no disponible para este informe. Las tablas muestran los importes exactos y la cobertura del conjunto consultado.</p>
     </section>
-    <Suspense fallback={<p role="status">Cargando evolución trimestral…</p>}><RoaEvolution parameters={parameters} report={report} /></Suspense>
   </>;
 }

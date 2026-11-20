@@ -1,5 +1,21 @@
 # App Papá — Decisiones y pendientes
 
+## ROA: comparación anual y tasas visibles — 2026-11-20
+
+La pantalla compara T1–T4 del mismo año con iguales filtros y revisiones
+independientes; el trimestre seleccionado controla el detalle. No agrega un ROA
+anual. Separa ROA total y ROA Advisory para comparar el Fee con su misma población.
+
+La tasa anual publicada de una cuenta Advisory se muestra aun sin tres fotos AUM.
+Se distingue del Fee ponderado, que conserva sus requisitos existentes. Referencias
+pendientes/obsoletas permanecen N/D. Conteos de tasas corresponden a cuentas
+observadas, sin certificar población esperada. Etiquetas de cuenta reutilizan
+identificador resuelto/custodio sin alterar identidad ni unir por nombre.
+
+Migración aplicada sólo en GMA como `20261120180701`; entrega mediante push a main
+autorizada por el dueño. Sin alterar hechos financieros. Ver [progreso](progress.md).
+
+
 ## Master: publicación operativa y corrección de capacidad — 2026-11-20
 
 Completada en Chrome por pedido del dueño, mediante su sesión administrativa y

@@ -1,5 +1,61 @@
 # App Papá — Progreso
 
+## ROA: comparación anual y tasas visibles — 2026-11-20
+
+Pedido vigente: mejorar `/rentabilidad`, explicar la asociación de Advisory Fees y
+comparar los cuatro trimestres del mismo año. Implementación verificada; migración aplicada en GMA por autorización posterior
+del dueño. Sin nueva importación, correspondencias inferidas ni publicación financiera.
+
+Diagnóstico remoto de sólo lectura en GMA: 176 cuentas clasificadas Advisory y 164
+con referencia para T1 2026; 150 con tres fotos AUM no nulas. La tasa vinculada y la
+posibilidad de ponderarla son conceptos distintos; no se concluye que los N/D sean
+cuentas mal asociadas. No se extrajeron originales ni identificadores financieros.
+
+UI: tarjetas T1–T4 al comienzo, mismo año/filtros, detalle trimestral por enlace y
+gráficos/tabla comparativa desplegables. Cada trimestre conserva revisión propia;
+no se suman snapshots ni se inventa un ROA anual. Fee y ROA Advisory se presentan
+con su propia población, separados del ROA total. Metodología desplegable, cobertura
+visible y clasificación dentro de la celda ROA para reducir ancho del detalle.
+
+Migración `20261120180701_roa_fee_reference_and_labels.sql`: conserva las fórmulas,
+ponderación, invalidaciones, permisos, identidad y publicación existentes; agrega
+`advisory_reference_percent` para un conjunto de una sola cuenta Advisory, aun sin
+AUM completo, y conteos de cuentas Advisory observadas/con tasa efectiva. No obtiene
+la tasa del Balance ni de otra cuenta/trimestre. Tasa pendiente u obsoleta permanece
+null; no se promedian tasas de cuentas distintas. Fee ponderado y diferencia siguen
+N/D cuando falta base. Etiqueta de cuenta: custodio + identificador original resuelto
+(preferencia existente Revenue/AUM/FA), UUID sólo de respaldo; el UUID sigue siendo
+la clave. Lateral limitado a una referencia evita multiplicar filas por aliases.
+
+Verificado: 54 unitarias; TypeScript, lint y build; suite SQL completa con operador
+administrado, permisos, restauración, concurrencia y capacidad ROA de 800 cuentas.
+Regresiones Master nuevas: tasa vinculada sin AUM, ponderado/diferencia N/D, tasa
+pendiente y etiqueta con ceros. Recorrido HTTP ROA Next→PostgreSQL correcto, con
+Auth/PostgREST/Storage sintéticos; confirma T1–T4, referencia visible y permisos.
+Chrome local: admin/lector en 1440/768/390 px; navegación trimestral conservando
+cuenta, teclado, filtros, paginación, vacío/error correctos. Sin desbordes globales,
+errores JavaScript ni infracciones/incompletos axe en seis vistas. Capturas
+sintéticas inspeccionadas, `/tmp/gma-roa-ui-preview/`. No es auditoría manual
+completa de accesibilidad con lector de pantalla.
+Logs locales: `/tmp/gma-roa-ui-{unit,build,db,http,browser}.log`.
+
+Entrega remota autorizada después: migración aplicada sólo a GMA como
+`20261120180701_roa_fee_reference_and_labels`. Archivo local alineado a la versión
+MCP conservando SQL, SHA-256 `e49cbd4a24731686d4d6193dd7fb5c907a696465b228c33517bc82b3ab2a87dc`.
+Cuerpo remoto/local MD5 `d02cfcc7826fa943fdbf89340f5c394a`; owner ejecutor,
+SECURITY DEFINER, search_path vacío y ACL conservados. CREATE del ejecutor revocado;
+sólo permanece la membresía administrativa previa de postgres concedida por
+supabase_admin (sin INHERIT ni SET). 18.800 AUM, 17.893 Revenue, 2.624 tasas y hash
+de punteros `71d8ab9671e1d861d5289dc40a56a034` iguales antes/después. Advisors conserva
+únicamente el WARN previo de protección de contraseñas filtradas. Entrega de código
+mediante commit y push a main solicitados por el dueño. Sin nueva conciliación
+financiera ni pruebas remotas autenticadas; los checks funcionales anteriores son
+locales/sintéticos.
+
+Próximo prompt: «Revisá las tasas pendientes y conciliá un trimestre de ROA con las
+fuentes financieras». Los faltantes reales siguen pendientes; N/D no significa cero.
+
+
 ## Master: publicación operativa y corrección de capacidad — 2026-11-20
 
 Completada en Chrome por pedido del dueño, mediante su sesión administrativa y

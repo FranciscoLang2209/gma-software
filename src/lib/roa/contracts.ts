@@ -19,6 +19,7 @@ export type RoaMetrics = {
   null_aum_account_months: number; null_revenue_account_months: number;
   unassigned_advisor_account_months: number; unassigned_team_account_months: number; unassigned_client_account_months: number;
   has_negative_aum: boolean; advisory_fee_percent: string | null; advisory_difference_pp: string | null;
+  advisory_reference_percent: string | null; advisory_accounts: number; advisory_rate_accounts: number;
   advisory_rate_version_id: string | null;
   advisory_fee_numerator: string | null; advisory_fee_denominator: string | null; advisory_difference_numerator: string | null;
   advisory_fee_status: "not_applicable" | "verified_reference" | "obsolete" | "insufficient_coverage";

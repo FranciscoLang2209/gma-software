@@ -1114,3 +1114,34 @@ footer { color: var(--gma-muted); }
 .master-review-form fieldset { min-width: 0; display: grid; gap: 16px; border: 1px solid var(--gma-border); border-radius: 6px; }
 .master-review-form .publish-confirmation { display: grid; gap: 12px; margin: 0; }
 .master-review-form button { max-width: 100%; white-space: normal; height: auto; min-height: 40px; }
+
+/* ROA: annual comparison remains visible before quarterly detail. */
+.roa-filters .import-form { gap: 14px; }
+.roa-filters #roa-filter-help { margin-bottom: 0; font-size: 12px; color: var(--gma-muted); }
+.roa-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.roa-section-heading h2, .roa-section-heading h3 { margin: 0; }
+.roa-eyebrow { display: block; font-size: 10px; letter-spacing: .12em; font-weight: 700; color: var(--gma-muted); margin-bottom: 8px; }
+.roa-unit, .roa-quarter-caption { font-size: 12px; color: var(--gma-muted); }
+.roa-quarter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 22px 0; }
+.roa-quarter-card { border: 1px solid var(--gma-border); border-radius: 12px; padding: 20px; min-width: 0; background: #fbfcfe; }
+.roa-quarter-card.is-selected { border-color: #204c6b; box-shadow: inset 0 3px #204c6b; background: #f4f8fb; }
+.roa-quarter-card h3 { font-size: 15px; }
+.roa-quarter-card a { font-size: 12px; white-space: nowrap; }
+.roa-quarter-value { display: block; font-size: 32px; font-weight: 650; letter-spacing: -.04em; margin-top: 22px; font-variant-numeric: tabular-nums; }
+.roa-quarter-caption { display: block; margin: 4px 0 12px; }
+.roa-quarter-card .rt-Badge { white-space: normal; }
+.roa-quarter-card dl { margin: 20px 0 0; padding-top: 12px; border-top: 1px solid var(--gma-border); }
+.roa-quarter-card dl > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; margin: 12px 0 0; font-size: 12px; }
+.roa-quarter-card dt { color: var(--gma-muted); }
+.roa-quarter-card dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.roa-year-details > summary { margin-top: 8px; }
+.roa-year-details .roa-charts { margin-top: 20px; }
+.roa-cell-note { display: block; margin-top: 4px; font-size: 11px; color: var(--gma-muted); }
+.roa-methodology > .rt-Badge { margin-bottom: 12px; }
+.roa-methodology details { margin-top: 8px; }
+.roa-table td, .roa-table th { font-size: 12px; }
+.roa-table td:nth-child(1), .roa-table th:nth-child(1) { min-width: 180px; }
+.roa-table td .money { white-space: nowrap; }
+@media (max-width: 1200px) { .roa-quarter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .roa-quarter-grid { grid-template-columns: minmax(0, 1fr); } .roa-unit { display: none; } }
+.roa-table .roa-cell-note .rt-Badge { white-space: normal; }

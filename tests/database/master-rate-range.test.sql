@@ -68,6 +68,16 @@ select pg_temp.seed('revenue','2023-02-01',1,'[[1,"50"]]');
 select pg_temp.seed('revenue','2023-03-01',1,'[[1,"50"]]');
 set local role authenticated;
 select pg_temp.assert_true((public.quarterly_roa_report(2023,1,account=>'20000000-0000-0000-0000-000000000001')->'total'->>'advisory_fee_percent')::numeric=0.5,'fee comparable de fuente Master en reporte');
+-- Una tasa publicada sigue asociada sin AUM; nunca fabrica la base ni el Fee ponderado.
+select pg_temp.assert_true(public.quarterly_roa_report(2023,1,account=>'20000000-0000-0000-0000-000000000001')->'total' @>
+ '{"advisory_reference_percent":"0.500","advisory_accounts":1,"advisory_rate_accounts":1}', 'referencia individual distinta del ponderado');
+reset role;
+select pg_temp.seed('revenue','2023-04-01',1,'[[1,"50"]]');
+set local role authenticated;
+select pg_temp.assert_true(public.quarterly_roa_report(2023,2,account=>'20000000-0000-0000-0000-000000000001')->'total' @>
+ '{"advisory_reference_percent":"0.500","advisory_fee_percent":null,"advisory_difference_pp":null,"advisory_accounts":1,"advisory_rate_accounts":1}', 'sin AUM conserva tasa vinculada sin fabricar ponderación');
+select pg_temp.assert_true(public.quarterly_roa_report(2023,1,account=>'20000000-0000-0000-0000-000000000002')->'total'->>'advisory_reference_percent' is null,'tasa pendiente nunca cero');
+select pg_temp.assert_true(public.quarterly_roa_report(2023,1,account=>'20000000-0000-0000-0000-000000000001')->'rows'->0->>'label' like '% · 000001','etiqueta conserva identificador textual y custodio');
 select public.import_master_rates(gen_random_uuid(),'preview',pg_temp.range_input()) fresh \gset
 select pg_temp.assert_true(jsonb_array_length(:'fresh'::jsonb->'rows'->0->'previous_rates')=16,'revisión de reemplazos por trimestre');
 select jsonb_set(jsonb_set(jsonb_set(pg_temp.range_input(),'{review,quarter_to}','"2023-04-01"'),'{master,rows,0,annualRate}','"0.006"'),'{review,revision}',:'fresh'::jsonb->'revision') correction \gset

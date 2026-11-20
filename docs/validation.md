@@ -1,5 +1,32 @@
 # Validación — evidencia local y pendientes
 
+## ROA: comparación anual y tasas visibles — 2026-11-20
+
+- 54 unitarias correctas; TypeScript, lint y build correctos.
+- Suite SQL completa: migraciones con operador sin SUPERUSER, permisos retirados,
+  concurrencia, restauración y capacidad de 800 cuentas ROA bajo timeout local 8 s.
+- Nuevos casos Master: tasa individual 0,5% con AUM incompleto; ponderación y
+  diferencia permanecen N/D; tasa pendiente null; etiqueta conserva ceros/custodio.
+- Recorrido Next→PostgreSQL temporal correcto, con Auth/PostgREST/Storage sintéticos:
+  T1–T4, tasa visible sin AUM, roles y revisión; regresiones del circuito completo.
+- Chrome local: administrador/lector a 1440, 768 y 390 px; cuatro tarjetas,
+  navegación T2 conservando cuenta, teclado, filtros, paginación, vacío/error.
+  Sin desborde global ni errores JavaScript; axe: cero infracciones y cero
+  resultados incompletos en las seis vistas. No sustituye una auditoría manual
+  completa con lector de pantalla. Capturas sólo sintéticas en
+  `/tmp/gma-roa-ui-preview/`, script/log `/tmp/gma-roa-ui-browser.{mjs,log}`.
+- Gráficos desplegados a 1440/390 px: SVG presentes, sin desbordes ni errores JS.
+- GMA, lectura agregada exclusivamente: 176 cuentas Advisory, 164 con tasa T1 2026,
+  150 con tres fotos AUM no nulas. Sin originales/identificadores en los logs.
+
+Evidencia local: `/tmp/gma-roa-ui-{unit,build,db,http}.log`. Migración remota aplicada
+como `20261120180701`; cuerpo y ACL verificados contra local, owner/config intactos,
+CREATE revocado. Recuentos y hash de punteros activos iguales antes/después.
+Advisors conserva sólo el WARN previo de [contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+No se ejecutó una consulta remota autenticada ni conciliación financiera real.
+Detalles y huellas en [progreso](progress.md).
+
+
 ## Master: publicación operativa y corrección de capacidad — 2026-11-20
 
 Completada en Chrome por pedido del dueño, mediante su sesión administrativa y

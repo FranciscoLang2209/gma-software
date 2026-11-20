@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { previousRoaQuarters, roaHref, roaScreenParameters, ROA_STATUS, FEE_STATUS } from "../src/lib/roa/presentation.ts";
+import { roaYearQuarters, roaHref, roaScreenParameters, ROA_STATUS, FEE_STATUS } from "../src/lib/roa/presentation.ts";
 
 const account = "20000000-0000-0000-0000-000000000001";
 test("Pantalla ROA: trimestre explícito y filtros conservados al llegar desde otra vista", () => {
@@ -24,12 +24,13 @@ test("Pantalla ROA: páginas fijan revisión y reinicio conserva todos los filtr
   assert.equal(next.get("offset"), "50");
   assert.equal(params.get("offset"), "25");
 });
-test("Pantalla ROA: evolución cruza años, conserva AND y descarta página/revisión ajenas", () => {
+test("Pantalla ROA: comparación T1–T4 del mismo año, conserva AND y descarta página/revisión ajenas", () => {
   const p = roaScreenParameters({ anio: "2026", trimestre: "1", cuenta: account, servicio: "Advisory", offset: "25", revision: "a".repeat(32) }).parameters!;
-  const previous = previousRoaQuarters(p);
-  assert.deepEqual(previous.map(q => [q.report_year, q.report_quarter]), [[2025, 2], [2025, 3], [2025, 4]]);
+  const previous = roaYearQuarters(p);
+  assert.deepEqual(previous.map(q => [q.report_year, q.report_quarter]), [[2026, 1], [2026, 2], [2026, 3], [2026, 4]]);
   assert.ok(previous.every(q => q.account === account && q.service_filter === "Advisory" && q.expected_revision === null && q.page_offset === 0 && q.page_size === 1));
-  assert.deepEqual(previousRoaQuarters({ ...p, report_year: 1900 }), []);
+  assert.deepEqual(roaYearQuarters({ ...p, report_year: 1900 }).map(q => q.report_year), [1900, 1900, 1900, 1900]);
+  for (const quarter of [1, 2, 3, 4]) assert.deepEqual(roaYearQuarters({ ...p, report_quarter: quarter }).map(q => q.report_quarter), [1, 2, 3, 4]);
   assert.equal(ROA_STATUS.open_quarter, "Trimestre abierto");
   assert.match(FEE_STATUS.obsolete, /obsoleta/);
 });

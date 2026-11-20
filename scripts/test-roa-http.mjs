@@ -27,10 +27,12 @@ export async function verifyRoa({ request, appOrigin, sql }) {
   const screen = path.replace('/api/rentabilidad', '/rentabilidad');
   for (const admin of [false, true]) {
     const html = await (await request(screen, admin)).text();
-    assert.ok(html.includes('Rentabilidad / ROA') && html.includes('Evolución trimestral'));
+    assert.ok(html.includes('Rentabilidad / ROA') && html.includes('Los cuatro trimestres de '));
     assert.ok(html.includes('USD 22') && html.includes('Cobertura incompleta'));
     assert.ok(html.includes('cálculo provisional sobre cobertura observada'));
     assert.ok(html.includes('Tres meses del conjunto filtrado') && html.includes('CSV no disponible'));
+    for (const quarter of [1, 2, 3, 4]) assert.ok(html.includes(`T${quarter} 2026`));
+    assert.ok(html.includes('Tasa anual publicada'));
     assert.ok(!html.includes('SECRETO SINTETICO') && !html.includes('SINTETICO.csv') && !html.includes('source_event_id'));
     assert.ok(!html.includes('name="source_event_id"'), 'no hay publicación administrativa en la pantalla de lectura');
   }
@@ -94,6 +96,10 @@ export async function verifyRoa({ request, appOrigin, sql }) {
   assert.notEqual(after.revision, reader.revision);
   assert.equal(after.total.advisory_fee_status, 'insufficient_coverage'); // Falta AUM marzo; sin tasa ponderada inventada.
   assert.equal(after.total.advisory_difference_pp, null);
+  assert.equal(after.total.advisory_reference_percent, '0.500');
+  assert.equal(after.total.advisory_rate_accounts, 1);
+  const linkedScreen = await (await request(screen)).text();
+  assert.ok(linkedScreen.includes('Vinculada al trimestre') && linkedScreen.includes('0,5 %'));
   assert.ok(!JSON.stringify(after).includes(input.evidence));
   assert.ok(!JSON.stringify(after).includes('source_event_id'));
   assert.equal((await request(path + '&revision=' + reader.revision)).status, 409);

@@ -216,3 +216,20 @@ CSV no habilitado: el contrato vigente no acepta un formato de exportación comp
 No se reutiliza el CSV de Resumen ni se ofrece descarga de solo una página.
 Sin dependencias nuevas, cambios de API/SQL ni operaciones remotas en esta etapa.
 Pruebas y límites de accesibilidad/entorno en [validation.md](validation.md).
+
+## ROA: comparación anual y tasas visibles — 2026-11-20
+
+La comparación principal ahora presenta T1–T4 del mismo año al comienzo. El trimestre
+seleccionado determina el detalle; enlaces conservan filtros y reinician paginación.
+Gráficos/tabla comparativa desplegables separan ROA total de ROA/Fee Advisory.
+
+La respuesta agrega `advisory_reference_percent` (tasa anual efectiva de una sola
+cuenta Advisory sin exigir AUM), `advisory_accounts` y `advisory_rate_accounts`
+(cuentas observadas y con tasa efectiva). Una tasa ausente u obsoleta nunca se
+sustituye por cero. `advisory_fee_percent` sigue siendo ponderado por AUM con sus
+requisitos originales; su diferencia requiere ROA calculable. Clave por UUID
+intacta, etiqueta por custodio/identificador original resuelto, sin unir aliases.
+
+Ver [progreso](progress.md) y [validación](validation.md). Migración aplicada en GMA
+como `20261120180701`; push a main autorizado después por el dueño. Documentación oficial de [funciones PostgreSQL en Supabase](https://supabase.com/docs/guides/database/functions)
+y [changelog](https://supabase.com/changelog.md) consultados antes del cambio.
