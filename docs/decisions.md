@@ -2,6 +2,11 @@
 
 ## Rentabilidad / ROA: frontend autorizado — 2026-11-20
 
+> Ampliación posterior del pedido: el dueño autorizó aplicar las migraciones
+> pendientes en el Supabase de GMA y push a main al completar frontend. Se aplicó
+> únicamente ROA, como20261120155740, pues las25 anteriores ya estaban presentes.
+> Código609b054 pusheado a main; ejecución/controles en progress.md y validation.md.
+
 El pedido vigente autoriza únicamente la interfaz sobre el backend local existente.
 Nueva `/rentabilidad`, accesible a admin y reader mediante `requireAccess()` y RPC
 con sesión del usuario. No hay publicación de tasas en esta pantalla ni cambios de

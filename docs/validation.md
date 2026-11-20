@@ -41,6 +41,14 @@ restauración. `/tmp/gma-roa-ui-db-final.log`; no se sustituyen pruebas remotas 
 usuario con estos fixtures. HTTP integral y navegador corresponden al build final.
 No se probaron roles autenticados en Supabase real ni se publicaron tasas reales.
 
+Git: `main` estaba alineada con origin antes del cambio; commit de código **609b054**
+y push aceptados por GitHub. Hooks de commit/push de Block Secrets correctos sobre
+63 archivos; sin credenciales/fuentes financieras agregadas. Las26 versiones SQL
+locales coinciden exactamente con el listado remoto. Vercel inició por integración
+Git el build de producción de609b054; no se ejecutó una promoción o deploy manual.
+El estado final de hosting se informa por separado: no equivale a una prueba
+funcional autenticada ni a conciliación de datos de negocio.
+
 ## ROA frontend: validación local — 2026-11-20
 
 Sin datos reales en fixtures, screenshots o logs. Node24.22.3, PostgreSQL17.12 y

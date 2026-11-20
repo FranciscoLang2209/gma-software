@@ -26,8 +26,11 @@ concurrencia, permisos y restauración. Log `/tmp/gma-roa-ui-db-final.log`.
 Unitarias49/49, lint, typecheck, build, HTTP integral y Chrome/axe correctos según
 el registro inferior. Clústeres y servidores sintéticos detenidos al cerrar.
 
-Se prepara el push del árbol revisado a main, preservando también cambios previos
-de importación histórica, clasificación REF y consultas ya presentes al inicio.
+Código pusheado correctamente a `origin/main` en **609b054** (20/11), preservando
+también cambios previos de importación histórica, clasificación REF y consultas ya
+presentes al inicio. Escaneo de secretos del commit y push correcto. Vercel inició
+automáticamente el build de producción asociado a ese SHA; su resultado se comprueba
+al cierre y se informa en la respuesta, sin despliegue manual adicional.
 No se crean nuevas funciones de negocio fuera del frontend durante esta etapa.
 El resultado del push se verifica contra origin; no se afirma validación económica
 real ni autenticación remota por rol a partir de estos checks sintéticos.
