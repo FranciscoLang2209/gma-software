@@ -1,5 +1,52 @@
 # App Papá — Decisiones y pendientes
 
+## Master Owners: aplicación remota y push autorizados — 2026-11-20
+
+El pedido posterior autoriza aplicar `master_owners_import` en el Supabase GMA y
+pushear la entrega a main. Aplicada como 20261120164104; archivo local alineado
+al timestamp remoto sin alterar SQL. No autoriza publicar tasas ni datos del Excel:
+esa operación sigue requiriendo conciliación y confirmación en la aplicación.
+Se conserva el criterio de puntos básicos y el redondeo exclusivamente visual.
+Evidencia técnica y límites en progress.md/validation.md.
+
+## Master Owners y formato visual — 2026-11-20
+
+El dueño confirma **Adv Fee / Retro en puntos básicos anuales**: 50 = 0,50 %,
+normalizado a proporción `0.005`. No se reinterpretan condiciones textuales como
+cero. El corte conocido del Balance sigue siendo 30/09/2026 para la muestra;
+el operador debe acreditar por separado el trimestre completo de aplicabilidad.
+
+Se autoriza implementar la carga local del Master: snapshot privado independiente,
+14 originales y metadatos de fórmulas/caché, revisión explícita de Broker→custodio y
+ACCOUNT exacto de Revenue (o UUID manual con evidencia). Las cuentas numéricas
+requieren confirmación literal sin reconstruir ceros. Seleccionar una tasa confirma
+su elegibilidad, base bruta, fórmula trimestral existente y comparabilidad ROA;
+no se deducen por Fee type/Status. Sólo cuentas ya clasificadas Advisory admiten
+esta proyección. Las demás filas permanecen pendientes en el snapshot original.
+Una tasa por cuenta/trimestre; componentes múltiples requieren revisión separada.
+
+Publicación conjunta del snapshot y selección, atómica/idempotente, con corrección
+versionada de las obligaciones Master existentes y sus tasas ROA. Omisiones no
+borran otras cuentas ni fuentes. Revisión obsoleta o selección inválida bloquea toda
+la publicación. No cambia AUM, Revenue, REF ni asignaciones comerciales. Sin nuevas
+reglas económicas de cobranza, sin aplicar remotamente ni desplegar en esta etapa.
+
+Formato visible solicitado: **máximo dos decimales**, redondeo decimal sin Number.
+Importes/participaciones/ROA/diferencias de tablas, tooltips y conciliación comparten
+formato. Las proporciones anuales se presentan en porcentaje para no ocultar tasas
+pequeñas al redondear. Cálculos, SQL, JSON/CSV y originales conservan su precisión;
+los paneles de originales siguen mostrando literalmente la evidencia fuente.
+
+## ROA: cierre de auditoría local — 2026-11-20
+
+La auditoría final no cambia definiciones financieras ni permisos. Se conserva el
+carácter provisional y el contrato sin CSV ROA; no se añade una exportación parcial
+para cubrir esa ausencia. Resumen sigue usando cierre mensual y Revenue del rango.
+La corrección de paginación vacía y las pruebas adicionales se documentan en
+[quarterly-roa-audit.md](quarterly-roa-audit.md). Lista para prueba manual exploratoria;
+aceptación económica y exportación ROA pendientes. Esta solicitud no autoriza
+despliegue de producción; no se hizo push ni ninguna operación remota.
+
 ## Rentabilidad / ROA: frontend autorizado — 2026-11-20
 
 > Ampliación posterior del pedido: el dueño autorizó aplicar las migraciones

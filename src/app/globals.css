@@ -1109,3 +1109,8 @@ footer { color: var(--gma-muted); }
 .roa-charts > :last-child { grid-column: 1 / -1; }
 @media (max-width: 800px) { .roa-charts { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 900px) { .roa-metrics { grid-template-columns: minmax(0, 1fr); } }
+
+.master-review-form { grid-template-columns: minmax(0, 1fr); align-items: start; }
+.master-review-form fieldset { min-width: 0; display: grid; gap: 16px; border: 1px solid var(--gma-border); border-radius: 6px; }
+.master-review-form .publish-confirmation { display: grid; gap: 12px; margin: 0; }
+.master-review-form button { max-width: 100%; white-space: normal; height: auto; min-height: 40px; }

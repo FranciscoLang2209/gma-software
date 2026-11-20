@@ -49,7 +49,7 @@ function xml(
   parser.on("text", (s, decode) => text(decode(s)));
   parser.parse(content);
 }
-export type ReadLimits = { rows: number; expanded: number };
+export type ReadLimits = { rows: number; expanded: number; mergedPreambleRows?: number };
 export const HISTORICAL_LIMITS: ReadLimits = { rows: 25000, expanded: 32 * 1024 * 1024 };
 function unzip(bytes: Uint8Array, limits: ReadLimits) {
   const files: Record<string, string> = Object.create(null);
@@ -127,7 +127,8 @@ function metadata(content: string, limits: ReadLimits) {
       tag = name;
       if (name === "row" && attrs.r && Number(attrs.r) > limits.rows + 1)
         throw new Error(`La hoja supera ${limits.rows.toLocaleString("es-AR")} filas.`);
-      if (name === "mergeCell")
+      if (name === "mergeCell" && !(limits.mergedPreambleRows && /^([A-Z]+)([1-9]\d*):([A-Z]+)([1-9]\d*)$/.test(attrs.ref ?? "") &&
+        attrs.ref.split(":").every((ref) => coordinates(ref, limits).row <= limits.mergedPreambleRows!)))
         throw new Error(
           "Celdas combinadas no admitidas: descombinalas y completá cada fila antes de importar.",
         );

@@ -30,6 +30,6 @@ export function ReportChart({ report, source, distribution = false }: { report: 
       <figcaption>USD · escalas independientes. N/D indica faltante, nunca cero. {distribution ? "Hasta 8 grupos de la página visible, en el orden del desglose (AUM o UUID según dimensión). No es un ranking por Revenue. Todos los grupos e importes exactos están en la tabla; el total filtrado incluye todas las páginas." : "La variación de AUM no representa rendimiento."}</figcaption>
     </figure>
     {!distribution && data.some((d) => d.value === null) && <p>Meses faltantes: {data.filter((d) => d.value === null).map((d) => d.label).join(", ")} · N/D</p>}
-    {!distribution && <details><summary>Ver meses e importes exactos de {label}</summary><ul className="month-values">{report.months.map((m) => <li key={m.period}><strong>{monthLabel(m.period)}</strong>: {usd(m[field])}{m[field] == null ? " · Faltante" : ""}</li>)}</ul></details>}
+    {!distribution && <details><summary>Ver meses e importes de {label}</summary><ul className="month-values">{report.months.map((m) => <li key={m.period}><strong>{monthLabel(m.period)}</strong>: {usd(m[field])}{m[field] == null ? " · Faltante" : ""}</li>)}</ul></details>}
   </section>;
 }

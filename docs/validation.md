@@ -1,5 +1,101 @@
 # Validación — evidencia local y pendientes
 
+## Master Owners: migración remota autorizada y entrega — 2026-11-20
+
+El dueño autorizó expresamente aplicar la migración y pushear a main. Confirmada
+la conexión Supabase **app papa**, proyecto GMA `gma-software-prueba`, referencia
+`zwdqnrbqqszjrtkhyqnz`, ACTIVE_HEALTHY. Aplicada únicamente `master_owners_import`
+por MCP; registrada como **20261120164104**. Renombrado el archivo local desde
+20261120162027 para alinear la historia, sin cambiar SQL. SHA256:
+`644227c01689312ccc9e9dfb2aa98ad4fcc0602452e832748d27d76a308fd9a5`.
+Las 27 migraciones locales/remotas coinciden.
+
+Checks remotos antes/después: 18.800 AUM, 17.893 Revenue, 0 eventos Comisiones,
+0 tasas ROA y 0 publicaciones Master. Punteros activos sin cambios (hash
+`71d8ab9671e1d861d5289dc40a56a034`) y función aggregate_report intacta (hash
+`3b93aa4880f708c948ced2692acfe012`). No se subió ni publicó el Excel real.
+
+Tabla nueva con RLS forzado; sin SELECT/INSERT directos para authenticated;
+wrapper invoker y ejecutor privado acotado; EXECUTE authenticated y denegado
+anon/service_role. Invocación sin sesión rechazada. Sin CREATE para ejecutor y
+sin membresías temporales con INHERIT/SET. Advisors security conserva únicamente
+el aviso preexistente de protección de contraseñas filtradas; no se cambió Auth.
+
+54/54 unitarias repetidas para esta entrega y diff --check correcto; las suites
+SQL/HTTP/build/navegador finales corresponden a la etapa anterior documentada.
+La migración sólo cambió de nombre al registrarse remotamente. Se conservan en
+la entrega la corrección y pruebas de auditoría ROA que ya estaban sin commit.
+
+El pedido vigente autoriza el push de estos cambios a main; el resultado Git y
+el estado del build automático Vercel se verifican y comunican al cierre. No se
+hace un despliegue manual adicional ni se certifica importación económica real.
+Próximo paso: revisar custodios/cuentas, clasificación Advisory y trimestre de
+vigencia del Master privado antes de confirmar su publicación en la aplicación.
+
+## Master Owners y decimales — 2026-11-20
+
+- Lectura local del XLSX privado mediante el parser final: contrato de 14 columnas,
+  412 cuentas y un subtotal; no se ejecutaron fórmulas ni se publicaron datos.
+  Solamente recuentos estructurales en la salida; fixtures y capturas sintéticos.
+- 54/54 pruebas unitarias: bps exactos incluso escala de 34 decimales tras conversión,
+  ceros/negativos, originales/caché, condiciones pendientes, cuentas ambiguas,
+  errores Excel bloqueantes, campos ausentes y combinadas sólo en preámbulo.
+  Redondeo visual con acarreo, signo, cero negativo y números mayores que MAX_SAFE_INTEGER.
+- Lint sin warnings, TypeScript/typegen y build Next correctos. Node 24.22.3 nativo
+  del runtime disponible; sin paquetes ni cambios de lockfile. El Node embebido de
+  ChatGPT no pudo cargar SWC por firma; verificación final con el Node nativo existente.
+- Suite SQL completa correcta (incluidos permisos de operador administrado,
+  capacidad, concurrencias y restauración). Prueba Master final adicional sobre
+  clúster efímero propio: literal/custodio, confirmación de cuenta numérica,
+  pendientes, revisión obsoleta por cambio de modelo, retry, corrección e invalidación,
+  no duplicación, inmutabilidad y denegación reader/anon/service_role.
+  Fallo en segunda escritura revierte también la primera obligación/tasa/snapshot.
+- HTTP integral correcto: Next → API → Storage/manifest → RPC → PostgreSQL;
+  original descargado byte a byte, retoma, bloqueo de origen/lector, Storage fallido,
+  selección, publicación e idempotencia. Conservada regresión JSON con toda precisión
+  y cambiada aserción HTML para exigir dos decimales sin el detalle largo anterior.
+  Auth y transporte Storage/PostgREST sintéticos; PostgreSQL y Next reales.
+- Chrome real, admin, 1440/390: carga XLSX sintético, UUID manual, selección,
+  conciliación y botón submit/publicación; formato USD 100.000,12. Sin errores JS
+  ni overflow de documento. Capturas inspeccionadas; tabla tiene scroll propio y
+  conserva foco de teclado al bloquear edición después de publicar. Axe sin
+  infracciones ni resultados inconclusos en los dos tamaños del formulario final.
+  Acortados los nombres de las otras pestañas para mantener Master visible en móvil;
+  la comprobación final exige su rectángulo completo dentro del viewport.
+
+Logs `/tmp/gma-master-{unit,lint,build,db,db-targeted,http,browser}.log`; capturas
+`/tmp/gma-master-ui-{1440,390}.png`. Sin pruebas autenticadas remotas, nueva suite
+Auth HTTP independiente, Safari/Firefox ni conciliación económica de la muestra.
+No se aplicó migración remota, push, despliegue o importación real. Lectura de docs
+Supabase/changelog y revisión de checklist React/SQL, sin introducir dependencias.
+
+## Auditoría final integral ROA — 2026-11-20
+
+Ejecución nueva sobre el repositorio, independiente de las verificaciones remotas
+anteriores. Ver [informe y matriz completa](quarterly-roa-audit.md).
+
+- Node24.22.3/PostgreSQL17.12 existentes; sin instalaciones ni cambio de lockfile.
+- 49/49 unitarias, lint sin warnings, typecheck y build local correctos.
+- Suite SQL completa ampliada correcta: umbrales exactos y a ambos lados, promedio
+  fijo de tres meses, duplicados legítimos, agrupaciones, vigencias, faltantes,
+  cero/negativos, tasas heterogéneas/no verificadas/obsoletas, roles/RLS, capacidad,
+  concurrencia y restauración con operador sin SUPERUSER.
+- `test:auth:http` y `test:dashboard -- --serve` correctos. Next y PostgreSQL reales;
+  transporte Auth/PostgREST/Storage sintético. Regresiones de CSV completo existente,
+  errores sin resultados parciales y cierre AUM intactos. API ROA rechaza ambos
+  formatos CSV con400JSON sin adjunto; no tiene exportación habilitada.
+- Chrome real: admin/reader ×1440/768/390 y calculable ×1440/390; filtros/teclado,
+  paginación, vacío/error, gráficos, conjunto mixto, sin errores JS/overflow global.
+  Diez escenarios axe sin infracciones detectadas; contraste `incomplete` en tablas
+  desplazables sin resolución automática (13–47 nodos según escenario).
+
+Logs nuevos: `/tmp/gma-audit-{unit,lint,types,build,db,auth,http,browser,calculable}.log`.
+Capturas/resultados axe sintéticos: `/tmp/gma-audit-ui`. Corregido contador de página
+vacía, sin cambios financieros, SQL o permisos. Sin pruebas autenticadas remotas,
+muestras reales, lector de pantalla, Safari/Firefox o advisors nuevos. Evaluación:
+lista para prueba manual exploratoria, no para certificar métricas económicas.
+No se hizo push ni despliegue ni publicación remota de datos/tasas.
+
 ## ROA: aplicación remota autorizada — 2026-11-20
 
 Destino contrastado por herramienta: `gma-software-prueba` (`zwdqnrbqqszjrtkhyqnz`),

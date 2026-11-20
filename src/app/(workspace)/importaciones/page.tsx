@@ -24,7 +24,7 @@ export default async function ImportsPage({ searchParams }: { searchParams: Prom
       <PageHeader
         eyebrow="ORIGEN Y TRAZABILIDAD"
         title="Importaciones"
-        description="Preparación privada de AUM, Revenue y FA. Los archivos y sus filas no aparecen en el dashboard."
+        description="Preparación privada de AUM, Revenue, FA y Master Owners. Los archivos y sus filas no aparecen en el dashboard."
       />
       <ImportModes
         initialHistoricalId={(await searchParams).carga}

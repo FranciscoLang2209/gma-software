@@ -1,5 +1,104 @@
 # App Papá — Progreso
 
+## Master Owners: migración remota autorizada y entrega — 2026-11-20
+
+El dueño autorizó expresamente aplicar la migración y pushear a main. Confirmada
+la conexión Supabase **app papa**, proyecto GMA `gma-software-prueba`, referencia
+`zwdqnrbqqszjrtkhyqnz`, ACTIVE_HEALTHY. Aplicada únicamente `master_owners_import`
+por MCP; registrada como **20261120164104**. Renombrado el archivo local desde
+20261120162027 para alinear la historia, sin cambiar SQL. SHA256:
+`644227c01689312ccc9e9dfb2aa98ad4fcc0602452e832748d27d76a308fd9a5`.
+Las 27 migraciones locales/remotas coinciden.
+
+Checks remotos antes/después: 18.800 AUM, 17.893 Revenue, 0 eventos Comisiones,
+0 tasas ROA y 0 publicaciones Master. Punteros activos sin cambios (hash
+`71d8ab9671e1d861d5289dc40a56a034`) y función aggregate_report intacta (hash
+`3b93aa4880f708c948ced2692acfe012`). No se subió ni publicó el Excel real.
+
+Tabla nueva con RLS forzado; sin SELECT/INSERT directos para authenticated;
+wrapper invoker y ejecutor privado acotado; EXECUTE authenticated y denegado
+anon/service_role. Invocación sin sesión rechazada. Sin CREATE para ejecutor y
+sin membresías temporales con INHERIT/SET. Advisors security conserva únicamente
+el aviso preexistente de protección de contraseñas filtradas; no se cambió Auth.
+
+54/54 unitarias repetidas para esta entrega y diff --check correcto; las suites
+SQL/HTTP/build/navegador finales corresponden a la etapa anterior documentada.
+La migración sólo cambió de nombre al registrarse remotamente. Se conservan en
+la entrega la corrección y pruebas de auditoría ROA que ya estaban sin commit.
+
+El pedido vigente autoriza el push de estos cambios a main; el resultado Git y
+el estado del build automático Vercel se verifican y comunican al cierre. No se
+hace un despliegue manual adicional ni se certifica importación económica real.
+Próximo paso: revisar custodios/cuentas, clasificación Advisory y trimestre de
+vigencia del Master privado antes de confirmar su publicación en la aplicación.
+
+## Master Owners / Advisory fee y decimales — 2026-11-20
+
+Implementación local del pedido actual, preservando los cambios previos de auditoría
+ROA que ya estaban sin commit. Nueva pestaña Master Owners / Fee y API admin para
+XLSX: original/manifiesto privados, retoma por UUID, revisión de custodio e identidad,
+trimestre/corte explícitos, selección/conciliación y publicación atómica/versionada
+mediante el motor existente de Comisiones y su referencia ROA. No modifica AUM,
+Revenue, REF ni asignaciones. Reintentos idempotentes, cambios de modelo o versiones
+invalidan revisión; pendientes conservados y correcciones sin duplicar obligaciones.
+
+Unidad confirmada por el dueño en este chat: puntos básicos anuales, 50 = 0,50 %.
+Lectura local del Excel privado: 412 cuentas, un subtotal, 169 tasas numéricas,
+245 filas con alguna condición/faltante de tasa o Balance y 14 cuentas numéricas.
+Estas cifras describen el parser; no acreditan correspondencias, vigencia económica
+ni importación/publicación real. Se conservan condiciones textuales y metadatos de
+fórmulas/caché sin ejecutarlas. Sin datos privados en Git/fixtures/logs/capturas.
+
+Presentación numérica compartida con máximo dos decimales (montos, porcentajes,
+ROA/diferencias, tooltips y conciliaciones). Cálculos y JSON/CSV/originales conservan
+precisión. Tasas proporcionales se presentan como porcentaje. N/D sigue distinto
+de cero y la clasificación financiera no depende del redondeo visible.
+
+Verificado: 54/54 unitarias, lint, typecheck, build; suite SQL completa con capacidad,
+concurrencia y restauración; suite SQL Master final adicional con cambios de modelo,
+custodio, corrección y fallo durante la segunda escritura con rollback íntegro;
+HTTP integral (Next/PostgreSQL reales, transporte Auth/Storage sintético) y Chrome
+1440/390 con carga → conciliación → publicación. Sin errores JS ni overflow global;
+axe sin infracciones ni resultados inconclusos en los dos tamaños del formulario
+final. Corregidos durante esa revisión la superposición del botón, el foco del área
+desplazable después de publicar y el recorte de la pestaña Master en móvil. Detalles en validation.md/imports.md.
+
+Pendiente de aplicar remotamente `20261120162027_master_owners_import.sql`, push y
+despliegue; no solicitados en esta etapa. No se cargó ni publicó el archivo real.
+Las filas sin evidencia/identidad y la clasificación de servicio requieren revisión
+del administrador. Una preparación reabierta requiere completar de nuevo el formulario
+de revisión; originales se retienen sin limpieza automática.
+
+Próximo prompt sugerido: «Aplicar la migración Master Owners en GMA y desplegar los
+cambios; después revisar custodios, correspondencias y trimestre del archivo privado
+antes de confirmar expresamente la publicación de sus tasas. Conservar pendientes».
+
+## Auditoría final integral ROA — 2026-11-20
+
+Cerrada la auditoría local solicitada. Informe completo, matriz de casos, evidencia
+y riesgos en [quarterly-roa-audit.md](quarterly-roa-audit.md). No se detectaron
+defectos financieros/de autorización en los escenarios ejecutados. Corregido el
+contador de página vacía que anunciaba una primera fila inexistente; regresión HTTP
+agregada. Ampliadas pruebas SQL para ambos lados de los umbrales, foto intermedia
+ausente, cambio de comercial, solo AUM, universo del mes previo y tasa no verificada.
+
+Verificados: 49/49 unitarias, lint, typecheck, build local, suite SQL completa con
+capacidad/concurrencia/restauración y ambas suites HTTP. Chrome/axe: admin/reader,
+1440/768/390 px y casos calculables a 1440/390; sin errores JS ni overflow global,
+sin infracciones axe detectadas, con contraste pendiente de evaluación manual en
+contenido recortado de tablas. Resumen conserva cierre; ROA promedio trimestral.
+CSV ROA rechazado expresamente; CSV existente y sus permisos/regresiones correctos.
+
+Apta para prueba manual exploratoria con invitados, sin certificar ROA económico.
+Pendientes: muestras privadas/conciliación por servicio, cobertura esperada, historia
+de cliente/servicio, tasas comparables y exportación ROA. Sin operaciones remotas,
+push ni despliegue; no se cambian migraciones ni dependencias.
+
+Próximo prompt sugerido: «Hagamos la prueba manual de ROA con administrador y lector
+en un entorno autorizado; conciliemos un trimestre con muestras privadas y definamos
+la cobertura esperada y comparabilidad de Payout broker y tasas Advisory. Mantener
+los resultados provisionales y no desplegar producción automáticamente».
+
 ## Publicación autorizada de ROA y sincronización del repositorio — 2026-11-20
 
 El dueño pidió aplicar las migraciones pendientes en Supabase y pushear a main

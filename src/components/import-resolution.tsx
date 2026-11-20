@@ -1,4 +1,5 @@
 "use client";
+import { exact } from "@/lib/queries/presentation";
 import Link from "next/link";
 import { DatePicker } from "./ui/date-picker";
 import { Select } from "./ui/select";
@@ -138,14 +139,14 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
         <Button disabled={busy || !!detail.batch.blocking_errors}>Conciliar y dejar lista</Button>
       </form>}
       <div className="section-heading reconciliation-heading"><div><p className="eyebrow">ANTES DE PUBLICAR</p><h3>Conciliación por período y custodio</h3></div><ShieldCheck size={20} aria-hidden="true" /></div>
-      <p>{detail.comparison.source.toUpperCase()} · {detail.comparison.period} · {code(detail.comparison.custodian_id)}. Importes exactos en USD. FA no tiene total monetario.</p>
+      <p>{detail.comparison.source.toUpperCase()} · {detail.comparison.period} · {code(detail.comparison.custodian_id)}. Importes en USD, presentados a dos decimales como máximo. FA no tiene total monetario.</p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Comparación de publicación">
         <Table.Root className="data-table"><Table.Header><Table.Row><Table.ColumnHeaderCell>Versión</Table.ColumnHeaderCell><Table.ColumnHeaderCell align="right">Filas</Table.ColumnHeaderCell><Table.ColumnHeaderCell align="right">Valores</Table.ColumnHeaderCell><Table.ColumnHeaderCell align="right">Total USD</Table.ColumnHeaderCell></Table.Row></Table.Header>
-          <Table.Body>{[{ label: "Archivo", value: detail.comparison.file }, { label: "Candidata conciliada", value: detail.comparison.candidate }, { label: "Activa antes de publicar", value: detail.comparison.active }].map(({ label, value: v }) => { return <Table.Row key={String(label)}><Table.Cell>{String(label)}</Table.Cell><Table.Cell align="right">{v?.rows ?? "N/D"}</Table.Cell><Table.Cell align="right">{v?.values ?? "N/D"}</Table.Cell><Table.Cell align="right">{v?.total ?? "N/D"}</Table.Cell></Table.Row>; })}</Table.Body>
+          <Table.Body>{[{ label: "Archivo", value: detail.comparison.file }, { label: "Candidata conciliada", value: detail.comparison.candidate }, { label: "Activa antes de publicar", value: detail.comparison.active }].map(({ label, value: v }) => { return <Table.Row key={String(label)}><Table.Cell>{String(label)}</Table.Cell><Table.Cell align="right">{v?.rows ?? "N/D"}</Table.Cell><Table.Cell align="right">{v?.values ?? "N/D"}</Table.Cell><Table.Cell align="right">{exact(v?.total)}</Table.Cell></Table.Row>; })}</Table.Body>
         </Table.Root>
       </div>
       <p>Comparación de filas por contenido conservando multiplicidad: {detail.comparison.row_changes.added} nuevas, {detail.comparison.row_changes.removed} retiradas del alcance activo. La versión anterior se conserva.</p>
-      <p>Sin asignación comercial al cierre: {detail.comparison.candidate.unassigned_accounts} cuentas / {detail.comparison.candidate.unassigned_rows} filas · USD {detail.comparison.candidate.unassigned_total ?? "N/D"}. Permanecen en el total global. Antes de conciliar, la candidata todavía no tiene hechos.</p>
+      <p>Sin asignación comercial al cierre: {detail.comparison.candidate.unassigned_accounts} cuentas / {detail.comparison.candidate.unassigned_rows} filas · USD {exact(detail.comparison.candidate.unassigned_total)}. Permanecen en el total global. Antes de conciliar, la candidata todavía no tiene hechos.</p>
       {detail.comparison.same_file && <p role="status">Mismo archivo que la versión activa. Publicarlo como otra versión reemplaza el alcance; no agrega sus filas a la versión anterior.</p>}
       {detail.batch.upload_id && <p>Este período pertenece a una carga histórica. <Link href={`/importaciones?carga=${detail.batch.upload_id}`}>Volver a la carga histórica</Link> para revisar y publicar todos sus períodos juntos.</p>}
       {detail.batch.status === "ready" && !detail.batch.upload_id && <form className="import-form publish-confirmation" onSubmit={(e) => { e.preventDefault(); void run(async () => { await api(detail.batch.id, "publish", { token: detail.batch.review?.token }); await reload(); setNotice("Publicación confirmada. La versión anterior y su auditoría se conservan."); }); }}>

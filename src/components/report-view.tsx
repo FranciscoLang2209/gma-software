@@ -91,8 +91,8 @@ export function ReportTable({ report, params, path }: { report: Report; params: 
   const metricCells = (m: Metrics) => <>
     <Table.Cell align="right" className="money">{usd(m.aum_usd)}</Table.Cell>
     <Table.Cell align="right" className="money">{usd(m.revenue_usd)}</Table.Cell>
-    <Table.Cell align="right">{m.aum_share_percent == null ? "N/D" : <abbr tabIndex={0} title={`${exact(m.aum_share_percent)} % exacto`}>{percent(m.aum_share_percent)}</abbr>}</Table.Cell>
-    <Table.Cell align="right">{m.revenue_share_percent == null ? "N/D" : <abbr tabIndex={0} title={`${exact(m.revenue_share_percent)} % exacto`}>{percent(m.revenue_share_percent)}</abbr>}</Table.Cell>
+    <Table.Cell align="right">{m.aum_share_percent == null ? "N/D" : <abbr tabIndex={0} title={`${exact(m.aum_share_percent)} % presentado`}>{percent(m.aum_share_percent)}</abbr>}</Table.Cell>
+    <Table.Cell align="right">{m.revenue_share_percent == null ? "N/D" : <abbr tabIndex={0} title={`${exact(m.revenue_share_percent)} % presentado`}>{percent(m.revenue_share_percent)}</abbr>}</Table.Cell>
   </>;
   const page = (offset: number) => reportHref(path, params, { agrupar: report.group_by, offset: String(offset), limite: String(report.limit), revision: report.revision });
   return <section className="panel report-section" id="detalle">
@@ -108,7 +108,7 @@ export function ReportTable({ report, params, path }: { report: Report; params: 
         <Table.Row className="report-total"><Table.RowHeaderCell>Total filtrado · todas las páginas</Table.RowHeaderCell>{metricCells(report.total)}<Table.Cell>Fuente: consulta agregada</Table.Cell></Table.Row>
         {report.rows.map((row) => <Table.Row key={row.key}>
           <Table.RowHeaderCell>{row.key === "sin_asignar" ? row.label : <Link href={(report.group_by === "account" ? reportHref(`/cuentas/${row.key}`, params, { cuenta: row.key }) : reportHref("/analisis-comercial", params, { agrupar: "account", [dimensionFilter[report.group_by]]: row.key })) + (report.group_by === "account" ? "" : "#detalle")}>{row.label}</Link>}</Table.RowHeaderCell>
-          {metricCells(row)}<Table.Cell><details><summary>Ver cobertura de {row.label}</summary><p>AUM: {row.aum_values}/{row.aum_rows} importes, {row.aum_missing_accounts} cuentas sin foto. Revenue: {row.revenue_values}/{row.revenue_rows} importes, {row.revenue_missing_account_months} cuenta-meses sin registro.</p><p>Cuentas con AUM: {row.accounts_with_aum}; clientes con AUM: {row.clients_with_aum}; cuentas con Revenue: {row.accounts_with_revenue}. Sin comercial: {row.aum_accounts_without_advisor} AUM / {row.revenue_accounts_without_advisor} Revenue.</p><p>Participación exacta: AUM {exact(row.aum_share_percent)}{row.aum_share_percent == null ? "" : " %"}; Revenue {exact(row.revenue_share_percent)}{row.revenue_share_percent == null ? "" : " %"}.</p></details></Table.Cell>
+          {metricCells(row)}<Table.Cell><details><summary>Ver cobertura de {row.label}</summary><p>AUM: {row.aum_values}/{row.aum_rows} importes, {row.aum_missing_accounts} cuentas sin foto. Revenue: {row.revenue_values}/{row.revenue_rows} importes, {row.revenue_missing_account_months} cuenta-meses sin registro.</p><p>Cuentas con AUM: {row.accounts_with_aum}; clientes con AUM: {row.clients_with_aum}; cuentas con Revenue: {row.accounts_with_revenue}. Sin comercial: {row.aum_accounts_without_advisor} AUM / {row.revenue_accounts_without_advisor} Revenue.</p><p>Participación: AUM {exact(row.aum_share_percent)}{row.aum_share_percent == null ? "" : " %"}; Revenue {exact(row.revenue_share_percent)}{row.revenue_share_percent == null ? "" : " %"}.</p></details></Table.Cell>
         </Table.Row>)}
       </Table.Body></Table.Root>
     </div>

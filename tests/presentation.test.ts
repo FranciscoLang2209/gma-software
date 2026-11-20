@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { exact, exportHref, percent, reportHref, reportWarnings, screenParameters, usd, usdRounded } from "../src/lib/queries/presentation.ts";
+import { exact, exportHref, percent, ratePercent, reportHref, reportWarnings, screenParameters, usd, usdRounded } from "../src/lib/queries/presentation.ts";
 import type { Report } from "../src/lib/queries/contracts.ts";
 
-test("presentación: decimales exactos, negativos, cero y ausencia sin redondear", () => {
-  assert.equal(exact("100.123456789123456789"), "100,123456789123456789");
+test("presentación: redondeo visual a dos decimales, negativos, cero y ausencia", () => {
+  assert.equal(exact("100.123456789123456789"), "100,12");
   assert.equal(exact("-1234567.05"), "-1.234.567,05");
   assert.equal(exact("0"), "0");
   assert.equal(exact("20.0000000000000000"), "20");
@@ -13,11 +13,14 @@ test("presentación: decimales exactos, negativos, cero y ausencia sin redondear
   assert.equal(percent("99.999"), "100 %");
   assert.equal(percent("-0.004"), "0 %");
   assert.equal(exact(null), "N/D");
+  assert.equal(exact("999.995"), "1.000");
+  assert.equal(exact("9007199254740993.015"), "9.007.199.254.740.993,02");
+  assert.equal(exact("-0.004"), "0");
 });
-test("indicadores: redondeo decimal a centavos sin perder precisión en detalle", () => {
+test("indicadores: redondeo decimal a centavos sin modificar la entrada", () => {
   const original = "1234567.556789123456789123"; // SINTÉTICO
   assert.equal(usdRounded(original), "USD 1.234.567,56");
-  assert.equal(usd(original), "USD 1.234.567,556789123456789123");
+  assert.equal(usd(original), "USD 1.234.567,56");
   assert.equal(usdRounded("999.995"), "USD 1.000,00");
   assert.equal(usdRounded("-0.005"), "USD -0,01");
   assert.equal(usdRounded("-0.004"), "USD 0,00");
@@ -76,4 +79,11 @@ test("enlaces: conservan filtros por ID y reinician paginación al cambiar pobla
   assert.equal(parsed.get("hasta"), "2026-02"); assert.equal(parsed.get("revision"), "b".repeat(32));
   assert.equal(parsed.get("formato"), "csv-completo"); assert.equal(parsed.get("agrupar"), "team");
   assert.equal(parsed.has("offset"), false); assert.equal(parsed.has("limite"), false);
+});
+
+test("tasas anuales se muestran como porcentaje sin ocultar el fee por redondear la proporción", () => {
+  assert.equal(ratePercent("0.005"), "0,5 %");
+  assert.equal(ratePercent("0.00251234"), "0,25 %");
+  assert.equal(ratePercent("0"), "0 %");
+  assert.equal(ratePercent(null), "N/D");
 });

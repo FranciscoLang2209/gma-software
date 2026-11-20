@@ -9,6 +9,7 @@ import { once } from "node:events";
 import { createServerClient } from "@supabase/ssr";
 import { verifyCommissions } from "./test-commissions-http.mjs";
 import { verifyImportWorkflow } from "./test-import-workflow.mjs";
+import { verifyMaster } from "./test-master-http.mjs";
 import { verifyRoa } from "./test-roa-http.mjs";
 
 const root = mkdtempSync(join(tmpdir(), "app-papa-dashboard-"));
@@ -42,6 +43,7 @@ const signatures = {
   source_file: "target_id uuid",
   commission_report: "filters jsonb",
   commission_dashboard: "filters jsonb",
+  import_master: "request_id uuid,operation text,input jsonb",
   manage_commission: "request_id uuid,operation text,target_id uuid,input jsonb",
   quarterly_roa_report: "report_year integer,report_quarter integer,custodian uuid,team uuid,advisor uuid,client uuid,account uuid,service_filter text,group_by text,page_size integer,page_offset integer,expected_revision text",
   publish_roa_rate: "request_id uuid,source_event_id uuid,expected_rate_id uuid,evidence text",
@@ -195,7 +197,7 @@ try {
   assert.match(longRangeHtml, /Ver cierre con registros de AUM: (?:<!-- -->)?05\/2026/);
   assert.ok(longRangeHtml.includes("hasta=2026-05") && !longRangeHtml.includes("Clasificación de clientes pendiente"));
   const preciseHtml = await (await request(`/?desde=2026-01&hasta=2026-05&cuenta=${account}`)).text();
-  assert.ok(preciseHtml.includes("USD 100,12") && preciseHtml.includes("USD 100,123456789123456789"));
+  assert.ok(preciseHtml.includes("USD 100,12") && !preciseHtml.includes("USD 100,123456789123456789"));
   const filteredMissing = await (await request(`/?desde=2026-01&hasta=2026-11&cuenta=${account}`)).text();
   assert.ok(filteredMissing.includes(`href="/?desde=2026-01&amp;hasta=2026-05&amp;cuenta=${account}&amp;agrupar=account"`), "el enlace al cierre conserva el filtro de cuenta");
   const unassignedHtml = await (await request(`/?${base}`)).text();
@@ -228,6 +230,7 @@ try {
   await verifyCommissions({ request, appOrigin, sql });
   await verifyRoa({ request, appOrigin, sql });
   await verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage: () => { failNextStorageWrite = true; }, interruptHistory: () => { failNextHistoryRegistration = true; } });
+  await verifyMaster({ request, appOrigin, sql, interruptStorage: () => { failNextStorageWrite = true; } });
   reportTimeout = true;
   const timedOutRoa = await (await request('/rentabilidad?anio=2026&trimestre=1')).text();
   assert.ok(timedOutRoa.includes('Consulta ROA no disponible') && timedOutRoa.includes('tiempo disponible') && !timedOutRoa.includes('SYNTHETIC PRIVATE TIMEOUT'));

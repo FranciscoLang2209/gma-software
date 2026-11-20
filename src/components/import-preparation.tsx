@@ -1,4 +1,5 @@
 "use client";
+import { exact } from "@/lib/queries/presentation";
 import { DatePicker } from "./ui/date-picker";
 import { Select } from "./ui/select";
 import { useRef, useState, type FormEvent } from "react";
@@ -348,7 +349,7 @@ export function ImportPreparation({
                 {detail.batch.source === "aum"
                   ? "Value (USD)"
                   : "Payout broker (USD)"}
-                : <strong>{detail.batch.totals.total ?? "N/D"}</strong>. Valores
+                : <strong>{exact(detail.batch.totals.total)}</strong>. Valores
                 interpretados: {detail.batch.totals.valueCount ?? 0}; ausentes:{" "}
                 {detail.batch.totals.missingValues ?? 0}; filas repetidas
                 conservadas: {detail.batch.totals.duplicateRows ?? 0}. Errores
@@ -439,7 +440,7 @@ export function ImportPreparation({
                       {r.cell_metadata.account ?? "Ausente"}
                     </Table.Cell>
                     <Table.Cell align="right">
-                      {r.cell_metadata.amount ?? "N/D"}
+                      {exact(r.cell_metadata.amount as string | null)}
                     </Table.Cell>
                     <Table.Cell>
                       {[...r.errors, ...r.cell_metadata.warnings].map(

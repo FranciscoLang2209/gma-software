@@ -33,10 +33,10 @@ export function exportHref(params: URLSearchParams, report: Report) {
   return reportHref("/api/consultas", params, { formato: "csv-completo", agrupar: report.group_by, revision: report.revision });
 }
 
-// Formato exacto: agrupa texto decimal; no redondea ni convierte importes a Number.
+// Presentación a dos decimales como máximo; conserva los textos originales fuera de la vista.
 export function exact(value: string | null | undefined) {
   if (value == null) return "N/D";
-  const [integer, rawFraction] = value.split(".");
+  const [integer, rawFraction] = rounded(value).split(".");
   const fraction = rawFraction?.replace(/0+$/, "");
   return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + (fraction ? `,${fraction}` : "");
 }
@@ -44,7 +44,7 @@ export function usd(value: string | null | undefined) {
   return value == null ? "N/D" : `USD ${exact(value)}`;
 }
 
-// Redondeo decimal de presentación; los cálculos y el detalle conservan el original.
+// Redondeo decimal de presentación; los cálculos conservan el original.
 function rounded(value: string) {
   const [whole, fraction = ""] = value.replace("-", "").split(".");
   let cents = BigInt(whole + fraction.padEnd(2, "0").slice(0, 2));
@@ -56,7 +56,7 @@ function rounded(value: string) {
 export function usdRounded(value: string | null | undefined) {
   if (value == null) return "N/D";
   const [whole, fraction] = rounded(value).split(".");
-  return `USD ${exact(whole)},${fraction}`;
+  return `USD ${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${fraction}`;
 }
 
 export function reportWarnings(report: Pick<Report, "total" | "coverage" | "period">) {
@@ -79,8 +79,17 @@ export function dateLabel(value: string) {
   return new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", dateStyle: "short", timeStyle: "short" }).format(new Date(value));
 }
 
-// Solo redondeo de presentación; el porcentaje exacto sigue disponible en el detalle.
+// Solo redondeo de presentación; el porcentaje original se conserva en el reporte y la exportación.
 export function percent(value: string | null | undefined) {
   if (value == null) return "N/D";
   return `${exact(rounded(value))} %`;
+}
+
+// Convierte proporción anual a porcentaje sólo para presentación.
+export function ratePercent(value: string | null | undefined) {
+  if (value == null) return "N/D";
+  const [whole, fraction = ""] = value.replace("-", "").split(".");
+  const digits = whole + fraction.padEnd(2, "0");
+  const shifted = digits.slice(0, whole.length + 2).replace(/^0+(?=\d)/, "") + "." + (digits.slice(whole.length + 2) || "0");
+  return percent(`${value.startsWith("-") ? "-" : ""}${shifted}`);
 }

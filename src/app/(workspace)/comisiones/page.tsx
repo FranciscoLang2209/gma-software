@@ -7,7 +7,7 @@ import { MetricCard } from "@/components/metric-card";
 import { CommissionChart } from "@/components/commission-chart";
 import { CommissionReview } from "@/components/commission-review";
 import { BASES, COMMISSION_STATUSES, VIEWS, commissionFilters, commissionHref, commissionSort, type CommissionDashboard, type CommissionRow, type CommissionGroup } from "@/lib/commissions/dashboard";
-import { exact, usd, percent, type Search } from "@/lib/queries/presentation";
+import { usd, percent, ratePercent, type Search } from "@/lib/queries/presentation";
 export const metadata: Metadata = { title: "Comisiones" };
 const fields = [["year", "Año"], ["quarter", "Trimestre (1–4)"], ["broker", "Broker"], ["owner", "Owner Name payout"], ["account_id", "Cuenta (UUID)"], ["fee_type", "Fee type"], ["min_absolute_variance", "Diferencia absoluta mínima USD"], ["min_absolute_percentage", "Diferencia porcentual mínima"]] as const;
 const money = new Set(["balance", "expected", "comparable_expected", "actual", "variance", "expected_quarterly", "actual_received"]);
@@ -22,7 +22,7 @@ function display(row: Record<string, unknown>, key: string) {
   if (key === "basis") return BASES[String(value)] ?? "Sin base clasificada";
   if (key === "variance_percentage") return percent(value as string | null);
   if (money.has(key)) return usd(value as string | null);
-  if (key === "annual_rate") return value == null ? "N/D" : `${row.annual_rate_original ?? "Original N/D"} · ${exact(String(value))} (proporción anual)`;
+  if (key === "annual_rate") return value == null ? "N/D" : ratePercent(String(value));
   return value == null ? "N/D" : String(value);
 }
 export default async function CommissionsPage({ searchParams }: { searchParams: Promise<Search> }) {

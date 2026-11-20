@@ -277,3 +277,49 @@ Las opciones quedan congeladas con la preparación y se reutilizan al procesar
 bloques. Reintentar con decisiones diferentes requiere una carga nueva. Originales,
 tipo de celda, warnings, motivo y coordenadas se conservan. No cambia el circuito
 de correspondencias/revisión/publicación conjunta ni se publica parcialmente.
+
+
+## Master Owners / Advisory fee — implementación local 2026-11-20
+
+Pestaña **Master Owners / Fee** en Importaciones, sólo administrador. XLSX de hasta
+2 MiB, hoja explícita si hay varias, 14 headers en fila 2 y una columna Balance.
+Se admite una combinada únicamente en la fila 1 de preámbulo; los demás lectores
+siguen rechazando combinadas. Subtotal sólo reconocible sin cuenta/datos en las
+primeras diez columnas y fórmula SUBTOTAL; se conserva en los bytes originales.
+No se ejecutan fórmulas/macros. Errores de saldo/tasa Excel o cuentas ambiguas son
+bloqueantes; una condición textual de tasa se conserva pendiente, nunca cero.
+
+Flujo: guardar original → indicar trimestre/corte y evidencia → asociar Broker a
+custodio → confirmar identidad literal ACCOUNT de REV o UUID individual acreditado
+→ seleccionar filas → conciliar → revisar tasa anterior y confirmar publicación.
+La selección de filas acredita tasa anual, trimestre completo, base bruta y fórmula
+Balance × tasa /4. La selección masiva requiere una nueva conciliación; condiciones,
+faltantes o cuentas no Advisory no pueden publicarse como tasas. Un UUID manual
+no crea identidades ni modifica equivalencias existentes. Máximo una fila elegida
+por cuenta; revisar componentes múltiples por el motor existente, sin sumarlos.
+
+Original y manifiesto inmutables en Storage privado, ruta `master/<UUID>/`; se
+retoma con ese UUID y se descarga el original con la sesión de administrador.
+Una preparación no publica. Reanudar abre el archivo para una nueva revisión;
+no restaura campos de un formulario que no se haya publicado. El evento publicado
+conserva manifiesto, alcance, decisiones, actor y fecha. No hay borrado automático
+de preparaciones ni originales huérfanos de una subida interrumpida.
+
+RPC `import_master`: preview de identidad/pendientes y revisión de versiones;
+publish conjunto con locks compartidos con correspondencias/modelo y Comisiones/ROA. Cada fila elegida alimenta
+`manage_commission` (componente estable `master-owners`) y `publish_roa_rate` dentro
+de la misma transacción. Una corrección conserva eventos previos, invalida tasa
+anterior y publica referencia nueva. Cuenta omitida conserva su tasa previa; esto
+se informa antes de publicar y no acredita que siga siendo económicamente vigente.
+Un cambio de versiones o de identidad/modelo invalida la revisión y obliga a conciliar otra vez. Reintento del mismo comando y
+contenido devuelve el resultado previo; no duplica obligaciones ni tasas.
+
+Las filas sin tasa/identidad/evidencia quedan visibles en la preparación conservada,
+fuera de la referencia ROA. No implica completar cobertura esperada del trimestre.
+Readers no acceden al archivo, manifiesto o eventos; sólo a las referencias
+publicadas existentes mediante el contrato ROA. Migración aplicada por autorización posterior como 20261120164104
+en GMA (ver progress.md); el archivo privado no se incluye en Git ni en fixtures/logs/capturas.
+
+Consulta documental: [funciones SQL](https://supabase.com/docs/guides/database/functions),
+[Storage upload](https://supabase.com/docs/reference/javascript/storage-from-upload)
+y changelog oficial, sin actualizar paquetes ni lockfile.

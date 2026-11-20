@@ -74,6 +74,9 @@ create function pg_temp.rate_input(a integer,rate text default '0.005') returns 
  'Net annual USD',null,'Payout final REP',null,'Final REP',null));
 $$;
 set local role authenticated;
+select public.manage_commission('90000000-0000-0000-0000-000000000009','expected','91000000-0000-0000-0000-000000000009',
+ pg_temp.rate_input(1)||'{"component_key":"sin-verificar","rate_evidence_status":"unconfirmed"}');
+select pg_temp.expect_error($q$select public.publish_roa_rate(gen_random_uuid(),'90000000-0000-0000-0000-000000000009',null,'SINTETICO: evidencia adicional no reemplaza verificación de fuente')$q$,'22023');
 select public.manage_commission('90000000-0000-0000-0000-000000000001','expected','91000000-0000-0000-0000-000000000001',pg_temp.rate_input(1));
 select public.manage_commission('90000000-0000-0000-0000-000000000002','expected','91000000-0000-0000-0000-000000000002',pg_temp.rate_input(2,'0.01'));
 select pg_temp.assert_true(public.quarterly_roa_report(2026,1,service_filter=>'Advisory')->'total'->>'advisory_fee_percent' is null,'verified de Comisiones no publica tasa ROA automáticamente');
@@ -134,6 +137,18 @@ select pg_temp.seed('revenue','2024-01-01',1,'[[1,"100"],[2,"0"]]');
 set local role authenticated;
 select pg_temp.assert_true(public.quarterly_roa_report(2024,1,account=>'20000000-0000-0000-0000-000000000001')->'total'->>'classification'='OK','0.40 inclusivo');
 reset role;
+select pg_temp.seed('revenue','2024-01-01',1,'[[1,"99.9999999999999999999999999"],[2,"0"]]');
+set local role authenticated;
+select pg_temp.assert_true(public.quarterly_roa_report(2024,1,account=>'20000000-0000-0000-0000-000000000001')->'total'->>'classification'='Bajo','justo debajo de 0.40, incluso si la división redondea');
+reset role;
+select pg_temp.seed('revenue','2024-01-01',1,'[[1,"100.0000000000000000000000001"],[2,"0"]]');
+set local role authenticated;
+select pg_temp.assert_true(public.quarterly_roa_report(2024,1,account=>'20000000-0000-0000-0000-000000000001')->'total'->>'classification'='OK','justo encima de 0.40');
+reset role;
+select pg_temp.seed('revenue','2024-01-01',1,'[[1,"149.9999999999999999999999999"],[2,"0"]]');
+set local role authenticated;
+select pg_temp.assert_true(public.quarterly_roa_report(2024,1,account=>'20000000-0000-0000-0000-000000000001')->'total'->>'classification'='OK','justo debajo de 0.60');
+reset role;
 select pg_temp.seed('revenue','2024-01-01',1,'[[1,"150"],[2,"0"]]');
 set local role authenticated;
 select pg_temp.assert_true(public.quarterly_roa_report(2024,1,account=>'20000000-0000-0000-0000-000000000001')->'total'->>'classification'='OK','0.60 inclusivo');
@@ -149,6 +164,42 @@ reset role;
 select pg_temp.seed('revenue','2024-01-01',1,'[[1,"0"],[2,"0"]]');
 set local role authenticated;
 select pg_temp.assert_true((public.quarterly_roa_report(2024,1,account=>'20000000-0000-0000-0000-000000000001')->'total'->>'roa_percent')::numeric=0,'Revenue cero presente produce ratio cero');
+reset role;
+-- Una foto intermedia ausente no se arrastra ni se divide entre dos.
+select pg_temp.seed('aum','2024-02-01',1,'[[2,"900000"]]');
+set local role authenticated;
+select pg_temp.assert_true(public.quarterly_roa_report(2024,1,account=>'20000000-0000-0000-0000-000000000001')->'total' @>
+ '{"aum_known_sum_usd":"200000","aum_average_divisor":3,"aum_average_usd":null,"missing_aum_account_months":1,"roa_percent":null,"classification":null,"calculation_status":"incomplete"}',
+ 'foto intermedia faltante: subtotal conocido, promedio/ROA N/D');
+reset role;
+-- Cambiar de comercial distribuye los meses, sin duplicar la cuenta ni inventar historia.
+insert into app_private.commercial_advisors(id,name,created_by)
+ values('30000000-0000-0000-0000-000000000002','Otro comercial SINTETICO',auth.uid());
+insert into app_private.account_assignments(account_id,advisor_id,valid_from,evidence,created_by)
+ values('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-03-01','SINTETICO: cambio explícito',auth.uid());
+set local role authenticated;
+select public.quarterly_roa_report(2026,1,account=>'20000000-0000-0000-0000-000000000001',group_by=>'advisor') changed_advisor \gset
+select pg_temp.assert_true(:'changed_advisor'::jsonb->'total' @> '{"aum_known_sum_usd":"360000","revenue_quarter_usd":"150","unassigned_advisor_account_months":0,"unassigned_team_account_months":1}',
+ 'cambio de comercial conserva total y marzo sin membresía de equipo');
+select pg_temp.assert_true((select x @> '{"aum_known_sum_usd":"220000","revenue_quarter_usd":"90","account_months":2}'
+ from jsonb_array_elements(:'changed_advisor'::jsonb->'rows') x where x->>'key'='30000000-0000-0000-0000-000000000001'), 'comercial anterior recibe enero y febrero');
+select pg_temp.assert_true((select x @> '{"aum_known_sum_usd":"140000","revenue_quarter_usd":"60","account_months":1}'
+ from jsonb_array_elements(:'changed_advisor'::jsonb->'rows') x where x->>'key'='30000000-0000-0000-0000-000000000002'), 'comercial nuevo recibe solo marzo');
+select pg_temp.assert_true(public.aggregate_report('2026-01-01','2026-03-01',account=>'20000000-0000-0000-0000-000000000001')->'total' @> '{"aum_usd":"140000","revenue_usd":"150"}',
+ 'Resumen sigue mostrando cierre 140000, no promedio ROA 120000');
+select pg_temp.assert_true(public.quarterly_roa_report(2024,2,account=>'20000000-0000-0000-0000-000000000001')->'total' @>
+ '{"accounts":1,"calculation_status":"no_data","aum_known_sum_usd":null,"revenue_quarter_usd":null,"missing_aum_account_months":3,"missing_revenue_account_months":3}',
+ 'cuenta observada en mes previo permanece visible sin arrastrar fotos ni Revenue');
+reset role;
+do $$ declare m date; begin
+ for m in select d::date from generate_series(date '2022-01-01',date '2022-03-01',interval '1 month') d loop
+  perform pg_temp.seed('aum',m,1,'[[1,"100000"]]');
+ end loop;
+end $$;
+set local role authenticated;
+select pg_temp.assert_true(public.quarterly_roa_report(2022,1,account=>'20000000-0000-0000-0000-000000000001')->'total' @>
+ '{"revenue_quarter_usd":null,"missing_revenue_account_months":3,"calculation_status":"incomplete","roa_percent":null}',
+ 'solo AUM: ausencia de Revenue no acredita cero movimientos');
 reset role;
 -- Trimestre abierto aun con tres fotos cargadas por adelantado: sin anualizarlo.
 do $$ declare m date; begin

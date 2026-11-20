@@ -17,6 +17,12 @@ export async function verifyRoa({ request, appOrigin, sql }) {
   assert.deepEqual(await (await request(path, true)).json(), reader);
   assert.equal((await request('/api/rentabilidad?anio=2026&trimestre=5')).status, 400);
   assert.equal((await request(path + '&cuenta=duplicado')).status, 400);
+  for (const format of ['csv', 'csv-completo']) {
+    const rejected = await request(path + '&formato=' + format);
+    assert.equal(rejected.status, 400, 'ROA no ofrece una exportación parcial ni reutiliza CSV de cierre');
+    assert.match(rejected.headers.get('content-type'), /application\/json/);
+    assert.equal(rejected.headers.has('content-disposition'), false);
+  }
   assert.equal((await request(path + '&revision=' + 'a'.repeat(32))).status, 409);
   const screen = path.replace('/api/rentabilidad', '/rentabilidad');
   for (const admin of [false, true]) {
@@ -32,7 +38,9 @@ export async function verifyRoa({ request, appOrigin, sql }) {
   assert.ok(noPeriod.includes('Elegí un año y trimestre') && !noPeriod.includes('Desglose trimestral'));
   assert.ok((await (await request('/rentabilidad?anio=2026&trimestre=9')).text()).includes('Revisá los filtros'));
   assert.ok((await (await request(screen + '&revision=' + 'a'.repeat(32))).text()).includes('Los datos cambiaron'));
-  assert.ok((await (await request('/rentabilidad?anio=1900&trimestre=1')).text()).includes('Sin datos publicados para estos filtros'));
+  const empty = await (await request('/rentabilidad?anio=1900&trimestre=1')).text();
+  assert.ok(empty.includes('Sin datos publicados para estos filtros'));
+  assert.ok(empty.includes('sin filas en esta página'), 'página vacía no anuncia una primera fila inexistente');
   const open = await (await request('/rentabilidad?anio=9998&trimestre=4')).text();
   assert.ok(open.includes('Trimestre abierto'));
   assert.equal((await fetch(appOrigin + '/rentabilidad', { redirect: 'manual' })).status, 307);
