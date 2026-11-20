@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Wallet, Users } from "lucide-react";
 import { MetricCard } from "./metric-card";
+import { ReferenceClassification } from "./reference-classification";
 import { ReportChart } from "./report-chart";
 import { CoverageDisclosure } from "./coverage-disclosure";
 import { Table } from "@radix-ui/themes";
@@ -30,7 +31,7 @@ function DirectoryTable({ data, params }: { data: Directory; params: URLSearchPa
       <Table.Root className="data-table"><Table.Header><Table.Row>{["Custodio", "Identificador principal", "Cliente", "Comercial al cierre", "Equipo al cierre", "Servicio", "AUM al cierre · USD", "Revenue del rango · USD"].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header>
         <Table.Body>{data.rows.map((a) => <Table.Row key={a.id}>
           <Table.Cell>{a.custodian}</Table.Cell><Table.RowHeaderCell><Link href={accountHref(`/cuentas/${a.id}`, params, { cuenta: a.id })}>{a.identifier}</Link><br /><small className="cell-secondary">{a.identifier_source ? `${a.identifier_source} · ${a.identifier_namespace}` : "Sin identificador externo · UUID"}{!a.active && " · Desactivada"}</small></Table.RowHeaderCell>
-          <Table.Cell>{a.client ?? "Sin asignar"}</Table.Cell><Table.Cell>{a.advisor ?? "Sin asignar"}</Table.Cell><Table.Cell>{a.team ?? "Sin asignar"}{a.assignment_changed && <p className="cell-warning">Cambió durante el rango · ver historia</p>}</Table.Cell><Table.Cell>{a.service}</Table.Cell>
+          <Table.Cell>{a.client ?? "Sin asignar"}{a.ref_client && <p className="cell-secondary">REF: {a.ref_client} · sin identidad confirmada</p>}</Table.Cell><Table.Cell>{a.advisor ?? "Sin asignar"}{a.ref_advisor && <p className="cell-secondary">REF: {a.ref_advisor} · sin vigencia histórica</p>}</Table.Cell><Table.Cell>{a.team ?? "Sin asignar"}{a.ref_team && <p className="cell-secondary">REF: {a.ref_team}</p>}{a.assignment_changed && <p className="cell-warning">Cambió durante el rango · ver historia</p>}</Table.Cell><Table.Cell>{a.service}</Table.Cell>
           <Table.Cell className="money">{usd(a.aum_usd)}<br /><small>{a.aum_values}/{a.aum_rows} importes</small></Table.Cell><Table.Cell className="money">{usd(a.revenue_usd)}<br /><small>{a.revenue_values}/{a.revenue_rows} importes</small></Table.Cell>
         </Table.Row>)}</Table.Body></Table.Root>
     </div>
@@ -46,6 +47,7 @@ function DetailView({ data, params, admin }: { data: AccountDetail; params: URLS
     <nav className="detail-links" aria-label="Secciones de la cuenta"><a href="#identidad">Identidad</a><a href="#historia">Historia mensual</a><a href="#asignaciones">Vigencias</a><a href="#registros">Revenue y procedencia</a><a href="#cobertura">Cobertura</a></nav>
     <section className="panel report-section account-identity" id="identidad"><p className="eyebrow">CUENTA · {a.custodian}</p><h2>{a.identifier}</h2><p>{a.custodian} · Cliente: {a.client ?? "Sin asignar"} · Servicio: {a.service} · {a.active ? "Activa" : "Desactivada"}</p><p>UUID {a.id}</p>
       <p>Referencia al cierre: {a.advisor ?? "Sin comercial"} / {a.team ?? "Sin equipo"}. {a.assignment_changed && "La asignación cambió durante el rango."}</p>
+      {a.ref_snapshot_id && <p>Foto REF, sin vigencia histórica: cliente {a.ref_client ?? "N/D"} · comercial {a.ref_advisor ?? "N/D"} · equipo {a.ref_team ?? "N/D"}. Son etiquetas de origen; no acreditan identidades ni reemplazan la historia.</p>}
       <p>Con los filtros aplicados: AUM al cierre {usd(data.report.total.aum_usd)} · Revenue del rango {usd(data.report.total.revenue_usd)}. Cliente y servicio usan la clasificación de la cuenta, sin historia propia.</p>
       {admin && <p><Link href={`/configuracion?entidad=accounts&editar=${a.id}`}>Editar clasificación o desactivar</Link> · <Link href="/configuracion?entidad=assignments">Administrar asignaciones con revisión histórica</Link></p>}
     </section>
@@ -90,6 +92,7 @@ export async function AccountScreen({ search, id }: { search: Search; id?: strin
       <label>Filas por página<Select name="limite" defaultValue={String(p.page_size)}>{[...new Set([10, 25, 50, 100, p.page_size])].sort((a,b) => a-b).map((n) => <option key={n}>{n}</option>)}</Select></label>
     </ReportFilters>
     {id ? <DetailView data={data as AccountDetail} params={params} admin={role === "admin"} /> : <DirectoryTable data={data as Directory} params={params} />}
+    <ReferenceClassification report={data.report} params={params} />
     {!id && <p className="section-note">La cobertura siguiente usa el rango y los filtros de entidades. La búsqueda textual acota el directorio; orden y paginación organizan sus filas.</p>}
     <CoverageDisclosure report={data.report} consultedAt={new Date().toISOString()} />
   </>;

@@ -1,5 +1,320 @@
 # Validación — evidencia local y pendientes
 
+## ROA: aplicación remota autorizada — 2026-11-20
+
+Destino contrastado por herramienta: `gma-software-prueba` (`zwdqnrbqqszjrtkhyqnz`),
+ACTIVE_HEALTHY, PostgreSQL17.11.0.019. Conexión Supabase **app papa**. Migraciones
+anteriores25 ya aplicadas; solo `quarterly_roa_backend` pendiente. `apply_migration`
+respondió success y el listado posterior registra **20261120155740**. Archivo local
+alineado al timestamp MCP sin cambiar SQL; SHA256
+`f28582da1acd0eb6307220eb3954f1bb238a56c9784d7ea8b9af4ee340315a66`.
+
+Lecturas antes/después: 18.800 filas AUM,17.893 Revenue,658 alcances,0 eventos
+Comisiones; mismos conteos. Hash de punteros activos
+`cae48d302a007b2ae7955e9947d9e865`, definición de aggregate_report
+`3b93aa4880f708c948ced2692acfe012`, idénticos. Son checks de invariantes técnicas,
+no una conciliación de importes de negocio. Nuevas versiones/invalidaciones de tasas:
+0/0. No se publicaron ni alteraron hechos financieros durante la migración.
+
+RLS habilitado y forzado en ambas tablas ROA; authenticated sin SELECT directo.
+Wrappers públicos invoker, funciones privadas del ejecutor NOLOGIN/NOBYPASSRLS;
+EXECUTE authenticated y sin EXECUTE anon/service_role en las cuatro funciones.
+Ejecutor sin CREATE en app_private. Única membresía visible: postgres otorgada por
+supabase_admin, admin=true, inherit=false,set=false; no membresía temporal con
+INHERIT/SET concedida por el operador de la migración. Invocar RPC sin sesión
+produce insufficient_privilege, comprobado sin suplantar usuarios reales.
+
+Security advisors antes/después: únicamente `auth_leaked_password_protection`
+(WARN preexistente). No se cambió Auth ni se activó un plan pago. Ver
+[remediación Supabase](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+Performance posterior:48FK sin índice (INFO),14auth_rls_initplan (WARN),5índices
+sin uso (INFO),16multiple_permissive_policies (WARN). No se declara que sean nuevos
+ni resueltos; no se modifican reglas/índices sin evidencia de carga específica.
+Referencias: [FK](https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys),
+[initplan](https://supabase.com/docs/guides/database/database-linter?lint=0003_auth_rls_initplan),
+[índices](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index),
+[políticas](https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies).
+
+También se repitió la **suite SQL local completa**, correcta con permisos de operador
+administrado, consultas/importaciones/cuentas/comisiones, capacidad, concurrencias y
+restauración. `/tmp/gma-roa-ui-db-final.log`; no se sustituyen pruebas remotas de
+usuario con estos fixtures. HTTP integral y navegador corresponden al build final.
+No se probaron roles autenticados en Supabase real ni se publicaron tasas reales.
+
+## ROA frontend: validación local — 2026-11-20
+
+Sin datos reales en fixtures, screenshots o logs. Node24.22.3, PostgreSQL17.12 y
+Chrome instalados previamente; sin instalación de dependencias ni cambio del lockfile.
+Se reutilizaron herramientas Playwright/axe externas al repositorio para revisión.
+
+- `npm test`: **49/49**; tres pruebas nuevas de presentación: período explícito,
+  filtros conservados, rechazo de entradas inválidas, revisión/paginación y cruce
+  de año sin propagar revisión de otro trimestre. Log `/tmp/gma-roa-ui-unit-final.log`.
+- Lint sin warnings, typegen/tsc y build Next de producción correctos. Ruta dinámica
+  `/rentabilidad` incluida. Logs `/tmp/gma-roa-ui-lint-final.log`,
+  `/tmp/gma-roa-ui-types-final.log`, `/tmp/gma-roa-ui-build-final.log`.
+- `npm run test:dashboard -- --serve`: recorrido HTTP/SQL integral correcto sobre
+  PostgreSQL efímero, con Auth/PostgREST/Storage sintéticos explícitos. Regresiones
+  de consultas, cuentas, comisiones, importación histórica y publicación correctas.
+  Casos nuevos ROA: lectura HTML por admin/reader, ausencia de originales/evidencia,
+  selección inicial, vacío, trimestre abierto, filtros inválidos, revisión vencida,
+  401/403 y redirecciones SSR para anónimo/perfil deshabilitado/sesión vencida;
+  timeout504 e indisponibilidad503 sin mensaje privado ni sustitución de cifras.
+  El transporte verifica además que la consulta de opciones no reciba parámetros
+  exclusivos de ROA. Log `/tmp/gma-roa-ui-http-final.log`.
+- Chrome headless real: admin/reader ×1440/768/390; sin overflow global, selectores
+  identificados, apertura por teclado, filtro servicio, envío de formulario,
+  paginación fijada a revisión, vacío/error y navegación. Sin errores JS.
+  `/tmp/gma-roa-ui-browser-final.log`; resultados axe/screenshot en `/tmp/gma-roa-ui`.
+- Fixture financiero sintético adicional publicado solo en ese clúster temporal:
+  dos trimestres calculables y referencia anual publicada desde Comisiones por API
+  administrativa. AUM100.000/Revenue150/ROA0,60%/Fee0,50%/diferencia0,10pp, categoríaOK.
+  Tres gráficos presentes y valores exactos en tablas. Dos roles ×1440/390, sin
+  overflow ni errores JS. Conjunto mixto acotado por cliente: ROA0,14%, Fee global
+  N/D y referencia en Advisory. `/tmp/gma-roa-ui-calculable-final.log`.
+- Axe WCAG2/2.1/2.2AA + best-practice: cero infracciones detectadas en seis escenarios
+  de cobertura incompleta y cuatro calculables. Quedan resultados `incomplete` de
+  contraste en contenido recortado/desplazado de tablas; no son una certificación
+  de accesibilidad completa. Se inspeccionaron screenshots desktop/móvil y se
+  corrigieron dos regiones con nombre duplicado, badge desbordado a768px,
+  superposición de columnas y contraste ámbar4,24:1 cambiando a `highContrast` Radix.
+
+Límites: sin lector de pantalla manual, pruebas en Safari/Firefox ni conciliación
+con Excel privado. Consultas de evolución por trimestre con revisiones independientes;
+no prueban un snapshot transaccional común. No se declara completitud económica,
+ni ausencia de movimientos por una fila faltante. CSV sigue sin soporte del contrato.
+Los checks anteriores son locales/sintéticos; no prueban Auth/PostgREST/Storage remotos.
+
+## ROA trimestral: backend/motor local — 2026-11-19
+
+Entorno: Node 24.22.3 y PostgreSQL 17.12 nativo ya disponibles, CLI Supabase 3.1.0
+del lockfile. Se localizaron los binarios fuera del PATH inicial; no se instalaron
+paquetes ni se actualizaron versiones. La nueva migración se generó con
+`supabase migration new quarterly_roa_backend`, tras consultar su ayuda y las
+referencias oficiales de funciones, numeric y changelog citadas en el plan.
+Solo clústeres sintéticos efímeros, sockets privados/sin TCP; sin bases remotas.
+
+Checks ejecutados:
+
+- Unitarias completas: **46/46 correctas**, incluidas cuatro nuevas de contratos,
+  publicación, adaptador y errores ROA; logs `/tmp/gma-roa-unit-final.log`.
+- ESLint con cero warnings, `next typegen` + `tsc --noEmit` y build Next de producción
+  correctos. Build contiene `/api/rentabilidad` y `/api/rentabilidad/tasas`, sin nueva
+  página. Logs `/tmp/gma-roa-lint-final.log`, `/tmp/gma-roa-types.log` y
+  `/tmp/gma-roa-build-final.log`. No se cambiaron componentes de interfaz.
+- Suite SQL completa correcta: esquema desde cero con operador CREATEROLE/BYPASSRLS
+  sin SUPERUSER, sin membresías/CREATE residuales del ejecutor, RLS/grants nuevos,
+  consultas/cuentas/comisiones/importaciones anteriores, concurrencia y restauración.
+  Log `/tmp/gma-roa-db-complete.log`.
+- SQL ROA: tres fotos 100.000/120.000/140.000 → promedio120.000, Revenue150 →
+  ROA0,50%; duplicados legítimos y aliases no multiplican montos. Agregado0,19%
+  distinto del promedio de ratios; 0,40/0,60 inclusivos y comparación de un decimal
+  inmediatamente superior sin redondeo; negativos, cero, null, solo-fuente y vacío.
+  Filtros AND, asignación por conjuntos al cierre, exposición del equipo /3, servicios
+  sin clasificar antes del filtro, páginas/revisión y preparación sin efectos.
+- Advisory: verified de Comisiones no expone tasas automáticamente; publicación
+  explícita con evidencia, ponderación por exposición mensual, diferencia en pp con
+  una sola división y sin mezcla de poblaciones; tasa parcial, trimestre distinto,
+  corrección/obsolescencia, retry viejo sin reactivación, historia e inmutabilidad.
+  Lector/admin reciben la misma proyección; originales y eventos siguen ocultos,
+  metadata no eleva roles y sesión inválida falla. La prueba focal final también
+  comprueba trimestre abierto aun cargando anticipadamente sus tres fotos:
+  `/tmp/gma-roa-focused-final.log`, correcto.
+- Capacidad sintética: **800 cuentas × 3 meses**, 250 filas por página, total sobre
+  800 cuentas, promedio80.000.000/Revenue240.000/ROA1,2%, primera/última página
+  conciliadas, con statement_timeout local8s. Primera llamada medida ~62,8ms en el
+  recorrido completo previo al último campo; la repetición del estado final midió
+  ~63,8ms. No equivale a latencia Supabase ni a un SLA real.
+  No se añadieron índices o timeouts al reporte existente.
+- Concurrencia ROA con dos conexiones: dos publicaciones diferentes contra una
+  misma revisión producen una ganadora y un rechazo; dos retries simultáneos del
+  UUID ganador no crean otra versión. Las concurrencias existentes también pasan.
+- Regresión explícita: `aggregate_report` conserva definición y JSON antes/después
+  de operaciones ROA/tasas en el fixture. SHA-256 de las tres migraciones locales
+  que contienen el aggregate vigente conserva los valores registrados al inicio;
+  comparación byte a byte del último cuerpo idéntica. No se sustituyó ese reporte.
+
+HTTP: recorrido completo inicial Next → transporte Auth/PostgREST/Storage sintético
+→ PostgreSQL local correcto (`/tmp/gma-roa-http.log`). Las pruebas nuevas verifican
+401/403, no-store, filtros400, revisión409, roles, origen, fuente de tasa inexistente,
+publicación/retry y omisión de evidencia/originales; también timeout504 y fallo503.
+Una repetición (`/tmp/gma-roa-http-final.log`) pasó ROA y Comisiones pero falló en
+la publicación del circuito previo de importaciones con409 en vez de200; no se
+determinó la causa ni se modificó ese circuito para ocultarlo. El reintento aislado
+completo fue correcto: `/tmp/gma-roa-http-retry.log`. Tras agregar la proyección
+del UUID público de tasa para recuperar una revisión, se repitieron correctamente
+SQL focal, 46 unitarias, lint y build. Los recorridos integrales del estado final
+SQL y HTTP también pasaron completos con salida0:
+`/tmp/gma-roa-db-final-state.log` y `/tmp/gma-roa-http-final-state.log`.
+`git diff --check` y revisión de whitespace de once archivos nuevos correctos.
+Los arneses eliminan sus clústeres/servidores al finalizar, incluso ante error.
+
+`supabase db advisors --type all --fail-on warn`, tras consultar ayuda, apuntó
+solo al stack local127.0.0.1:54322 y falló ECONNREFUSED: stack Supabase no iniciado.
+**Advisors no aprobado**; log `/tmp/gma-roa-advisors.log`. RLS SQL sintético no
+sustituye servicios Supabase reales. No se ejecutaron advisors ni migraciones
+remotos, despliegues, muestras/conciliaciones reales, UI nueva ni commit/push.
+Pendientes económicos y contrato provisional en [quarterly-roa.md](quarterly-roa.md).
+
+## Consulta de 32 meses: timeout y recuperación — 2026-11-18
+
+Lectura remota de logs: cancelaciones por tiempo agotado. Presupuesto web de roles
+8 s intacto. Sentencia administrativa del reporte sin envoltura de sesión: EXPLAIN
+ANALYZE 16.606,5 ms antes / 2.730,2 ms después de acotar la huella de revisión.
+Comparación real completa: igualdad JSON excluyendo únicamente revision, 32 meses.
+Estos tiempos no prometen latencia de la sesión autenticada ni son QA visual.
+Migración 20261119011514 aplicada sólo a GMA; cuerpo, owner, search_path y ACL
+comprobados después. Sin cambios de datos publicados. Security advisor sin avisos
+nuevos y health vacío; se conserva el WARN previo de contraseñas filtradas.
+
+Local sintético: 42 unitarias, lint, build/TypeScript y suite SQL completa correctos.
+Nuevo report-capacity.test.sql: 800 cuentas, enero 2024–agosto 2026 + mes previo,
+AUM del cierre 80.000 y Revenue 800, meses ausentes N/D, misma proyección completa
+que antes y revisión estable entre páginas distantes. Regresiones existentes cubren
+correcciones financieras, vigencias, REF, roles y cambios de revisión.
+
+HTTP integral repetido sin concurrir con la suite SQL: correcto. Timeout inyectado
+57014 muestra aviso y formulario de fechas con desglose conservado; elimina offset
+y revision al reenviar. API devuelve 504 sin mensaje SQL privado. Otros errores
+siguen genéricos. El primer HTTP falló con 502 al preparar un lote; causa no
+establecida, segundo recorrido completo correcto sin cambiar importaciones.
+No se obtuvo sesión real ni se reintentó navegador bloqueado. Despliegue
+dpl_GhsuSWVXwDp5LREWpSccmBm3tnFU READY y alias canónico confirmado; logs de
+build confirman outputs desplegados. No equivale a probar una consulta autenticada.
+
+
+## Aplicación versionada de referencias REF — 2026-11-18
+
+42 unitarias, lint completo, build/TypeScript y suite PostgreSQL temporal completa
+correctos. La suite de migraciones conserva operador CREATEROLE/BYPASSRLS sin
+SUPERUSER. Regresión en historical-aum-resolution.test.sql verifica cuatro cuentas
+de dos custodios con iguales etiquetas: identidades separadas, cifras AUM exactas,
+ninguna asignación histórica. Retry no duplica versión/auditoría; par contradictorio
+y error de Grupo aplicable revierten todo; nueva versión conserva anterior y
+rechaza revisión obsoleta. Authenticated no puede ejecutar el helper de escritura.
+
+HTTP integral completo pasado con Next compilado y PostgreSQL reales temporales,
+Auth/Storage simulados. AUM+REF seguido de REV mantiene UUID por custodio; snapshot
+visible en Análisis/Detalle y JSON, y CSV completo con etiquetas
+que empiezan por = protegidas con apóstrofo. Cifras 240/10 sintéticas conservadas.
+La suite SQL verifica además búsqueda por la etiqueta Client REF en el directorio.
+Clúster y servidores eliminados. Logs /tmp/gma-ref-snapshot-{unit,lint,build,db,http}.log.
+
+Migración 20261118211139 y snapshot aplicados sólo en GMA mediante conexión del
+operador, sin JWT ni claims simulados. 807 filas originales / 773 cuentas / 34
+sin UUID, 66 cuentas sin REF, una con Owner ausente. Original inalterado y SHA
+igual al conservado en carga AUM. Retry remoto conserva un evento de publicación.
+actor_id NULL y database_role postgres describen la vía real; autorización del
+dueño y uploader de fuente conservados en campos separados.
+
+Controles remotos posteriores: huellas de recuentos/sumas mensuales de AUM y
+Revenue idénticas a las conciliadas con Excel; 44 meses por fuente. Enero–agosto:
+los tres desgloses de etiquetas REF conservan ambas sumas exactas. 629 cuentas
+observadas, 629 vinculadas, 486 etiquetas Client entre cuentas con AUM. No se
+crearon identidades de clientes ni asignaciones con fechas inventadas.
+
+RLS forzado en las tres tablas; anon/authenticated/service_role sin EXECUTE del
+helper; authenticated sin SELECT directo de filas/originales. El ejecutor sólo
+lee y las RPC publican proyecciones. Advisor de seguridad antes/después sin avisos
+nuevos, conserva advertencia preexistente de contraseñas filtradas desactivada.
+Sin modificar Auth, planes ni política de retención. UI remota todavía sin QA
+visual por bloqueo guardado del navegador; no se buscó otra vía de sesión.
+
+La consulta SQL completa del reporte con las nuevas CTE fue ejecutada además sobre
+datos reales como lectura administrativa: enero–agosto devuelve ocho meses, 629
+cuentas con REF y 27 grupos comerciales; AUM y Revenue coinciden con sumas
+independientes. Se excluyó sólo la envoltura de control de sesión al ejecutar la
+sentencia SELECT, sin crear JWT ni función alternativa persistente. No prueba una
+sesión web real. Despliegue dpl_Ci6MfaHzau2vKpc93pgDgQ7KxRge READY y alias canónico
+gma-software.vercel.app confirmado por Vercel; build remoto completado.
+
+## Relectura de fuentes y contexto comercial — 2026-11-18
+
+XML/ZIP de los cuatro Excel con Decimal y texto original, sin ejecución de
+fórmulas/vínculos/macros. SHA-256 de AUM/REV/REF iguales a los almacenados en la
+carga histórica publicada. Huellas de los recuentos y sumas mensuales exactas,
+44 meses por fuente, coinciden entre Excel y consultas remotas GMA de sólo lectura.
+Se conservaron 18.800 AUM, 17.893 Revenue y 12 importes Revenue ausentes originales.
+
+REF: 807 pares unívocos, 773 cuentas financieras con Client, 66 sin REF, 34 REF
+sin hechos financieros. Grupo consulta Owner Name payout de su fila en las 807
+fórmulas; cada una de las 28 etiquetas actuales con grupo válido tiene un único
+grupo. Advisor Name tiene 50 etiquetas, 22 comunes; no acredita identidades iguales.
+Una de las 773 cuentas tiene Owner ausente; ninguna tiene error de Grupo. D68 es
+error conservado de una referencia sin hechos. No se crearon asignaciones fechadas.
+
+Master: 412 filas ACCOUNT; 409 coincidencias literales candidatas con REF, tres
+sin coincidencia (258, 383, 384), una diferencia Owner (266 vs REF419). No se usa
+la similitud de nombres ni espacios para forzar identidades/custodios.
+
+openpyxl independiente read_only/data_only y keep_links=False confirma los cuatro
+recuentos y los 12 vacíos. Hashes antes/después iguales. Informe y detalles fuera
+del repo en analisis-faltantes-2026-11-18. Cambios de esta continuación documentales;
+revisión de contenido y git diff --check, sin repetir suite de aplicación ni afirmar
+clasificación publicada o QA visual remoto.
+
+## Faltantes después de la importación histórica — 2026-11-18
+
+Lecturas remotas administrativas, sin mutaciones, sólo en GMA:
+
+- AUM: 18.800 filas, 745 cuentas, 433 alcances activos, cero importes NULL.
+- Revenue: 17.893 filas, 749 cuentas, 225 alcances activos, 12 importes NULL.
+- Ambos históricos cubren 2023-01 a 2026-08; cero alcances activos en septiembre.
+- 655 cuentas compartidas por UUID, 90 sólo AUM, 94 sólo Revenue. Cero aliases
+  contradictorios AUM/bd_REV ↔ Revenue/ACCOUNT dentro del mismo custodio.
+- 18.800 filas AUM comprobadas contra import_cell de su original y aliases de
+  ambos orígenes: cero diferencias de identidad. Cero cuenta/mes AUM duplicados.
+- Los 658 alcances activos coinciden en recuentos y sumas exactas con las métricas
+  de sus lotes revisados. Verifica integridad interna, no completitud del negocio.
+- 839 cuentas sin cliente, ninguna asignación comercial ni FA activo. Agosto:
+  546 cuentas con AUM, todas sin cliente. No se completó clasificación por nombres
+  ni se extendieron condiciones actuales al histórico.
+
+Validación local con datos exclusivamente sintéticos:
+
+- 42 unitarias correctas; cinco de presentación, incluidas dos nuevas sobre
+  redondeo y avisos. Casos: centavos con acarreo, negativos, cero, N/D, valores
+  mayores al entero seguro de Number y detalle con precisión original.
+- Lint completo y build Next con TypeScript correctos. Node 24.22.3 ya disponible
+  en el runtime; ejecutados los entrypoints del package.json con Node porque npm
+  no estaba en PATH. Prebuild local ejecutado antes de compilar; sin dependencias.
+- HTTP completo correcto, Next compilado → RPC → PostgreSQL temporal: cierre sin
+  AUM conserva NULL; aviso visible; enlace al último cierre del rango conserva
+  filtro de cuenta; avisos de cliente/comercial e importe ausente; indicador
+  redondeado y tabla exacta. Conserva las regresiones de importación/publicación,
+  roles/RLS, originales privados, correcciones, comisiones y exportación.
+- Primer intento HTTP falló por una aserción que no contemplaba el comentario
+  separador de texto de React; se ajustó y el recorrido completo pasó. No fue una
+  falla de datos. Clúster y servidores temporales eliminados.
+
+Logs locales: /tmp/gma-data-diagnostics-unit.log,
+/tmp/gma-data-diagnostics-build.log y /tmp/gma-data-diagnostics-http.log.
+No hay nuevo despliegue ni QA visual remoto. Los datos reales no se modificaron.
+
+## Regresión del Resumen enero–noviembre — 2026-11-18
+
+- Suite HTTP sintética completa pasada con la aplicación Next compilada existente:
+  Resumen enero–noviembre renderiza sin «Consulta no disponible»; API devuelve once
+  meses, Revenue exacto, cierre AUM NULL y últimos tres meses NULL. Cubre también
+  importación/publicación, cuentas, comisiones, exportaciones y roles existentes.
+- Control negativo aislado: queries.test.sql falla con la función anterior porque
+  intenta invocar advisor_at; pasa con la migración nueva. Clústeres temporales
+  eliminados al finalizar. git diff --check correcto.
+
+- Suite SQL completa pasada con migración 20261118185015: proyección, filtros,
+  fuentes independientes, precisión, FA/vigencias, roles, concurrencia/restauración.
+- queries.test.sql sustituye advisor_at por un error dentro de la transacción:
+  todas las consultas siguen funcionando sin llamadas escalares por cuenta/mes.
+  Enero–noviembre conserva once meses, Revenue 38.15 sintético y AUM final NULL;
+  septiembre–noviembre no se convierten en cero ni reciben saldos arrastrados.
+- EXPLAIN ANALYZE sobre datos reales, lectura administrativa: consulta optimizada
+  1045.990 ms. Conciliación independiente remota del Revenue del rango correcta;
+  cierre noviembre NULL y meses faltantes conservados. No equivale a una prueba
+  autenticada desde el navegador; ese acceso sigue bloqueado por permiso guardado.
+- Migración aplicada sólo en GMA. Verificados owner app_papa_executor, SECURITY
+  DEFINER, search_path vacío y ACL originales. Sin cambiar límites de espera,
+  hechos publicados ni número de filas de ambas fuentes.
+
 ## Excepciones revisadas de carga manual — 2026-11-17
 
 40 pruebas unitarias correctas, typecheck/lint de archivos modificados y build
@@ -1338,3 +1653,251 @@ Conteos sin cambios: una operación previa y cero scopes publicados. Advisors co
 el WARN anterior de [contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
 No se cambiaron datos/usuarios, ni se publicó el archivo del dueño. Documentación y
 git diff --check correctos. Reintento de carga real por web pendiente del dueño.
+
+## Timeout durante preparación acumulada de REV — 2026-11-18
+
+Diagnóstico remoto de sólo lectura: error 57014 a las 00:15:28 UTC en
+guard_upload_row, búsqueda de coordenadas existentes con JOIN entre import_rows e
+import_batches, invocada por prepare_import_chunk. Última carga: 225 alcances,
+109 iniciados, 7.889 filas persistidas; cero scopes publicados. También se encontró
+un timeout anterior de registro a las 23:34:09 UTC en guard_upload_batch, seguido
+de registros exitosos. El fallo más reciente corresponde a preparación, no a parser
+ni a rechazo de las excepciones del archivo.
+
+Migración mínima reemplaza sólo guard_upload_row y retira el barrido redundante.
+Conserva la comprobación de mes/custodio/hoja/fila/huella del manifiesto inmutable;
+la unicidad global del manifiesto y por hijo hacen innecesaria esa búsqueda.
+Restricciones e índices UNIQUE remotos comprobados antes de aplicar.
+
+Prueba de capacidad anterior cubría sólo el primer bloque de 80 filas. Ahora se
+preparan las 18.080 filas de 226 alcances en comandos separados, cada uno sujeto a
+statement_timeout=8s. Recuento/suma decimal exactos, todos needs_resolution y retry
+del último bloque sin duplicados. Se conservan movimientos idénticos en coordenadas
+distintas. Una ejecución aislada y otra dentro de la suite completa finalizaron.
+Registro/retry/inspect en la suite: ~571/33/17 ms; no se midió latencia real de retoma
+en Supabase ni se afirma un SLA para completar el archivo.
+
+Nuevos casos pequeños verifican duplicado de coordenada mediante UNIQUE (23505),
+fila de otro custodio, período falso y fingerprint adulterado. Todos revierten el
+bloque completo. Con el código anterior el caso de duplicado falla en la expectativa
+de 23505 porque ejecuta el antiguo barrido y lanza P0001; esto comprueba el cambio de
+vía de validación, no reproduce por sí solo el timeout remoto.
+
+Suite test:db completa correcta: migraciones con operador CREATEROLE/BYPASSRLS sin
+SUPERUSER, permisos retirados, fuentes mensual/histórica/multicustodio, precisión,
+publicación/reintentos, concurrencia, roles y restauración. Primera ejecución local
+no pudo iniciar PostgreSQL por memoria compartida bloqueada en sandbox; ejecución
+autorizada posterior usa sólo clúster temporal sintético, terminado y eliminado.
+Sin cambios TypeScript/UI/runtime: no se repitieron build, HTTP ni QA visual.
+
+Documentación oficial revisada: [changelog](https://supabase.com/changelog.md) y
+[RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+CLI existente con DO_NOT_TRACK=1 generó el archivo. Migración aplicada sólo a GMA
+como 20261118130529; nombre local alineado sin cambiar SQL. Consulta posterior
+confirma owner postgres, SECURITY INVOKER, search_path vacío, comprobación del
+manifiesto intacta y ausencia del JOIN redundante. CREATE del ejecutor sigue
+revocado; authenticated/authenticator conservan timeout 8s. Sin índices, tablas,
+roles o permisos nuevos. 7.889 filas y cero scopes publicados antes/después.
+Advisors conserva sólo el aviso previo de
+[contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+Sin importación ni publicación de fuentes reales desde el agente; falta que el
+dueño retome la preparación y concilie la carga real. git diff --check correcto.
+
+## Resolución/conciliación de REV por bloques — 2026-11-18
+
+Helper administrativo nuevo resolve_historical_revenue: máximo 50 filas pendientes,
+con lock del circuito, pertenencia del hijo al padre y guard de sesión/admin. Reutiliza
+manage_import/resolve y su auditoría. Identidad: ACCOUNT literal + Revenue + custodio;
+sin normalizar ceros/espacios, unir fuentes, deduplicar movimientos o asignar comerciales.
+API valida confirmación/evidencia. UI conserva motivo explícito, pausa, retoma y
+conciliación por el circuito existente; publicar sigue separado y exige todos los hijos.
+
+40 unitarias, lint, typecheck y build correctos. Suite SQL completa correcta, incluyendo
+operador administrado sin SUPERUSER, concurrencia y restauración. Nuevo test de 240
+filas: 50+10 por hijo, retry sin duplicados, ceros, dos custodios, UUID reutilizados entre
+meses, namespace, actor, NULL/negativos y multiplicidad exacta. Rechaza evidencia corta,
+hijo de otro padre, lector con metadata adulterada y acceso anon/service_role. No publica.
+Primer intento falló por un nombre de vista inexistente en el test, corregido antes de
+remotos; segunda suite completa correcta. Clústeres temporales eliminados.
+
+HTTP integral Next real→API→PostgreSQL real correcto; transportes Auth/Storage son
+sintéticos. Nueva ruta probada con confirmación faltante (400), lector (403), resolución
+exacta, retry idéntico, separación entre AUM y REV y conciliación/publicación posterior.
+Conserva regresiones de 36 meses, varios custodios, correcciones, permisos y dashboard.
+No se extrajeron credenciales ni se usó una sesión real para pruebas sintéticas.
+
+Migración remota 20261118134006 aplicada a GMA. Owner app_papa_executor, anon sin
+EXECUTE y CREATE revocado comprobados. Advisors conserva sólo el WARN previo de
+[contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+Despliegue dpl_4StFbRdnkm3LF1wJEniWxV2W5CrT READY y alias gma-software.vercel.app
+asignado, sin error de build. Snapshot allowlist de 85 archivos/663.342 bytes, huella en
+progress.md, sin .env, fuentes reales, tests ni docs. Código local sobre ed09eff, sin push.
+Documentación oficial de [despliegues](https://vercel.com/docs/deployments) consultada.
+
+La operación real solicitada se inició desde la UI autenticada del dueño, sin exportar
+cookies/credenciales ni simular una sesión SQL. Evidencia menciona la delegación del
+18/11, ACCOUNT literal/custodio y separación entre fuentes. Lectura previa: 749 claves
+exactas, 683 presentes en REF y 66 ausentes; 17.893 filas válidas, 12 N/D y 1.312 ajustes
+negativos. No se usó REF como alias para esta operación. Comprobación intermedia de
+3.953 resoluciones: cero custodios incorrectos y cero referencias exactas ausentes.
+Resultado real final: 17.893 resoluciones/749 cuentas, cero conflictos de referencia
+exacta o custodio. Conciliación en 225/225 hijos ready; 17.893 hechos candidatos.
+Control SQL por alcance: fila/cobertura/suma de candidatos = preparación = métricas
+del lote, comparación decimal exacta verdadera para todos. Cada importe candidato
+coincide con cell_metadata.amount, incluidas 12 ausencias y 1.312 negativos. La UI
+registró la revisión conjunta: padre ready con review y cero scopes publicados.
+Comprobante visual recortado a sólo el aviso de revisión, sin cifras/identificadores
+financieros, en /tmp/gma-rev-revisada.png. No se publicaron datos.
+
+La primera conciliación real se detuvo en 214/225. Logs muestran 57014 a las
+14:02:24 UTC en advisor_at, invocada tres veces por movimiento desde import_comparison.
+Se conservaban 214 conciliaciones y todas las resoluciones; el alcance fallido revirtió
+sus hechos completos. Se reemplazó sólo el agregado por facts/attribution materializados:
+una llamada por cuenta/mes, sin alterar asesor al cierre, RLS, multiplicidad o NULL.
+Suite SQL completa repetida después del cambio; contador sintético demuestra 8
+llamadas para 240 movimientos en 4 alcances/2 cuentas por alcance. Las restantes
+pruebas de vigencias, cobertura, fuentes independientes, roles, concurrencia y
+restauración pasan. Sin cambios runtime, no se repitió build/HTTP por este SQL aislado.
+Migración remota 20261118140712, archivo local alineado, owner postgres e invoker
+comprobados. Retoma real completó los 11 alcances pendientes y revisión padre.
+git diff --check correcto. Sigue pendiente la publicación financiera y su dashboard.
+
+## Publicación real de REV y lectura en Resumen — 2026-11-18
+
+El dueño intentó publicar y luego pidió ver datos. Lectura remota confirmó padre
+ready/published_at NULL/0 activos. Logs a las 14:21:13 UTC: 57014 dentro de guard_batch,
+al sumar revenue_entries y evaluar current_access por fila. Se conservaron todos los
+datos revisados y ninguna publicación parcial. Migración 20261118142741 modifica
+sólo cuatro políticas published_scopes/batches/aum/revenue, sustituyendo la llamada
+directa por (SELECT current_access()); predicados, roles y RLS permanecen iguales.
+
+Suite SQL completa correcta con operador sin SUPERUSER, roles, rollback, concurrencia
+y restauración. Nuevo contador temporal de autorización prueba <20 evaluaciones para
+240 hechos; el mismo test falla al omitir la migración, detectando la regresión.
+Prueba ampliada de capacidad ejecutada aparte: 18.080 filas/226 alcances preparados,
+conciliados y publicados en una transacción, retry sin duplicados y 226 eventos de
+publicación. Cada comando bajo 8 s; revisión conjunta ~275 ms, publicación ~1.177 ms
+y retry ~10 ms en una ejecución local. Fixture sintético de dos identidades exactas
+por custodio. Esto no promete el mismo tiempo en infraestructura compartida remota.
+
+El reintento remoto a las 14:28:35 UTC volvió a 57014 dentro de record_change/auditoría,
+con rollback total: padre ready y cero activos. Se definió presupuesto de 30 s sólo
+para public.manage_historical, usando hoisting de settings de función documentado en
+[Supabase](https://supabase.com/docs/guides/database/postgres/timeouts) y
+[PostgREST 14](https://docs.postgrest.org/en/v14/references/transactions.html#hoisted-function-settings).
+Migración 20261118143144 aplicada; NOTIFY de schema cache. Contrato local probado
+con operador CREATEROLE/BYPASSRLS sin SUPERUSER: configuración 30s, invoker y anon
+sin EXECUTE; ACL/propiedad del circuito intactas. Lectura remota comprueba roles
+authenticated/authenticator=8s, lock_timeout authenticator=8s, sólo esta RPC=30s.
+
+Publicación completada desde la sesión UI autenticada del dueño a las 14:32:06 UTC,
+sin exportar credenciales ni simular claims. UI confirmó publicación conjunta;
+SQL confirmó published/225 activos/17.893 filas/12 N/D y 225 eventos publish.
+Comparación decimal de suma publicada vs revisada verdadera para los 225 alcances.
+Sin modificaciones de otras cargas, borrados ni planes pagos. Advisors mantiene sólo
+el WARN previo de [contraseñas filtradas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+
+Navegación real a /?desde=2026-01&hasta=2026-08: Resumen ejecutivo, tarjeta Revenue
+con importe visible, cobertura visible, sin estado vacío ni error. No se registraron
+los importes ni identificadores financieros en logs o screenshots. Captura recortada
+al título/período, /tmp/gma-resumen-publicado.png. Fuente abarca 2023-01 a 2026-08;
+2026-11 fuera de cobertura explica otro motivo de vacío con el filtro por defecto.
+Sin nuevo build/HTTP sintético porque sólo cambiaron SQL/configuración de RPC;
+verificación real UI→API→datos publicados ejecutada. git diff --check correcto.
+
+## AUM + REF: ampliación de resolución y preparación — 2026-11-18
+
+Nueva carga del dueño: 18.800 filas/433 alcances. Primera operación conserva 1.645
+bloqueos por identificadores numéricos; no había marcado la decisión autorizada.
+Se creó otra operación con los mismos originales, aceptación numérica explícita y
+motivo que cita la confirmación previa. SHA-256 y tamaños de ambos archivos de
+Downloads coinciden con los subidos por el dueño; sin modificar libros. Nuevo
+manifiesto: cero bloqueos, cero duplicados AUM y cero filas sin alcance. REF contiene
+807 pares y no tiene ambigüedad por ninguno de los dos identificadores/custodio.
+
+Helper AUM de 50 filas reutiliza manage_import/resolve: par literal REF, custodio,
+consenso entre aliases AUM y REV. Ambigüedad o UUID contradictorio revierte el bloque.
+Sin cuenta existente crea AUM propio y registra el alias Revenue acreditado por REF.
+Evidencia añade SHA/hoja/fila REF; no modifica hechos REV ni infiere historia comercial.
+Wrapper genérico invoker, con guard admin y ACL acotada, conserva el wrapper REV.
+
+Preparación HTTP nueva comparte lectura/hash del original y REF dentro de cada
+petición de hasta cinco alcances. Revalida ambos originales en cada petición, sin
+caché persistente. Configuración se compara con la congelada, deriva resúmenes con
+reportSummary y persiste por el mismo prepare_import_chunk, con cursor y límite de
+250 filas/bytes por hijo. Fallo después de un hijo conserva sus cursores, no publica.
+
+40 unitarias, lint, typecheck/build correctos; suite SQL completa correcta con operador
+administrado sin SUPERUSER, roles, concurrencia y restauración. Nuevo test AUM+REF:
+UUID REV reutilizado, cuentas propias, dos custodios, ceros, aliases explícitos,
+evidencia, par ambiguo en segunda fila con rollback de la primera, UUID contradictorio
+sin fusión, lector/anon denegados, sin Revenue ni asignaciones inventadas. Cierre de
+rango AUM 2.6 sintético, sin sumar las fotos mensuales.
+
+HTTP integral Next→PostgreSQL real con Auth/Storage sintéticos correcto: preparación
+de cinco alcances en historia de 36 meses, cuatro alcances AUM+REF/REV por lectura,
+retry sin nuevas filas, lector denegado, enlace por REF a la misma cuenta y reporte
+con AUM 240/Revenue 10. Conserva las regresiones previas, 120/22, originales privados,
+correcciones y permisos. Servidores/clústeres sintéticos eliminados.
+
+Migración 20261118150030 aplicada sólo a GMA, archivo local alineado; owner ejecutor,
+invoker público, anon sin EXECUTE y CREATE revocado comprobados. Runtime desplegado
+como dpl_GVGn4YBaXfjN2Zgghwz1DRxsvgpH READY con alias canónico: snapshot allowlist
+de 86 archivos/668.057 bytes, SHA a3184ff3cec4934c390b5eb98ba0541363f88360c18b98a1ed4b8b4885f50eba,
+sin .env, fuentes reales, tests ni docs. Código local sobre ed09eff, sin push.
+
+Flujo real anterior pausado desde UI en 8.781 filas; retoma del mismo UUID con la
+nueva preparación llegó a 18.800/18.800, 433 hijos needs_resolution y cero bloqueos.
+Resolución real ejecutada desde la sesión del dueño tras «continua», con evidencia y
+confirmación explícitas: 18.800 filas, 745 cuentas AUM, 655 compartidas con Revenue
+publicado, 90 propias. Query independiente de aliases AUM (ambos namespaces), alias
+Revenue y custodio: cero conflictos. Conciliación real completa: 433 hijos ready,
+18.800 hechos candidatos, sumas/recuentos/cobertura por alcance iguales a preparación
+y métricas revisadas; cada importe coincide con cell_metadata.amount. Cero duplicados
+de cuenta/mes. Revisión conjunta confirmada por UI y SQL: padre ready/review presente.
+
+Publicación no ejecutada: la revisión automática rechazó el intento por requerir
+autorización explícita para publicar las 433 fotos, sin considerar «continua» suficiente.
+No se intentó ninguna vía indirecta. Observación posterior de navegador rechazada por
+permiso de origen declinado; no se reintentó ni se cambió de navegador. No hay captura
+final nueva por ese bloqueo. Última consulta SQL de estado (anterior al rechazo de
+observación): AUM activo=0; Revenue publicado conserva 17.893 filas y sumas por sus
+225 alcances exactamente iguales a las revisadas. Se pide autorización específica de
+publicación y acceso al navegador. No se exportaron credenciales ni se simularon claims.
+
+## Publicación AUM: timeout al cierre y presupuesto acotado — 2026-11-18
+
+Tras la autorización explícita y el intento manual del dueño, SQL confirmó ready,
+published_at NULL, 0 alcances/filas AUM activos. Revenue conserva sus 17.893 filas y
+sumas revisadas. Logs a las 18:31:36 UTC: 57014 dentro de guard_upload al actualizar
+el padre a published, después del bucle de 433 publicaciones. Transacción revertida
+íntegra; se conservan candidatos y revisión. No es una diferencia de importes.
+
+Se revisó la [documentación oficial de timeouts](https://supabase.com/docs/guides/database/postgres/timeouts):
+presupuesto por función y máximo de API de 60 s. Nueva migración 20261118183517,
+generada con CLI existente/DO_NOT_TRACK, aplicada sólo a GMA, archivo local alineado.
+Contrato actualizado a statement_timeout=60s probado en PostgreSQL temporal con
+operador CREATEROLE/BYPASSRLS sin SUPERUSER; finalizó correctamente y eliminó su
+clúster. Verifica invoker, anon sin EXECUTE y permisos/propiedades existentes.
+
+Consulta remota posterior confirma sólo manage_historical=60s, search_path vacío e
+invoker, anon sin EXECUTE. Authenticated/authenticator=8s, lock_timeout=8s intactos.
+Padre AUM aún ready y cero activos. Sin cambios de lógica financiera, permisos ni
+runtime; no se repitieron build/HTTP/suite financiera por este ajuste de configuración.
+No se reintentó navegador ni publicación indirecta ante el bloqueo guardado. Pendiente
+reintento real del dueño y verificación posterior. git diff --check correcto.
+
+## Publicación AUM confirmada por el dueño — 2026-11-18
+
+Después de «Listo», consulta remota de sólo lectura confirmó padre published con
+published_at=2026-11-18T18:37:17.165361Z, 433 punteros activos, 18.800 filas AUM
+y 745 UUID distintos en el histórico. Comparación numérica por los 433 alcances:
+suma publicada = métrica revisada, todas verdaderas. Revenue conserva 17.893 filas
+y todas las sumas de sus 225 alcances revisados. El último reintento real con 60 s
+sí terminó; no se afirma que la ejecución local representara su latencia remota.
+
+Publicación realizada por el dueño, sin automatización indirecta ni simulación de
+sesión ante el permiso guardado de navegador. No se tomó captura ni se afirmó QA
+visual posterior de AUM. Se entrega enlace al Resumen con enero–agosto 2026, dentro
+de la cobertura publicada; AUM = cierre de agosto, Revenue = suma del rango. Código
+sin cambios adicionales; revisión documental/git diff --check correctos.

@@ -1,5 +1,13 @@
 # Diccionario de datos — etapa 2
 
+> Backend ROA trimestral local (2026-11-19):
+> [quarterly-roa.md](quarterly-roa.md) documenta la RPC independiente, numeric/text,
+> cobertura observada provisional y publicación explícita de tasas. Nuevas tablas
+> privadas `roa_rate_versions` (versiones inmutables de referencia por cuenta y
+> trimestre con fuente/actor/evidencia) y `roa_rate_invalidations` (corrección de la
+> versión fuente). RLS forzado, sin grants de tabla a authenticated; el lector solo
+> recibe proyección publicada. No altera hechos financieros ni aggregate_report.
+
 > Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
 > El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
 > local revisada. Supera para este motor las restricciones de sólo planificación

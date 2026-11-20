@@ -69,21 +69,14 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
     await run(async () => {
       setProcessing(true); paused.current = false;
       let state = await load(detail.upload.id);
-      for (const child of state.children) {
-        if (!["uploaded", "validating"].includes(child.status)) continue;
-        let done = false;
-        while (!done && !paused.current) {
-          const result = await api(`/api/importaciones/${child.id}`, { method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ options: { source: state.upload.options.source, sheet: state.upload.options.sheet,
-              numericFormat: state.upload.options.numericFormat, delimiter: state.upload.options.delimiter,
-              period: child.period, custodianId: child.custodian_id,
-              custodianCode: state.upload.manifest.partitions.find((p) => p.period === child.period && p.custodianId === child.custodian_id)?.custodianCode ?? state.upload.options.custodianCode } }) });
-          done = result.done;
-          state = { ...state, children: state.children.map((c) => c.id === child.id ? { ...c, processed: result.processed,
-            status: done ? (state.upload.manifest.partitions.find((p) => p.period === c.period && p.custodianId === c.custodian_id)?.summary.blockingErrors ? "failed" : "needs_resolution") : "validating" } : c) };
-          setDetail(state);
-        }
-        if (paused.current) break;
+      let done = false;
+      while (!done && !paused.current) {
+        const result = await api(url(state.upload.id), { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ operation: "prepare", input: {} }) });
+        done = result.done;
+        const updates = new Map<string, { processed: number; status: string }>(result.children.map((c: { id: string; processed: number; status: string }) => [c.id, c]));
+        state = { ...state, children: state.children.map((c) => ({ ...c, ...updates.get(c.id) })) };
+        setDetail(state);
       }
       await load(state.upload.id);
       setNotice(paused.current ? "Pausa confirmada. Podés retomar desde los cursores guardados." : "Validación finalizada. Resolvé y conciliá cada período antes de revisar la carga completa.");
@@ -93,6 +86,50 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
     if (!detail) return;
     await api(url(detail.upload.id), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ operation, input }) });
     await load(detail.upload.id);
+  }
+  async function resolveAccounts(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const evidence = String(new FormData(event.currentTarget).get("evidence") ?? "");
+    if (!detail) return;
+    await run(async () => {
+      paused.current = false; setProcessing(true);
+      const state = await load(detail.upload.id);
+      let completed = 0;
+      for (const child of state.children) {
+        if (child.status !== "needs_resolution") continue;
+        let done = false;
+        while (!done && !paused.current) {
+          const result = await api(url(state.upload.id), { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ operation: "resolve", input: { child_id: child.id, evidence, confirm_exact: true } }) });
+          done = result.done;
+          setNotice(`Correspondencias: ${completed} alcances completos; bloque actual ${result.processed} / ${result.total} filas. No se publicaron datos.`);
+        }
+        if (paused.current) break;
+        completed++;
+      }
+      await load(state.upload.id);
+      setNotice(paused.current ? "Correspondencias pausadas. Podés retomar sin duplicar cuentas ni filas." : "Correspondencias exactas resueltas. Revisá el archivo y conciliá los alcances antes de publicar.");
+    });
+  }
+  async function reconcileScopes(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!detail) return;
+    await run(async () => {
+      paused.current = false; setProcessing(true);
+      const state = await load(detail.upload.id);
+      let completed = 0;
+      for (const child of state.children) {
+        if (paused.current) break;
+        if (child.status !== "needs_resolution") continue;
+        await api(`/api/importaciones/${child.id}/gestion`, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ operation: "review", input: { complete_scope: true, period: child.period, custodian_id: child.custodian_id,
+            expected_active_id: child.comparison.active?.id ?? null } }) });
+        completed++;
+        setNotice(`Conciliación: ${completed} alcances completos. No se publicaron datos.`);
+      }
+      await load(state.upload.id);
+      setNotice(paused.current ? "Conciliación pausada. Los alcances ya revisados se conservan." : "Conciliación terminada. Revisá la comparación de todos los alcances antes de publicar.");
+    });
   }
   async function downloadErrors() {
     if (!detail) return;
@@ -187,6 +224,21 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
       {blocked && <p role="alert">Hay errores bloqueantes. Ningún período se publicará parcialmente. Revisá el resumen y volvé a analizar con decisiones explícitas o con una copia corregida del original.</p>}
       <p role="status">Preparación persistida: {processed} / {totalRows} filas · {detail.children.length} alcances mes/custodio detectados.</p>
       <progress value={processed} max={Math.max(totalRows, 1)} aria-label="Filas preparadas" />
+      {(detail.upload.options.source === "revenue" || !!detail.upload.options.references) && detail.upload.status === "preparing" && !blocked
+        && detail.children.every((c) => ["needs_resolution", "ready"].includes(c.status)) && <section aria-label="Correspondencias por bloques">
+        <h3>Resolver y conciliar {detail.upload.options.source === "aum" ? "AUM con REF" : "Revenue"} por bloques</h3>
+        <p>{detail.upload.options.source === "aum" ? "REF acredita el par literal Holding Account Number / Account Number bd_REV y su custodio. Se reutiliza la cuenta REV exacta o se crea una cuenta sólo AUM si no existe; se registran sus equivalencias con evidencia. Un par ambiguo o UUID contradictorio detiene el bloque. No se suman fotos duplicadas ni se asignan comerciales." : "Se reutiliza o crea una cuenta UUID por ACCOUNT exacto y custodio dentro de Revenue. Se conservan ceros y filas repetidas. Cuentas sin REF permanecen como sólo Revenue; no se vinculan AUM, clientes ni comerciales por nombre."}</p>
+        <form className="import-form" onSubmit={(e) => void resolveAccounts(e)}>
+          <label>Evidencia para las correspondencias<textarea name="evidence" required minLength={10} maxLength={detail.upload.options.source === "aum" ? 1500 : 2000} disabled={busy} /></label>
+          <label><input type="checkbox" required disabled={busy} /> {detail.upload.options.source === "aum" ? "Confirmo los pares literales y custodios de este REF, y la equivalencia acreditada entre Account Number bd_REV y ACCOUNT de Revenue. No autorizo uniones por nombre ni historia comercial." : "Confirmo la identidad por ACCOUNT exacto y custodio de este REV, sin inferir equivalencias entre fuentes."}</label>
+          <Button disabled={busy}>{detail.upload.options.source === "aum" ? "Resolver cuentas con REF" : "Resolver cuentas exactas"}</Button>
+        </form>
+        <form className="import-form" onSubmit={(e) => void reconcileScopes(e)}>
+          <label><input type="checkbox" required disabled={busy} /> Revisé todos los alcances mes/custodio del archivo, sus importes conocidos, faltantes y omisiones para conciliarlos.</label>
+          <Button disabled={busy}>Conciliar alcances de {detail.upload.options.source === "aum" ? "AUM" : "REV"}</Button>
+        </form>
+        <p>Ambos pasos se pueden retomar. Un conflicto detiene el proceso y conserva los bloques completados; ninguna de estas acciones publica datos.</p>
+      </section>}
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Períodos y comparación histórica">
         <Table.Root className="data-table"><Table.Header><Table.Row>{["Año / mes", "Custodio", "Cuentas", "Importe USD (archivo)", "Errores", "Duplicados de cuenta", "Progreso", "Estado / versión", "Versión activa / USD", "Comparación / correspondencias"].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header>
           <Table.Body>{detail.children.map((child) => {

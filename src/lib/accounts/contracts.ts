@@ -2,6 +2,7 @@ import type { Report } from "../queries/contracts.ts";
 import { screenParameters, type Search } from "../queries/presentation.ts";
 
 export type AccountRow = {
+  ref_client?: string | null; ref_advisor?: string | null; ref_team?: string | null; ref_snapshot_id?: string | null;
   id: string; custodian_id: string; custodian: string; client_id: string | null; client: string | null;
   identifier: string; identifier_source: string | null; identifier_namespace: string | null;
   advisor_id: string | null; advisor: string | null; team_id: string | null; team: string | null;

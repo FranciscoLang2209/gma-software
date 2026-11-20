@@ -5,7 +5,23 @@ import Link from "next/link";
 import { SlidersHorizontal } from "lucide-react";
 import { Button, Table } from "@radix-ui/themes";
 import type { Report, Metrics } from "@/lib/queries/contracts";
-import { DIMENSIONS, ENTITY_FILTERS, dateLabel, exact, percent, monthLabel, reportHref, usd } from "@/lib/queries/presentation";
+import { DIMENSIONS, ENTITY_FILTERS, dateLabel, exact, percent, monthLabel, reportHref, reportWarnings, usd } from "@/lib/queries/presentation";
+
+export function ReportDataStatus({ report, params, path }: { report: Report; params: URLSearchParams; path: string }) {
+  const warnings = reportWarnings(report);
+  if (!warnings.length) return null;
+  const lastAum = report.months.findLast((m) => (m.aum_rows ?? 0) > 0);
+  const previousClosing = lastAum && lastAum.period < report.period.to;
+  return <section className="panel report-section" aria-labelledby="data-status-title">
+    <h2 id="data-status-title">Datos disponibles y pendientes</h2>
+    <ul>{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+    <div className="report-actions">
+      {previousClosing && <Link href={reportHref(path, params, { hasta: lastAum.period.slice(0, 7), agrupar: report.group_by })}>Ver cierre con registros de AUM: {monthLabel(lastAum.period)}</Link>}
+      <a href="#cobertura">Revisar cobertura por mes y custodio</a>
+    </div>
+    {previousClosing && <p>El enlace cambia el mes Hasta y también el rango de Revenue. Los filtros de entidades se conservan.</p>}
+  </section>;
+}
 
 export function ReportFilters({ params, report, path, commercial = false, children, accountId, compact = false }: { params: URLSearchParams; report: Report; path: string; commercial?: boolean; children?: ReactNode; accountId?: string; compact?: boolean }) {
   const entityField = (key: string, label: string) => {

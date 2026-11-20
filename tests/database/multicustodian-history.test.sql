@@ -48,6 +48,22 @@ select public.manage_historical(:'aum','begin',pg_temp.multi_input('aum'));
 select public.manage_historical(:'aum','inspect','{}') initial_summary \gset
 select pg_temp.assert_true((select bool_and((c->'comparison'->>'pending')::boolean and c->'comparison'->'row_changes'->>'added' is null) from jsonb_array_elements(:'initial_summary'::jsonb->'children') c),'resumen inicial no inventa diferencias antes de conciliación');
 select pg_temp.assert_true((select count(*)=4 and count(distinct custodian_id)=2 from public.admin_import_batches where upload_id=:'aum'),'mismos meses en dos custodios sin duplicar retry');
+-- La pertenencia al manifiesto y el UNIQUE sustituyen el barrido de todas las filas.
+select id guard_child,parsing_conventions->'options' guard_options from public.admin_import_batches
+ where upload_id=:'aum' order by period,custodian_id limit 1 \gset
+select jsonb_build_object('sheet_name','CSV','row_number',2,'original_cells',jsonb_build_object('Value (USD)','0.1'),
+ 'cell_metadata',jsonb_build_object('amount','0.1','period','2023-01-01','fingerprint',repeat('a',64)),
+ 'status','valid','errors','[]'::jsonb) guard_row \gset
+select pg_temp.expect_error(format('select public.prepare_import_chunk(%L,0,%L,%L,%L)',:'guard_child',:'guard_options',
+ jsonb_build_array(:'guard_row'::jsonb,:'guard_row'::jsonb),'{"rowCount":2,"blockingErrors":0,"errors":[]}'),'23505');
+select pg_temp.expect_error(format('select public.prepare_import_chunk(%L,0,%L,%L,%L)',:'guard_child',:'guard_options',
+ jsonb_build_array(jsonb_set(:'guard_row'::jsonb,'{row_number}','3')),'{"rowCount":1,"blockingErrors":0,"errors":[]}'));
+select pg_temp.expect_error(format('select public.prepare_import_chunk(%L,0,%L,%L,%L)',:'guard_child',:'guard_options',
+ jsonb_build_array(jsonb_set(:'guard_row'::jsonb,'{cell_metadata,period}','"2023-02-01"')),'{"rowCount":1,"blockingErrors":0,"errors":[]}'));
+select pg_temp.expect_error(format('select public.prepare_import_chunk(%L,0,%L,%L,%L)',:'guard_child',:'guard_options',
+ jsonb_build_array(jsonb_set(:'guard_row'::jsonb,'{cell_metadata,fingerprint}',to_jsonb(repeat('b',64)))),
+ '{"rowCount":1,"blockingErrors":0,"errors":[]}'));
+select pg_temp.assert_true((select count(*)=0 from public.admin_import_rows),'bloques inválidos revierten incluso la primera fila');
 select pg_temp.populate_multi(:'aum');
 select public.manage_historical(:'aum','review','{"confirm_all":true}') as reviewed \gset
 select pg_temp.assert_true((select bool_and(not (c->'comparison'->>'pending')::boolean and c->'comparison'->'candidate'->>'total'='0.1') from jsonb_array_elements(:'reviewed'::jsonb->'children') c),'resumen conserva conciliación revisada por hijo');

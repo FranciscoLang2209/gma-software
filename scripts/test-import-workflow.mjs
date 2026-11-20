@@ -169,6 +169,8 @@ export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, ad
     const historical = async (operation, input) => json(await post(`${endpoint}/${id}`, { operation, input }));
     let state = await json(await requestHistory());
     assert.equal(state.children.length, 36);
+    const firstParentPreparation = await json(await post(`${endpoint}/${id}`, { operation: "prepare", input: {} }));
+    assert.equal(firstParentPreparation.children.length, 5, "máximo cinco alcances por lectura del original");
     for (const child of state.children) {
       const result = await json(await post(`/api/importaciones/${child.id}`, { options: { ...options, period: child.period } }));
       assert.ok(result.done);
@@ -227,15 +229,28 @@ export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, ad
     assert.equal(state.upload.manifest.excludedRows[0].number, 7);
     assert.equal(state.upload.manifest.unroutable.length, 0);
     assert.equal(new Set(state.children.map((c) => c.custodian_id)).size, 2);
+    assert.equal((await post(`${endpoint}/${requestId}`, { operation: "prepare", input: {} }, false)).status, 403);
+    const preparedTogether = await json(await post(`${endpoint}/${requestId}`, { operation: "prepare", input: {} }));
+    assert.equal(preparedTogether.children.length, 4);
+    assert.ok(preparedTogether.children.every((c) => c.status === "needs_resolution"));
+    const preparedRetry = await json(await post(`${endpoint}/${requestId}`, { operation: "prepare", input: {} }));
+    assert.deepEqual(preparedRetry, { children: [], done: true });
     for (const child of state.children) {
-      const p = state.upload.manifest.partitions.find((p) => p.period === child.period && p.custodianId === child.custodian_id);
-      const result = await json(await post(`/api/importaciones/${child.id}`, { options: { source, sheet: "CSV", numericFormat: "dot", delimiter: ",", period: child.period, custodianId: p.custodianId, custodianCode: p.custodianCode } }));
-      assert.ok(result.done);
-      if (source === "revenue") {
-        const i = custodians.findIndex((c) => c.id === child.custodian_id);
-        multiAccounts[child.custodian_id][`MULTI-REV-${i}`] = multiAccounts[child.custodian_id]["000MULTI"];
+      {
+        const path = `${endpoint}/${requestId}`;
+        const input = { child_id: child.id, evidence: "Pares exactos e identidad por custodio SINTETICOS revisados", confirm_exact: true };
+        assert.equal((await post(path, { operation: "resolve", input }, false)).status, 403);
+        assert.equal((await post(path, { operation: "resolve", input: { ...input, confirm_exact: false } })).status, 400);
+        const resolved = await json(await post(path, { operation: "resolve", input }));
+        assert.ok(resolved.done);
+        const retry = await json(await post(path, { operation: "resolve", input }));
+        assert.deepEqual(retry, resolved);
+        const inspected = await inspect(child.id);
+        assert.ok(inspected.rows.every((r) => r.resolution));
+        if (source === "aum") multiAccounts[child.custodian_id]["000MULTI"] = inspected.rows[0].resolution.account_id;
+        else assert.equal(inspected.rows[0].resolution.account_id, multiAccounts[child.custodian_id]["000MULTI"], "reutiliza la equivalencia REV acreditada antes por AUM+REF");
       }
-      await resolve(child.id, multiAccounts[child.custodian_id]); await review(child.id);
+      await review(child.id);
     }
     assert.notEqual(multiAccounts[custodians[0].id]["000MULTI"], multiAccounts[custodians[1].id]["000MULTI"]);
     state = await json(await post(`${endpoint}/${requestId}`, { operation: "review", input: { confirm_all: true } }));
@@ -246,10 +261,24 @@ export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, ad
       const response = await request(`${endpoint}/${requestId}?original=1&reference=1`, true);
       assert.equal(response.status, 200); assert.deepEqual(Buffer.from(await response.arrayBuffer()), referencesRaw);
       assert.equal((await request(`${endpoint}/${requestId}?original=1&reference=1`, false)).status, 403);
+      // Sólo operador del clúster sintético: no JWT ni credenciales privilegiadas en runtime.
+      sql(`select app_private.apply_reference_snapshot(gen_random_uuid(),:'upload',u.options->'references'->>'fileHash',
+        (select jsonb_agg(p||jsonb_build_object('client','=CLIENTE REF SINTETICO','advisor','COMERCIAL REF SINTETICO','team','EQUIPO REF SINTETICO','old_owner',null,'group_error',false))
+         from jsonb_array_elements(u.options->'references'->'pairs')p),
+        'Aplicar referencia SINTETICA revisada sin vigencia histórica') from app_private.import_uploads u where id=:'upload';`, ["-v", `upload=${requestId}`]);
     }
     const total = await json(await request("/api/consultas?desde=2029-01&hasta=2029-02"));
     assert.equal(total.total.aum_usd, "240");
     assert.equal(total.total.revenue_usd, source === "aum" ? null : "10");
+    assert.equal(total.reference_classification.matched_accounts, 2);
+    assert.equal(total.reference_classification.groups[0].aum_usd, "240");
+    assert.equal(total.reference_classification.groups[0].revenue_usd, source === "aum" ? null : "10");
+    const refHtml = await (await request("/analisis-comercial?desde=2029-01&hasta=2029-02&agrupar=client")).text();
+    assert.ok(refHtml.includes("Clasificación según REF") && refHtml.includes("=CLIENTE REF SINTETICO"));
+    const refDetail = await (await request(`/cuentas/${multiAccounts[custodians[0].id]["000MULTI"]}?desde=2029-01&hasta=2029-02`)).text();
+    assert.ok(refDetail.includes("COMERCIAL REF SINTETICO") && refDetail.includes("sin vigencia histórica"));
+    const refCsv = await (await request("/api/consultas?desde=2029-01&hasta=2029-02&agrupar=client&formato=csv-completo")).text();
+    assert.ok(refCsv.includes("clasificacion_REF") && refCsv.includes("\"'=CLIENTE REF SINTETICO\""));
   };
   await multi("aum"); await multi("revenue");
   {

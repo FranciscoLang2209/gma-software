@@ -1,5 +1,589 @@
 # App Papá — Progreso
 
+## Publicación autorizada de ROA y sincronización del repositorio — 2026-11-20
+
+El dueño pidió aplicar las migraciones pendientes en Supabase y pushear a main
+una vez cerrada la interfaz. Se confirmó el proyecto `gma-software-prueba`, ref
+`zwdqnrbqqszjrtkhyqnz`, mediante la conexión Supabase **app papa**, sin tocar otros
+proyectos. Las 25 migraciones anteriores ya coincidían con el estado remoto;
+únicamente faltaba `quarterly_roa_backend`.
+
+Aplicada por MCP como **20261120155740**. El archivo generado originalmente por CLI
+como20261119185545 se renombró para coincidir con el timestamp registrado por MCP,
+sin cambiar su contenido ni editar historia remota. SHA256:
+`f28582da1acd0eb6307220eb3954f1bb238a56c9784d7ea8b9af4ee340315a66`.
+26 migraciones locales/remotas concordantes después de aplicar.
+
+Verificado remotamente: tablas ROA vacías con RLS forzado y sin SELECT directo para
+authenticated, wrappers invoker y ejecutores acotados, sin EXECUTE anon/service_role.
+RPC sin sesión rechazada. Conteos de hechos/punteros y hash de aggregate_report
+idénticos antes/después. No se importaron ni publicaron hechos financieros o tasas.
+Advisors security conserva únicamente el aviso preexistente de contraseñas filtradas;
+los avisos performance se registran en validation.md, sin ampliar el alcance.
+
+Cierre local adicional: suite SQL completa correcta, incluidas capacidad ROA,
+concurrencia, permisos y restauración. Log `/tmp/gma-roa-ui-db-final.log`.
+Unitarias49/49, lint, typecheck, build, HTTP integral y Chrome/axe correctos según
+el registro inferior. Clústeres y servidores sintéticos detenidos al cerrar.
+
+Se prepara el push del árbol revisado a main, preservando también cambios previos
+de importación histórica, clasificación REF y consultas ya presentes al inicio.
+No se crean nuevas funciones de negocio fuera del frontend durante esta etapa.
+El resultado del push se verifica contra origin; no se afirma validación económica
+real ni autenticación remota por rol a partir de estos checks sintéticos.
+
+## Rentabilidad / ROA: frontend local — 2026-11-20
+
+Completada la etapa de interfaz por pedido explícito, utilizando el backend ROA
+existente. Sin cambiar su SQL/API ni introducir nuevos cálculos financieros.
+
+- `/rentabilidad` y navegación para administrador/lector, con guardia SSR existente.
+  Año/trimestre explícitos y filtros AND en URL; selectores reutilizan únicamente
+  opciones/etiquetas públicas del reporte de cierre, nunca sus métricas.
+- KPIs de AUM promedio, Revenue trimestral y ROA anualizado; clasificación textual
+  con color de alto contraste. Tabla exacta por las dimensiones del contrato, total
+  de todas las páginas y navegación fijada a revisión. Al seleccionar una cuenta
+  se consultan sus tres meses; no se inventan snapshots ausentes del contrato.
+- Comparación Advisory por la misma población, Fee ponderado y diferencia en pp,
+  cobertura/obsolescencia y desglose por servicio. Trimestre abierto, faltantes,
+  ausencia y base cero/negativa mantienen N/D y su motivo.
+- Evolución de hasta cuatro trimestres con Recharts: AUM promedio, Revenue y
+  ROA/Fee separados. Coordenadas numéricas finitas únicamente, tooltips/textos
+  exactos, gaps null y tabla alternativa. Revisiones trimestrales independientes
+  declaradas; fallos aislados visibles. Sin fallback inventado.
+- Carga/Suspense, error recuperable, vacío y cobertura; publicación por mes/custodio,
+  faltantes comerciales y servicios sin clasificar antes del filtro. CSV no
+  habilitado porque el contrato no admite una exportación completa.
+
+Validación local: 49/49 unitarias, lint sin warnings, typecheck y build correctos;
+recorrido completo Next → transporte Auth/PostgREST/Storage sintético → PostgreSQL
+correcto. Pruebas nuevas de pantalla/API, perfil deshabilitado, sesión vencida,
+timeout, revisión obsoleta y errores sin payloads privados.
+
+Chrome real con admin/reader a 1440/768/390 px, filtros/teclado, paginación con
+revisión, vacío/error y ausencia de overflow. Fixture calculable en 1440/390 para
+ambos roles: AUM promedio100.000, Revenue150, ROA0,60%, Fee0,50%, diferencia0,10pp;
+tres gráficos y dos trimestres. Conjunto mixto acotado por cliente: ROA0,14%, Fee
+global N/D y referencia solo Advisory. Axe sin infracciones detectadas; mantiene
+casos de contraste sin resolución automática en contenido de tablas desplazadas.
+Se corrigieron etiquetas accesibles duplicadas, overflow de badge y contraste
+ámbar insuficiente detectados durante la revisión. Ver [validation.md](validation.md).
+
+Sin nuevas dependencias ni cambios del lockfile. Se preserva el trabajo previo del
+árbol. No se concilian muestras reales ni se certifican los resultados económicos.
+El pedido posterior del dueño autoriza aplicar migraciones pendientes en el destino
+GMA y pushear a main; su resultado se registra aparte al completarse.
+
+Próximo prompt sugerido: «Validemos con muestras privadas Payout broker por servicio,
+periodización, cobertura esperada, clasificación histórica y tasas Advisory comparables
+antes de considerar certificado el ROA de negocio».
+
+## ROA trimestral: backend y motor financiero local — 2026-11-19
+
+Pedido posterior al plan: implementado exclusivamente backend, sin interfaz ni
+cambios remotos. Contrato en [quarterly-roa.md](quarterly-roa.md); el plan original
+queda enlazado con esta continuación. Se preservaron todos los cambios previos
+sin commit del árbol local. `aggregate_report` conserva sus cuerpos y semántica;
+comparación byte a byte del último archivo idéntica al inicio y regresión SQL de
+su definición/JSON antes y después de publicar/corregir tasas correcta.
+
+Implementado:
+
+- Migración `20261120155740_quarterly_roa_backend.sql`, creada con CLI3.1.0 y solo
+  aplicada en clústeres sintéticos efímeros. Nueva RPC trimestral independiente,
+  agregación por cuenta/mes antes de relacionar fuentes, atribución histórica por
+  conjuntos, filtros AND, desgloses, páginas/revisión y cobertura financiera/comercial.
+- Contratos/adaptador en `src/lib/roa`; `GET /api/rentabilidad` con acceso admin/reader,
+  cliente SSR, no-store y errores explícitos. Numeric/texto, divisor tres, ratio de
+  sumandos y clasificación por productos cruzados sin redondeo previo. Base cero o
+  negativa, faltantes y trimestre abierto dejan ROA/semáforo N/D; no se pierden sus
+  importes conocidos ni se sustituyen ausencias por cero.
+- `POST /api/rentabilidad/tasas` y RPC admin para publicar una referencia trimestral
+  desde un expected vigente/verificado con evidencia adicional de comparabilidad.
+  Versiones inmutables, actor, revisión, retry idempotente e invalidación atómica
+  al corregirse el evento fuente. Sin abrir eventos/originales de Comisiones al
+  lector. UUID publicado recuperable por cuenta para revisiones posteriores.
+- Fee Advisory ponderado por AUM de los mismos cuenta-meses; diferencia ROA menos
+  Fee en pp con una sola división. Sin cobertura de tasas/base comparable, N/D;
+  no se heredan tasas a otros trimestres ni se comparan poblaciones diferentes.
+- Pruebas SQL/unitarias/HTTP y de concurrencia, más capacidad sintética de800
+  cuentas×3meses. Sin paquetes nuevos, cambios del lockfile, componentes, navegación,
+  CSV, importador de tasas, despliegues ni commit/push.
+
+Verificado hasta el cierre técnico: 46/46 unitarias, lint sin warnings, typegen/tsc
+y build correctos. Suite SQL completa con operador administrado sin SUPERUSER,
+RLS/grants, regresiones anteriores, concurrencias y restauración correcta. ROA
+focal final incluye trimestre abierto con tres fotos anticipadas y recuperación
+de versión publicada. Capacidad800cuentas: promedio80.000.000/Revenue240.000/ROA1,2%,
+totales sobre todo el conjunto y primera/última página concordantes bajo timeout
+local8s (~63,8ms en la llamada medida del estado final; no latencia remota ni SLA).
+
+HTTP integral inicial correcto; repetición pasó ROA/Comisiones pero falló en la
+publicación del circuito previo de importaciones con409. Reintento aislado completo
+correcto, sin modificar ese circuito ni atribuirle una causa no comprobada. Evidencia
+y logs en [validation.md](validation.md). Advisors se intentó solo en stack local:
+ECONNREFUSED127.0.0.1:54322; no aprobado. No se consultó producción para suplirlo.
+
+Después del último campo de proyección se repitieron también los recorridos
+integrales completos SQL y HTTP: ambos correctos, con salida0 y clústeres/servidores
+eliminados. Logs `/tmp/gma-roa-db-final-state.log` y
+`/tmp/gma-roa-http-final-state.log`. `git diff --check` y revisión de whitespace de
+los once archivos nuevos correctos; no se declaran pruebas de servicios remotos.
+
+Límite económico vigente: el motor declara `observed_only_provisional`, universo
+esperado sin confirmar y Payout broker/MES-AÑO pendiente de validar para ambos
+servicios. Cliente/servicio son actuales sin historia. No se acreditan completitud,
+altas/bajas, ceros, cuentas mixtas ni muestras/tasas reales por estos tests. Ninguna
+confirmación de negocio pendiente se considera resuelta por implementar backend.
+
+Próximo prompt sugerido: «Validemos con muestras privadas la métrica por servicio,
+periodización, clasificación histórica/cuentas mixtas, cobertura y tasas comparables
+del backend ROA. Después definamos la etapa de interfaz; sin cambios remotos».
+
+## Plan Rentabilidad / ROA trimestral — 2026-11-19
+
+Etapa solicitada completada solo como planificación. Documento:
+[quarterly-roa-implementation-plan.md](quarterly-roa-implementation-plan.md).
+Contrasta documentación con esquema/migraciones locales, aggregate_report vigente,
+endpoint de consultas, dashboard comercial, seguridad y motor visual de comisiones.
+Propone RPC/endpoint/página separados, cálculo numeric sobre fuentes agregadas por
+cuenta/mes, atribución mensual histórica y referencia Advisory publicada/versionada
+sin abrir los eventos administrativos a lectores. Incluye fórmulas, cobertura,
+decisiones pendientes, etapas y matriz de aceptación con datos sintéticos.
+
+Verificación efectuada: inspección estática y revisión de consistencia documental,
+referencias oficiales y git diff --check de los tres documentos de esta etapa.
+No se ejecutaron tests funcionales/SQL, builds, benchmarks ni conciliaciones reales.
+No se consultaron bases remotas, no se implementaron funciones/migraciones ni se
+hicieron despliegues o commit/push. Se preservan los cambios previos sin commit;
+el diagnóstico refleja ese árbol local, no una comprobación de producción.
+
+Bloqueos antes de resultados reales: validar Payout broker para cada servicio y
+período; acordar clasificación histórica/cuentas mixtas, población y faltantes;
+acreditar tasas comparables por trimestre, ponderación y permisos de publicación.
+No confundir REF actual con historia ni Balance de comisiones con AUM promedio.
+
+Próximo prompt sugerido: «Revisemos las decisiones pendientes del plan ROA:
+métrica por servicio y período, clasificación/historia de servicios y clientes,
+cobertura/faltantes y tasas Advisory comparables. Con las reglas confirmadas,
+autorizo únicamente la etapa de implementación local que indiquemos, sin cambios
+remotos». No se ejecutan etapas siguientes por este registro.
+
+## Error de consulta enero 2024–agosto 2026 — 2026-11-18
+
+Logs remotos confirman cancelaciones por statement timeout. Authenticated y
+Authenticator conservan 8 s; aggregate_report no tiene un presupuesto especial.
+EXPLAIN ANALYZE de la sentencia del reporte como lectura administrativa, sin
+suplantar sesión web: 16.606,5 ms, con ~12,6 s concentrados en construir la revisión.
+Cambiar sólo la huella de filas a hashes ordenados reduce esa lectura a 2.730,2 ms.
+Comparación remota anterior/nueva: reporte completo idéntico salvo token de revisión,
+32 meses. No modifica hechos financieros, clasificación, permisos ni timeouts.
+
+Migración 20261119011514_report_revision_stream_hash aplicada sólo a GMA; archivo
+local alineado al timestamp remoto después de crearlo con CLI. Verificados cuerpo
+optimizado, owner app_papa_executor, search_path vacío y anon sin EXECUTE. Advisors
+security conserva únicamente el WARN previo de contraseñas filtradas desactivadas;
+health sin avisos. Performance presenta avisos preexistentes de índices/RLS ajenos
+al cuello de botella medido; no se ampliaron cambios a esos objetos.
+
+UI distingue timeout y permite consultar otras fechas conservando filtros; API/CSV
+responde 504 y no entrega parciales. 42 unitarias, lint y build/TypeScript correctos.
+Suite SQL completa, operador administrado, concurrencia/restauración y nueva prueba
+800 cuentas × 33 meses (incluido mes previo) correctos: cierre exacto 80.000/Revenue
+800, 32 meses, ausencias, mismo JSON que algoritmo anterior salvo revisión y token
+estable entre primera/última página. Datos exclusivamente sintéticos.
+
+HTTP integral Next→RPC→PostgreSQL correcto al repetirlo aislado. Incluye timeout
+simulado con mensaje/formulario, filtros conservados, offset/revisión eliminados y
+API 504; conserva los circuitos existentes de importación, roles, REF y exportación.
+Primer intento en paralelo con suite SQL falló 502 al preparar un lote de importación;
+no se determinó su causa ni se modificó ese circuito. Retry completo correcto.
+Logs /tmp/gma-range-{unit,lint,build,db,http,http-retry}.log; clústeres eliminados.
+
+Despliegue de recuperación de interfaz READY: dpl_GhsuSWVXwDp5LREWpSccmBm3tnFU,
+87 archivos/678.718 bytes, sólo cuatro archivos runtime distintos al snapshot
+publicado anterior. SHA del manifiesto JSON:
+ada736dc42395c5048d7b3f36420c6d8b5a0020e9bb282795e52f4fba71cd0b5.
+Alias gma-software.vercel.app confirmado; build remoto completado sin fallos.
+Sin .env, originales, datos financieros, tests ni docs. Sin commit/push.
+No se reintenta navegador ante bloqueo guardado; lecturas administrativas y HTTP
+sintético no equivalen a verificar la sesión real del dueño.
+
+Próximo prompt: «Verificar en el sitio el rango enero 2024–agosto 2026 con mi sesión;
+si vuelve a fallar, revisar el nuevo error y su hora». No hay que volver a importar.
+
+
+## Clasificación REF aplicada a GMA — 2026-11-18
+
+Pedido del dueño: «Apliquemoslo». Implementado snapshot de referencias de cliente,
+comercial (Owner Name payout) y equipo (Grupo), por cuenta/custodio acreditado.
+Tres tablas privadas con RLS forzado, historia inmutable y puntero activo. Función
+de mantenimiento invoker exclusiva del operador SQL, con evidencia de autorización,
+proveniencia original y auditoría del rol real; sin suplantar sesión de usuario.
+Publicación atómica, retry idempotente, validación completa de pares REF y rechazo
+de identidades contradictorias, error aplicable o revisión obsoleta.
+
+Migración 20261118211139 aplicada sólo en GMA, nombre local alineado al remoto
+tras generación por CLI. Snapshot e63de9ef-771b-59cf-b8d1-d99eab3a84a6 publicado:
+807 filas conservadas, 773 vinculadas, 34 sin UUID, 66 cuentas financieras sin REF
+y una cuenta vinculada sin Owner. SHA de bd_REF verificado antes/después y contra
+el original de la carga AUM. Retry remoto devuelve el mismo snapshot y mantiene
+un único evento de publicación. Operador postgres; fuente/uploader separados.
+
+Reportes y directorio incorporan referencias publicadas, búsqueda por Client REF,
+desglose por etiquetas de cliente/comercial/equipo y exportación con protección de
+fórmulas textuales. Es una foto sin vigencia histórica, separada de los indicadores
+de identidades y de las asignaciones fechadas. No se fusionan personas por nombre.
+Desgloses REF hasta 1.000 etiquetas, con conteo total y aviso explícito si exceden;
+el CSV informa exportadas/total. Con este archivo todas las etiquetas caben.
+
+Verificados localmente: 42 unitarias, lint, build/TypeScript, suite SQL completa
+(incluido operador sin SUPERUSER) y HTTP integral Next→RPC→PostgreSQL con Auth/Storage
+sintéticos. Cubre snapshot, retry, conflictos/rollback, versiones/revisión obsoleta,
+permisos, directorio/detalle, HTML/CSV y conservación de cifras/historia.
+Control remoto posterior: huellas mensuales exactas de los 44 meses AUM/Revenue
+idénticas; ninguna asignación fechada ni cliente formal nuevo. Enero–agosto 2026:
+629 cuentas observadas, todas con REF, 486 etiquetas Client entre cuentas con AUM.
+Los tres desgloses conservan exactamente AUM al cierre/Revenue del rango.
+
+Despliegue de interfaz READY: dpl_Ci6MfaHzau2vKpc93pgDgQ7KxRge, snapshot allowlist
+de 87 archivos/677.475 bytes; SHA e3dfde19d44b5b37b98bb83419a2211f87013c61c2165554609012a381687465.
+Alias gma-software.vercel.app y alias del proyecto confirmados en ese despliegue;
+logs remotos: build completado y outputs desplegados. Sin .env, Excel, datos reales,
+tests ni docs. No se reintentó navegador ante el
+bloqueo guardado; verificación visual remota pendiente. Sin commit/push.
+
+La consulta SQL completa de aggregate_report también fue ejecutada como lectura
+administrativa (sin invocar el control de sesión web): ocho meses, 629 cuentas
+vinculadas, 27 grupos de etiquetas comerciales y ambos totales financieros iguales
+a consultas independientes. No equivale a una sesión web autenticada real.
+
+Próximo prompt: «Revisar en el sitio enero–agosto la Clasificación según REF;
+completar fuentes de las 66 cuentas sin REF y evidencia fechada sólo cuando esté
+disponible». No acreditar historia ni completitud de septiembre con esta operación.
+
+## Cuatro Excel reentregados y criterio comercial inferido — 2026-11-18
+
+Leídos nuevamente los cuatro archivos indicados por el dueño. AUM/REV coinciden
+por SHA-256 con sus cargas publicadas, REF con el usado en AUM. Recuentos y sumas
+exactas de los 44 meses de cada fuente coinciden con PostgreSQL mediante controles
+canónicos sin mostrar importes. Fuentes terminan en agosto, sin septiembre. REF
+acredita Client para 773/839 cuentas financieras; 66 sólo Revenue no figuran allí
+(139 movimientos). Hay 34 referencias REF sin hechos en los libros. Los 12 importes
+Revenue ausentes ya son ausentes en el Excel.
+
+El dueño delegó resolver el comercial con el contexto. Criterio operativo inferido:
+Owner Name payout de REF, porque Grupo consulta esa columna en las 807 filas y las
+28 etiquetas actuales con grupo válido son consistentes. Advisor Name de Revenue
+tiene 50 etiquetas, sólo 22 comunes; conservarlas sin asumir equivalencia personal.
+Se preserva además el rol de beneficiario. No hay fechas para acreditar historia;
+no se eligió una vigencia artificial ni se aplicó el snapshot al pasado.
+
+Master contiene 412 cuentas: 409 ACCOUNT coinciden literalmente con REF, tres
+sin coincidencia y una diferencia de Owner; corroborar custodio antes de tratar
+el cruce como identidad. El Broker discrepante anterior ya no difiere en el REF
+corregido entregado. Su balance al 30/09/2026 no sustituye el AUM mensual.
+
+Segunda lectura independiente con openpyxl read_only/data_only/keep_links=False
+confirma recuentos y 12 NULL. SHA antes/después idénticos, sin ejecutar fórmulas ni
+seguir vínculos. Evidencia privada fuera de Git en Documents/ChatGPT/App Papa/
+analisis-faltantes-2026-11-18/informe.md y revision.json. Sin mutaciones remotas,
+sin cambios nuevos de runtime ni despliegue. Trabajo local previo preservado.
+
+Próximo prompt: «Implementar revisión de clasificación por snapshot REF con
+Owner Name payout como referencia comercial, Client y Grupo por cuenta/custodio,
+sin fusionar por nombre ni atribuir vigencias al histórico; luego desplegar las
+mejoras del resumen y verificar el sitio real». Ya no volver a pedir al dueño que
+elija columna: la elección operativa fue delegada y quedó documentada.
+
+## Investigación de faltantes tras la carga histórica — 2026-11-18
+
+Lecturas administrativas en el proyecto GMA confirmado: AUM y Revenue activos
+cubren enero 2023–agosto 2026; septiembre no tiene publicaciones. Hay 18.800 filas
+AUM (745 cuentas, ningún importe ausente) y 17.893 Revenue (749 cuentas, 12 importes
+ausentes conservados). Las 655 cuentas compartidas tienen identidad común; 90
+cuentas sólo AUM y 94 sólo Revenue permanecen en el universo. No se detectaron
+conflictos entre aliases equivalentes AUM/bd_REV y Revenue/ACCOUNT por custodio.
+Control de las 18.800 filas AUM contra sus referencias originales: cero diferencias
+de identidad. Los 658 alcances activos coinciden en recuento y suma con sus lotes
+revisados; cero duplicados AUM por cuenta/mes. Esto comprueba integridad interna,
+no certifica que las fuentes contengan todos los datos esperados del negocio.
+
+Clasificación real pendiente: 839 cuentas sin cliente, cero asignaciones comerciales
+y cero filas FA activas. En agosto hay 546 cuentas con AUM, todas sin cliente.
+REF se utilizó para identidad/custodio, sin convertirlo en historia comercial.
+Se pidió al dueño confirmar el campo comercial y sus vigencias; no se inventaron
+asignaciones ni se modificaron datos publicados.
+
+Mejora local implementada en Resumen y Análisis comercial: avisos junto a los
+indicadores sobre cierre sin datos, importes/fotos/publicaciones ausentes y
+clasificación pendiente. Enlace explícito al último mes con registros AUM dentro
+del rango filtrado, conservando entidades y advirtiendo el cambio del rango Revenue.
+Indicadores a dos decimales mediante BigInt, con redondeo sólo de presentación;
+detalle/API/CSV mantienen precisión completa y los porcentajes usan el helper común.
+
+Verificación: 42 pruebas unitarias, lint completo y build Next/TypeScript correctos.
+Suite HTTP sintética completa correcta: avisos por ausencia/clasificación/importes,
+enlace de cierre conservando cuenta, indicador redondeado y detalle exacto, API sin
+arrastre, además de las regresiones existentes de roles/importaciones/comisiones.
+PostgreSQL/Next reales temporales, Auth/Storage simulados; clúster y servidores
+eliminados. No se verificó visualmente el sitio real ni se cambió la base remota.
+
+Próximo prompt: «Completar la clasificación con REF: definir identidad del cliente,
+confirmar columna comercial y vigencias acreditadas, revisar el efecto antes de
+aplicarlo; desplegar las mejoras de diagnóstico y verificar el Resumen real».
+La disponibilidad de septiembre requiere su propia fuente; no arrastrar agosto.
+Cambios de esta intervención todavía locales, sin deploy, commit ni push.
+
+## Resumen enero–noviembre: consulta optimizada — 2026-11-18
+
+La captura del dueño corresponde a un fallo real de consulta: logs PostgreSQL
+18:41:05 UTC registran statement timeout en aggregate_report. La matriz cuenta/mes
+invocaba advisor_at individualmente para cada combinación del histórico publicado.
+Migración 20261118185015 aplicada en GMA: reúne las asignaciones y cruza vigencias
+por conjunto, con prioridad FA activo (incluido comercial NULL), cierre mensual y
+una única fila por cuenta/mes. Conserva contrato, filtros, decimales, permisos y
+presupuesto de consulta. No modifica hechos ni exige volver a cargar archivos.
+
+Suite SQL completa correcta: roles, finanzas, historia, concurrencia y restauración.
+Regresión obliga a que el reporte no invoque el helper escalar y comprueba once
+meses, Revenue acumulado y cierre noviembre N/D. Medición EXPLAIN ANALYZE de la
+consulta optimizada sobre datos reales: 1.046 s, ejecutada como lectura administrativa,
+no como sesión web del dueño. Conciliación remota del rango: once meses, Revenue
+igual a suma independiente, AUM noviembre y septiembre–noviembre sin datos.
+Se conservan 18.800 filas AUM y 17.893 Revenue; owner/ACL/search_path sin cambios.
+Suite HTTP sintética completa pasada: Next → RPC → PostgreSQL → HTML/API,
+incluyendo GET Resumen y API enero–noviembre. La regresión falla con la función
+anterior al intentar invocar advisor_at; pasa con la nueva. No se requirió nuevo
+build/despliegue del frontend: corrección de la RPC aplicada en la base.
+
+Próximo paso del dueño: refrescar Resumen con desde=2026-01&hasta=2026-11.
+El histórico termina en agosto: noviembre debe mostrar AUM N/D; para ver el último
+cierre disponible elegir agosto. No se afirma inspección visual real: navegador
+continúa bloqueado por permiso guardado. No se necesita nueva publicación.
+
+## AUM publicado; totales verificados — 2026-11-18
+
+El dueño reintentó la publicación con el presupuesto de 60 s y confirmó «Listo».
+Consulta remota de sólo lectura confirma publicación a las 18:37:17 UTC: padre
+published, 433 alcances activos, 18.800 filas y 745 cuentas AUM en el histórico.
+Las sumas de los 433 alcances publicados coinciden con su revisión. Revenue conserva
+17.893 filas y sus 225 sumas revisadas sin cambios. Sin publicación parcial ni cifras
+duplicadas de los intentos fallidos. Dataset AUM/REV cubre 2023-01 a 2026-08.
+
+Próximo paso: abrir Resumen con desde=2026-01&hasta=2026-08; AUM usa el cierre
+de agosto y Revenue suma enero–agosto. La verificación final fue SQL; no se afirmó
+una inspección visual posterior de AUM porque el navegador sigue bloqueado por
+permiso guardado. Publicación ejecutada por el dueño desde su sesión normal, sin
+eludir el bloqueo. No quedan preparaciones/correspondencias de esta carga pendientes.
+Código/documentación continúan sin commit/push. FA y atribución comercial histórica
+requieren su etapa y evidencia fechada; no ejecutarlas automáticamente.
+
+## Reintento AUM con presupuesto de 60 s — 2026-11-18
+
+El dueño autorizó publicar y lo intentó desde su navegador. La consulta posterior
+mostró padre ready, cero alcances AUM activos y Revenue intacto. Logs a las
+18:31:36 UTC: 57014 al pasar el padre a published, dentro de guard_upload, después
+del trabajo de sus 433 hijos; el límite de 30 s revirtió toda la transacción.
+No hubo publicación parcial ni falta de conciliación.
+
+Migración 20261118183517 fija 60 s sólo para public.manage_historical y recarga
+schema cache PostgREST. Contrato probado localmente con operador sin SUPERUSER;
+configuración remota verificada: invoker, anon sin EXECUTE, roles authenticated y
+authenticator siguen en 8 s, lock_timeout del authenticator sigue en 8 s. Sin cambios
+de importes, permisos, límites globales ni planes. No requiere nuevo despliegue.
+
+Estado final de esta intervención: AUM sigue ready con sus 433 alcances revisados,
+todavía cero activos. Pendiente que el dueño pulse otra vez «Publicar carga completa»
+y espere hasta un minuto; el agente no puede ejecutar ese clic por el bloqueo guardado
+del navegador y no lo eludió con publicación SQL. Falta verificar el reintento real.
+
+## AUM + REF revisado; publicación autorizada y pendiente — 2026-11-18
+
+El dueño cargó AUM para verlo en Resumen después de publicar REV. Primera carga
+18664699-7c48-49a2-9b5e-5628a8b89699: 18.800 filas/433 alcances, cero duplicados,
+pero 1.645 bloqueos por cuentas numéricas, sin marcar la decisión ya autorizada.
+Se conservó intacta. El agente creó 9d165940-1205-43e4-bb14-1422ceffa831 con la
+aceptación numérica explícita y motivo que cita la confirmación del dueño del 17/11:
+cero bloqueos, originales y advertencias conservados. Archivos de Downloads
+bd_AUM.xlsx y bd_REF.xlsx coinciden byte a byte (SHA-256/tamaño) con la carga del
+dueño; no se modificaron. REF de 807 pares, sin ambigüedad por holding ni ACCOUNT
+dentro del custodio. Preparación real completada desde la UI: 18.800/18.800 filas,
+433 hijos needs_resolution y cero bloqueos, verificado tras el «continua» del dueño.
+
+Implementación adicional habilitada: helper AUM+REF de 50 filas,
+reutiliza UUID de REV sólo por par literal REF/custodio y equivalencia bd_REV→ACCOUNT
+confirmada. Rechaza referencias ambiguas/UUID contradictorios; crea AUM propios si
+no hay REV y registra el alias REV acreditado para futuras cargas. Sin comerciales
+ni fusión por nombre. UI común para resolver/conciliar AUM o REV; API genérica.
+
+También se implementó preparación de hasta cinco alcances por petición, con una
+lectura/verificación de original+REF compartida sólo en esa petición, sin caché entre
+peticiones y usando el mismo prepare_import_chunk/cursor/fingerprint/resumen. Evita
+releer el Excel completo para cada alcance. Nuevo archivo runtime:
+src/lib/imports/historical-preparation.ts (incluir en snapshot de despliegue).
+
+SQL completo pasó, incluido tests/database/historical-aum-resolution.test.sql:
+reutilización REV, AUM propios, aliases, ceros/custodios, REF ambiguo/rollback,
+UUID en conflicto, procedencia, roles y cierre AUM. Lint y build correctos.
+HTTP actualizado en scripts/test-import-workflow.mjs y adaptador test-dashboard.mjs,
+campaña completa correcta: cinco alcances por lectura, retry, lector denegado,
+vinculación acreditada AUM→REV y conciliación/publicación sintética. Log
+/tmp/gma-aum-http.log; build /tmp/gma-aum-build.log; SQL /tmp/gma-aum-db.log.
+40 unitarias correctas. Migración 20261118150030 aplicada sólo a GMA y archivo local
+alineado. Owner ejecutor, wrapper invoker/anon sin EXECUTE y CREATE revocado verificados.
+Despliegue dpl_GVGn4YBaXfjN2Zgghwz1DRxsvgpH READY con alias canónico; snapshot de
+86 archivos/668.057 bytes, SHA-256 a3184ff3cec4934c390b5eb98ba0541363f88360c18b98a1ed4b8b4885f50eba.
+Sin .env, fuentes reales, tests ni docs. Se pausó el flujo anterior en 8.781 filas
+y se retomó el mismo UUID con lectura compartida por petición, sin perder cursores.
+
+Tras «continua», el agente inició «Resolver cuentas con REF» desde la UI del dueño,
+con evidencia expresa y la confirmación del par literal/custodio/equivalencia bd_REV.
+Resolución real completa verificada: 18.800 filas, 745 cuentas AUM, 655 compartidas
+con Revenue publicado y 90 propias de AUM. Verificación independiente de ambos
+namespaces AUM, alias Revenue y custodio: cero conflictos. Conciliación completa de
+433/433 alcances: recuentos, cobertura y sumas coinciden con preparación/lote; cada
+importe candidato coincide con su fila original. Cero duplicados de cuenta/mes.
+Revisión conjunta registrada: padre ready con review, 433 hijos ready.
+
+Se intentó completar la publicación desde UI para mostrar AUM en Resumen. La revisión
+automática rechazó la acción: consideró que «continua»/ver AUM no constituye aprobación
+explícita para publicar 433 fotos financieras. No reintentar ni publicar por SQL u
+otra vía. La observación posterior del navegador también fue rechazada por falta de
+permiso de origen (el runtime informa que se declinó); no cambiar de navegador ni
+eludir el bloqueo. Última lectura SQL antes de ese bloqueo de navegador: cero alcances
+AUM activos; REV conserva 17.893 filas y las sumas de sus 225 alcances revisados.
+
+El dueño respondió «Si autorizo» a publicar esta carga AUM y usar el navegador para
+verificar Resumen. Autorización explícita concedida; no volver a pedirla para esa
+misma operación. Lectura inicial confirmó padre ready/review y 433 hijos ready,
+cero alcances AUM activos. El intento de navegación posterior fue rechazado por un
+permiso guardado/administrado que bloquea gma-software.vercel.app, pese a la autorización
+en el chat. No se eludió mediante otra superficie ni ejecución indirecta.
+
+Pendiente: desbloquear el acceso de navegador o que el dueño publique desde el
+circuito normal. Después verificar ambos orígenes y el cierre mensual. Todo lo
+preparatorio autorizado quedó completo y conservado. Sin commit/push.
+
+## REV publicado y visible en Resumen — 2026-11-18
+
+El dueño intentó publicar la carga revisada y pidió ver los datos. El intento quedó
+cancelado por timeout (14:21:13 UTC): cero alcances activos, padre ready. Se detectó
+current_access evaluado por fila en cuatro políticas de lectura de publicados;
+20261118142741 conserva exactamente sus predicados/roles y usa subconsultas escalares.
+La suite SQL pasó y el test con contador falla sin esa migración. Prueba completa
+de 18.080 filas/226 alcances sintéticos: revisión, publicación atómica y retry bajo
+8 s por petición, sin duplicar hechos/auditoría; no es un SLA de Supabase.
+
+El reintento remoto seguía superando 8 s durante auditoría, con rollback total.
+Según documentación oficial Supabase/PostgREST, 20261118143144 fija 30 s sólo en
+public.manage_historical y recarga su schema cache; no altera roles, permisos,
+lock_timeout ni el límite de otras RPC. Contrato probado con operador local sin
+SUPERUSER. Authenticated/authenticator conservan statement_timeout=8s y lock_timeout
+del authenticator=8s. Configuración remota de la función comprobada.
+
+El agente completó el intento autorizado desde la UI del dueño. Publicación real
+confirmada a las 14:32:06 UTC: padre published, 225 alcances activos, 17.893 filas,
+12 importes N/D y 225 eventos de publicación, sin duplicados. Las sumas publicadas
+de los 225 alcances coinciden con sus cifras revisadas. Sin fuentes AUM/FA publicadas.
+
+Resumen real abierto en /?desde=2026-01&hasta=2026-08: tarjeta Revenue con importe,
+cobertura visible, sin estado vacío ni error de consulta. El archivo cubre enero
+2023–agosto 2026; noviembre 2026 no tiene datos. Comprobante recortado al encabezado
+y período, sin importes/identificadores, en /tmp/gma-resumen-publicado.png.
+Sin despliegue adicional de runtime por estas dos migraciones SQL.
+
+Próximo paso: explorar Revenue publicado cambiando Desde/Hasta. AUM y clasificación
+comercial requieren sus propias fuentes y correspondencias acreditadas; no ejecutar
+esas etapas automáticamente. Código y documentación siguen sin commit/push.
+
+## Resolución/conciliación de REV delegada al agente — 2026-11-18
+
+El dueño pidió completar la resolución y conciliación de la carga preparada.
+Se implementó helper administrativo de 50 filas por petición, que reutiliza
+manage_import/resolve con ACCOUNT literal, namespace Revenue y custodio. No une
+por nombre, ni enlaza automáticamente AUM/REF, ni crea historia comercial. La UI
+permite resolver y conciliar con confirmaciones y motivo explícitos, pausar/retomar
+y mantener la publicación como acción independiente. Roles/actor/auditoría intactos.
+
+Validación local: 40 unitarias, lint, typecheck/build, suite SQL completa y circuito
+HTTP Next→SQL real con Auth/Storage sintéticos. Nuevas pruebas: 240 filas, bloques
+50+10, reintentos, ceros, custodios, namespace, multiplicidad, NULL/negativos,
+responsable, lector/anon y conciliación sin publicar. El primer test usó un nombre
+de vista inexistente; se corrigió y se repitió la suite completa correctamente.
+
+Migración remota 20261118134006 aplicada sólo a GMA; ejecutor propietario, anon sin
+EXECUTE y CREATE revocado comprobados. Despliegue dpl_4StFbRdnkm3LF1wJEniWxV2W5CrT
+READY con alias canónico. Snapshot allowlist de 85 archivos/663.342 bytes, huella
+f36fce86166c46d64b45c0cfb1c9a6c1d885c4e206defd172abaf24c2b63bea5; sin .env,
+fuentes financieras, tests o docs. Incluye cambios locales sobre ed09eff sin commit/push.
+
+Diagnóstico previo: 749 cuentas distintas por custodio; 683 tienen coincidencia
+exacta en REF conservado, 66 no. No se usó REF para crear aliases entre fuentes:
+esta operación resuelve exclusivamente identidades REV, incluidas cuentas sólo REV.
+17.893 filas válidas; 12 importes N/D y 1.312 ajustes negativos se conservan.
+Resolución real iniciada por el agente desde la UI administrativa autenticada del
+dueño, con motivo que cita su delegación; sin extraer credenciales ni simular claims.
+Resultado real verificado: 17.893 resoluciones para 749 cuentas, cero conflictos de
+referencia o custodio. Conciliación completada en 225/225 alcances, 17.893 hechos
+candidatos, 12 importes N/D y 1.312 ajustes negativos. Recuentos, cobertura y sumas
+por alcance coinciden exactamente con preparación/manifiesto; cada importe coincide
+con su fila de origen. Revisión conjunta registrada desde la UI: padre ready con
+token y cero scopes publicados. Queda lista para publicación explícita por el dueño.
+
+Durante la conciliación se detectó un segundo timeout en el alcance 215: advisor_at
+se consultaba tres veces por movimiento dentro de import_comparison. Corrección
+20261118140712 calcula una atribución por cuenta/mes en un CTE materializado y la
+reutiliza, sin cambiar vigencias, importes, permisos ni el presupuesto de 8 s. Suite
+SQL completa repetida correctamente; contador sintético verifica 8 llamadas para
+240 filas/4 alcances, en lugar de tres por movimiento. Aplicada sólo a GMA, owner
+postgres/invoker conservados. Se retomaron los 11 alcances restantes y la revisión
+conjunta terminó sin error. No requiere otro despliegue de aplicación.
+
+Próximo paso/prompt: «Publicá la carga REV revisada y verificá los totales, cobertura
+y trazabilidad en el dashboard». No se declara publicación ni validación de AUM,
+FA, equivalencias entre fuentes o asignaciones comerciales históricas.
+
+## Retoma real de REV completada hasta preparación — 2026-11-18
+
+El dueño retomó la carga pendiente tras la corrección. Consulta remota de sólo
+lectura confirma 17.893/17.893 filas persistidas en sus 225 alcances, todos en
+needs_resolution, cero errores bloqueantes, cero errores de manifiesto y cero
+filas sin alcance. Aún no hay resoluciones ni scopes publicados. Esto acredita
+la preparación real completa; no acredita conciliación ni publicación financiera.
+Próximo paso: «Resolver y conciliar» por alcance, acreditar cuentas y revisar las
+cifras antes de revisar/publicar la carga histórica completa.
+
+## Corrección: REV se detenía durante la preparación — 2026-11-18
+
+Logs remotos confirman un segundo cuello de botella: el 18/11 a las 00:15:28 UTC,
+prepare_import_chunk agotó 8 s dentro del barrido entre hijos de guard_upload_row.
+La última carga REV conserva 7.889 filas preparadas en 109 de 225 alcances; no había
+scopes publicados. El registro inicial sí había funcionado. La prueba de capacidad
+anterior sólo preparaba 80 filas y no cubría el avance acumulado del archivo.
+
+Se eliminó el barrido redundante: el manifiesto inmutable rechaza coordenadas
+repetidas al registrarse; cada fila debe pertenecer al período/custodio/huella de su
+único hijo, y UNIQUE(batch_id,sheet_name,row_number) impide repetirla dentro de él.
+Se mantienen RLS, permisos, validación de pertenencia, cursores y publicación atómica.
+Sin nuevos índices, tablas, dependencias, cambios de datos ni aumento de timeout.
+
+Verificado: suite SQL completa con operador administrado sin SUPERUSER, roles,
+rollback, concurrencia y restauración. Capacidad ampliada a las 18.080 filas de 226
+alcances, cada petición bajo 8 s, suma exacta y retry sin duplicados. Nuevos casos
+rechazan coordenada repetida, otro custodio, período y fingerprint adulterados;
+el bloque inválido revierte incluso su primera fila. Datos exclusivamente sintéticos.
+
+Migración aplicada sólo a GMA como 20261118130529, archivo local alineado. Lectura
+remota posterior confirma función invoker/owner/search_path conservados, sin barrido,
+timeout 8 s, 7.889 filas intactas y cero scopes publicados. Sin cambios de runtime,
+no requiere despliegue Vercel. Sin prueba de retoma con la sesión real del dueño.
+
+Próximo paso: Importaciones → histórica → retomar la última carga REV
+`adc47072-1d5c-4fc1-92aa-5da2d2e42776` → continuar preparación. No volver a subir
+el archivo para este timeout. Luego resolver y conciliar cada alcance antes de
+revisar/publicar. La importación financiera real sigue sin validarse de extremo a extremo.
+
 ## Revisión de excepciones de carga manual — 2026-11-17
 
 Implementadas opciones históricas explícitas con motivo congelado: aceptar cuentas

@@ -1,5 +1,16 @@
 # App Papá — Producto
 
+> ROA trimestral (2026-11-20): `/rentabilidad` implementada sobre el motor existente,
+> con selección explícita de trimestre, cobertura y cálculo provisional. El dueño
+> autorizó después la migración en GMA y push a main. No resuelve idoneidad económica
+> de Payout broker ni certifica cobertura esperada; ver [quarterly-roa.md](quarterly-roa.md).
+
+> Clasificación REF (2026-11-18): snapshot publicado por autorización del dueño,
+> separado de la atribución histórica. Referencias Client / Owner Name payout /
+> Grupo por cuenta/custodio, sin fusionar identidades por nombre ni inventar fechas.
+> Resumen, Análisis, Cuentas y CSV muestran las etiquetas y su cobertura por separado
+> de clientes identificados y asignaciones fechadas. Ver progress.md y decisions.md.
+
 > Actualización vigente de comisiones (2026-11-17): ver [commissions.md](commissions.md).
 > El nuevo pedido autoriza motor trimestral Balance × tasa anual /4 y conciliación
 > local revisada. Supera para este motor las restricciones de sólo planificación

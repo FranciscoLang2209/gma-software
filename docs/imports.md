@@ -1,6 +1,41 @@
 # Importaciones — preparación, correspondencias y publicación (etapas 4–5)
 
-Solo administradores habilitados y con sesión vigente. Se usa su JWT para Storage, vistas y RPC; no hay clave privilegiada ni fallback a una demo. Aplicar todas las migraciones vigentes (ocho) en un destino dedicado antes de usar la pantalla. El entorno Supabase remoto sigue pendiente; preparación operativa en [operations.md](operations.md).
+## AUM + REF y preparación compartida — 2026-11-18
+
+La preparación histórica procesa hasta cinco alcances por petición, compartiendo
+sólo dentro de esa petición la lectura y verificación de original+REF. Mantiene los
+límites por bloque, cursores, fingerprints y resúmenes; no usa caché entre peticiones.
+Pausar/reintentar retoma el mismo UUID y no vuelve a insertar filas ya guardadas.
+
+AUM preparado y sin bloqueos ofrece «Resolver cuentas con REF». Requiere motivo y
+confirmación del par literal/custodio y la equivalencia bd_REV→ACCOUNT acreditada.
+Reutiliza la cuenta exacta de REV o AUM; si no existe, crea la propia y registra sus
+aliases explícitos. Un REF ambiguo o UUID contradictorio detiene el bloque sin fusionar
+cuentas. Se guarda SHA, hoja y fila REF junto con la procedencia AUM. No crea
+movimientos REV ni atribuciones comerciales. «Conciliar alcances de AUM» conserva
+la unicidad de foto por cuenta/mes y exige las mismas cifras exactas del archivo.
+
+Una decisión de identificadores numéricos ya autorizada debe quedar marcada y con
+motivo en cada carga. Para cambiarla se crea una nueva operación con los mismos
+originales; nunca se altera el manifiesto de una preparación anterior.
+
+## Resolución histórica de Revenue por bloques — 2026-11-18
+
+Una carga REV completamente preparada y sin bloqueos ofrece «Resolver cuentas
+exactas». Requiere confirmar ACCOUNT literal/custodio y registrar evidencia. Cada
+petición resuelve hasta 50 filas usando las operaciones existentes, reutilizando el
+UUID de ese identificador dentro de Revenue/custodio o creando uno si no existe.
+No une con AUM/REF ni clientes/comerciales por nombre; cuentas sin REF quedan sólo
+REV. Se conserva cada movimiento, sus originales, ceros, N/D y ajustes negativos.
+Un conflicto detiene el proceso; pausa/reintento conserva lo ya resuelto.
+
+«Conciliar alcances de REV» requiere revisar todos los meses/custodios del archivo;
+ejecuta la conciliación existente por hijo, con filas/importes/cobertura exactos y
+control de versión activa. También se puede retomar. Luego «Revisar toda la carga»
+congela la revisión conjunta; «Publicar carga completa» continúa siendo un paso
+explícito, separado y atómico. Resolver o conciliar no publica datos.
+
+Solo administradores habilitados y con sesión vigente. Se usa su JWT para Storage, vistas y RPC; no hay clave privilegiada ni fallback a una demo. Aplicar todas las migraciones vigentes en un destino dedicado antes de usar la pantalla. Estado del entorno remoto en [progress.md](progress.md) y operación en [operations.md](operations.md).
 
 ## Uso
 

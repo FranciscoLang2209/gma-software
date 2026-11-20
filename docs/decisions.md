@@ -1,5 +1,216 @@
 # App Papá — Decisiones y pendientes
 
+## Rentabilidad / ROA: frontend autorizado — 2026-11-20
+
+El pedido vigente autoriza únicamente la interfaz sobre el backend local existente.
+Nueva `/rentabilidad`, accesible a admin y reader mediante `requireAccess()` y RPC
+con sesión del usuario. No hay publicación de tasas en esta pantalla ni cambios de
+permisos, SQL, API o despliegues por esta etapa. Se conservan decisiones económicas
+pendientes y la advertencia `observed_only_provisional` en resultados calculables.
+
+- Año/trimestre explícitos, sin convertir rangos de Resumen ni elegir períodos
+  implícitos. Navegación conserva entidades compatibles; filtros AND en URL.
+- Selectores reutilizan únicamente etiquetas/opciones públicas de `aggregate_report`
+  bajo el mismo rango y entidades (hasta 100 por selector). Sus cifras de cierre no
+  se usan en ROA. Si las opciones fallan se informa, conservando filtros/resultados.
+- KPIs y tabla consumen textos/null del reporte ROA; clasificación y comparadores
+  provienen de SQL. `Number` solo posiciona coordenadas finitas de Recharts.
+- Las tres fotos por cuenta se inspeccionan seleccionando la cuenta desde la tabla:
+  el contrato ofrece meses del conjunto filtrado, no snapshots por cada fila. No
+  se agregan consultas por fila ni se reconstruyen fotos desde AUM promedio.
+- Evolución: hasta cuatro trimestres con iguales filtros. Cada trimestre conserva
+  su propia revisión; se informa que no forman un snapshot conjunto. Fallos por
+  trimestre se presentan como errores, sin ceros ni datos de sustitución.
+- CSV diferido porque el contrato ROA no lo admite. No se exporta solo una página
+  ni se reutiliza el CSV de AUM al cierre como si fuera AUM promedio.
+
+Ver implementación, validación local y límites en [quarterly-roa.md](quarterly-roa.md),
+[progress.md](progress.md) y [validation.md](validation.md).
+
+## ROA: backend y motor local autorizados — 2026-11-19
+
+Un pedido posterior autoriza exclusivamente migración, motor SQL, contratos/API y
+pruebas, sin interfaz ni acciones remotas. Se implementa reporte separado de
+aggregate_report: tres fotos/divisor 3, Revenue publicado por MES/AÑO, atribución
+histórica al cierre, ratios sobre sumandos y filtros AND. Numeric y texto/null;
+faltantes, base cero/negativa y trimestre abierto no generan ROA ni categoría.
+
+Payout broker se reutiliza como métrica existente **sin dar por verificada su
+idoneidad para ambos servicios**. Los cálculos posibles se etiquetan provisionales
+sobre cobertura observada; cliente/servicio siguen siendo actuales sin historia.
+No se agregan certificaciones de cero/completitud ni se infieren cuentas activas.
+
+Advisory admite una publicación administrativa explícita de tasa trimestral desde
+un expected vigente/verificado, con evidencia adicional de comparabilidad. Esto
+implementa la proyección publicada del plan para admin/reader sin abrir eventos u
+originales de Comisiones. Copia tasa de origen, conserva versiones/actor, invalida
+al corregirse la fuente y requiere revisión/idempotencia. Fee ponderado por AUM
+mensual, diferencia ROA menos Fee en pp con una sola división; tasa incompleta o
+incompatible N/D. La selección revisada no prueba por sí misma una muestra real.
+
+Son políticas técnicas conservadoras para este backend local, no una conciliación
+económica ya realizada. Siguen pendientes las definiciones/muestras del plan antes
+de habilitar resultados reales. Ver [quarterly-roa.md](quarterly-roa.md).
+
+## Rentabilidad / ROA trimestral: alcance de planificación — 2026-11-19
+
+El dueño solicita planificar una sección separada con filtros combinables de
+año/trimestre, equipo, custodio, cliente, comercial, cuenta y servicio. Regla del
+pedido: AUM promedio de los tres snapshots mensuales; Revenue trimestral sumado;
+ROA anualizado = Revenue × 4 / AUM promedio × 100. Bajo <0,40%; OK entre 0,40% y
+0,60% inclusive; Muy bien >0,60%. Advisory añade Fee anual y diferencia solo con
+base/vigencia comparables. No cambia AUM al cierre del dashboard existente.
+
+Plan en [quarterly-roa-implementation-plan.md](quarterly-roa-implementation-plan.md).
+Solo se autoriza documentación en esta etapa, sin implementación ni cambios
+remotos. El código confirma Payout broker como métrica general normalizada, pero
+no acredita todavía su idoneidad económica para ambos servicios. No se da esa
+decisión por confirmada. Comisiones es administrativo y sus tasas no son una
+fuente publicada para lectores; REF no acredita vigencias históricas.
+
+Pendientes: métrica/periodización por servicio; cuentas mixtas e historia de
+cliente/servicio; universo esperado y faltantes/cero; Fee comparable y evidencia;
+ponderación por AUM, signo de diferencia y acceso lector a tasas. La política
+estricta de N/D ante faltantes, diferencia ROA menos Fee en pp y publicación
+separada de tasas son propuestas del plan, aún sin aprobación de negocio.
+
+## Consultas amplias: huella de revisión acotada — 2026-11-18
+
+Bug informado al consultar enero 2024–agosto 2026. El reporte conserva la matriz
+cuenta/mes y todos sus filtros, reglas de cierre, cobertura y atribución. La huella
+opaca pasa de un JSON agregado de todas las filas a hashes de fila ordenados por
+período/UUID, concatenados y resumidos. Incluye los mismos campos, filtros,
+publicaciones faltantes y snapshot REF. La revisión sigue detectando cambios entre
+páginas; tokens emitidos antes del cambio requieren reiniciar la consulta.
+No se eleva el límite de 8 s ni se recorta el rango o la precisión para ocultar el fallo.
+
+Ante SQLSTATE 57014 se informa tiempo agotado. La pantalla permite editar fechas,
+conserva filtros de entidades/desglose y descarta offset/revisión al consultar otra
+vez. API/CSV devuelve 504 sin entregar un resultado parcial. Otros errores mantienen
+sus estados de acceso, revisión o indisponibilidad.
+
+
+## Snapshot REF aplicado por autorización del dueño — 2026-11-18
+
+«Apliquemoslo» autoriza aplicar el criterio operativo ya revisado. Se publica una
+clasificación de referencias de origen, separada de identidades formales y de las
+asignaciones históricas. Client, Owner Name payout y Grupo conservan sus etiquetas
+literales por UUID de cuenta/custodio acreditado. Agrupar etiquetas iguales en el
+desglose REF no fusiona clientes/personas ni prueba identidad personal.
+
+Snapshot versionado e inmutable con original SHA/hoja/fila y vínculo al AUM que
+conserva el REF en Storage privado. Revisión de los 807 pares completos: 773 tienen
+cuenta resuelta, 34 se conservan sin UUID. Hay 66 cuentas financieras fuera de REF.
+El error Grupo de una referencia sin UUID queda preservado; un error de grupo
+aplicable a una cuenta resuelta bloquea la operación completa. No hay sustitución
+de hechos financieros ni asignaciones fechadas. Una clasificación posterior
+requiere nueva versión y revisión del puntero activo.
+
+La aplicación remota se ejecuta como mantenimiento por el operador SQL real:
+función invoker privada, sin EXECUTE para PUBLIC/anon/authenticated/service_role
+ni ejecutor de la app. Auditoría con actor_id NULL, database_role postgres y texto
+de autorización del dueño, sin simular JWT; el uploader original se conserva
+por separado. No hay credenciales privilegiadas en runtime.
+
+Resumen/Análisis/Cuentas/CSV muestran el snapshot explícitamente sin vigencia.
+Los filtros y métricas históricos conservan sus reglas y asignaciones fechadas.
+Clientes identificados y etiquetas Client de REF son conteos distintos.
+
+## Referencia comercial REF elegida por contexto — 2026-11-18
+
+Ante la pregunta por el campo comercial y vigencias, el dueño delegó al agente
+resolverlo con el contexto. Se adopta Owner Name payout de REF como referencia
+comercial operativa de ese snapshot. La evidencia es que las 807 fórmulas Grupo
+consultan C de su fila y cada una de las 28 etiquetas actuales con grupo válido
+mantiene un único grupo. Advisor Name de Revenue tiene 50 etiquetas y sólo 22
+coinciden literalmente con REF. No se sustituyen ni se equiparan personas entre
+fuentes. Owner conserva además el significado de beneficiario de comisiones.
+
+Es una inferencia operativa documentada por delegación, no una confirmación
+independiente del negocio ni permiso para fusionar identidades por nombre.
+REF no tiene vigencias: no usar fecha de recepción como inicio, ni aplicar el
+snapshot a 2023–2026. Las referencias actuales y la atribución histórica deben
+presentarse por separado. No se publicaron asignaciones ni clientes nuevos.
+
+Client aporta etiquetas por cuenta/custodio para 773 de las 839 cuentas con hechos;
+66 cuentas Revenue quedan sin REF. Conservar etiquetas originales y resolver
+identidades explícitamente. La elección de columna queda resuelta como criterio
+operativo del snapshot; las vigencias históricas siguen sin evidencia.
+
+## Faltantes visibles e indicadores legibles — 2026-11-18
+
+La investigación solicitada tras la carga histórica distingue identidad de cuenta,
+cobertura financiera y clasificación de clientes/comerciales/equipos. Resolver
+cuentas con REF no acredita estas clasificaciones ni vigencias históricas.
+No se modifican identidades ni datos publicados sin evidencia adicional.
+
+Resumen y Análisis comercial muestran los faltantes del informe junto a los
+indicadores: cierre AUM sin registros, fotos/importes ausentes, publicaciones
+faltantes y clasificación pendiente. Un enlace permite elegir el último mes con
+registros AUM observado dentro del rango y filtros actuales; la selección es
+explícita, conserva filtros de entidades y también cambia el rango de Revenue.
+No se arrastran saldos ni se promete cobertura fuera del rango consultado.
+
+Los indicadores monetarios de ambas pantallas muestran dos decimales con redondeo
+decimal exacto de presentación (mitades alejadas de cero), reutilizando la regla
+de porcentajes existente. Detalles, API, CSV, originales y cálculos conservan toda
+su precisión. Se informa esta diferencia de presentación en las pantallas.
+
+## Presupuesto histórico de 60 s para AUM — 2026-11-18
+
+La publicación real AUM (433 alcances) llegó al cierre del padre y agotó 30 s,
+revirtiéndose por completo. Se amplía a 60 s únicamente la RPC manage_historical,
+dentro del máximo documentado de la API. Conserva permisos, límites de roles/otras
+RPC, lock_timeout, validaciones, auditoría e idempotencia/atomicidad. Sustituye el
+presupuesto anterior de 30 s para esta función. No autoriza publicar por otra vía
+ni eludir el bloqueo del navegador; requiere reintento desde el circuito normal.
+
+## Aplicación del par REF a las identidades AUM/REV — 2026-11-18
+
+Al continuar la carga AUM solicitada por el dueño, se aplica el contrato confirmado:
+ACC # Addepar / ACCOUNT / Broker de REF acredita el par de referencias y custodio;
+Account Number bd_REV corresponde a ACCOUNT de Revenue. La resolución por bloques
+exige el par literal, sin ambigüedad en ninguno de sus lados dentro del custodio.
+Consulta ambos namespaces AUM y el namespace ACCOUNT de Revenue: sólo reutiliza
+un UUID si todas las referencias acreditadas coinciden. UUID contradictorios bloquean
+el bloque completo; no se fusionan cuentas ni se unen por nombre.
+
+Si no existe cuenta, se crea una propia de AUM y se registra también la equivalencia
+Revenue/ACCOUNT expresamente acreditada por REF, para que una futura carga REV
+reutilice esa identidad. Esto no crea Revenue ni modifica movimientos publicados.
+Cada resolución conserva actor, motivo, SHA del REF, hoja, fila y origen AUM.
+No se infieren clientes, comerciales ni vigencias históricas.
+
+## Presupuesto acotado para la operación histórica — 2026-11-18
+
+La publicación real de 225 alcances auditados supera 8 s en Supabase aun después
+de optimizar consultas repetidas. Se establece statement_timeout=30s sólo en la
+RPC pública manage_historical, con hoisting documentado de PostgREST. Roles y otras
+RPC conservan sus límites; no se altera lock_timeout, permisos ni atomicidad.
+Cuatro políticas de lectura publicada evalúan current_access por consulta mediante
+SELECT escalar; sus predicados, roles y límites de publicación no cambian.
+
+## Resolución por bloques de identidad exacta en REV — 2026-11-18
+
+El dueño pidió al agente completar las correspondencias y conciliación de su carga
+preparada. Se habilita una operación administrativa por bloques de hasta 50 filas:
+reutiliza o crea un UUID por ACCOUNT literal/custodio dentro del namespace Revenue,
+usando la resolución existente y su evidencia/actor/auditoría. Sin ceros inventados,
+coincidencias por nombre ni aliases entre fuentes. Las cuentas ausentes de REF
+permanecen como sólo Revenue; no se inventan clientes o comerciales históricos.
+Reintentar conserva resoluciones existentes y no agrega movimientos. La conciliación
+por alcance reutiliza el control previo de filas/importes/cobertura/versión activa;
+se mantiene separada de la publicación explícita y atómica de la carga completa.
+
+## Preparación histórica sin barrido de coordenadas entre hijos — 2026-11-18
+
+Se conserva la unicidad por coordenada de origen mediante el manifiesto inmutable
+validado al registrar la carga, pertenencia de cada fila a su alcance y restricción
+UNIQUE por hijo/hoja/fila. El barrido global por cada inserción era redundante y
+provocó un timeout real al preparar REV; se retiró sin ampliar permisos ni plazos.
+Los movimientos idénticos de Revenue en filas distintas siguen siendo legítimos.
+No cambia ninguna decisión de negocio ni se autoriza publicación automática.
+
 ## Revisión de carga manual confirmada — 2026-11-17
 
 El dueño autorizó conservar Payout broker ausente como N/D y permitir publicación

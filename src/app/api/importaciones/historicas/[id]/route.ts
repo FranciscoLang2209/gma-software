@@ -1,6 +1,7 @@
 import { LIMITS, UUID } from "@/lib/imports/contracts";
 import { sha256 } from "@/lib/imports/read";
 import { boundedBody, importAccess, privateHeaders, reply } from "@/lib/imports/server";
+import { prepareHistoricalBlocks } from "@/lib/imports/historical-preparation";
 export const runtime = "nodejs";
 async function manage(request: Request, params: Promise<{ id: string }>) {
   const supabase = await importAccess(request);
@@ -25,9 +26,21 @@ async function manage(request: Request, params: Promise<{ id: string }>) {
   if (request.method === "POST") {
     try {
       const body = JSON.parse((await boundedBody(request, 8192)).toString("utf8"));
-      if (!["review", "publish"].includes(body.operation) || !body.input || typeof body.input !== "object") throw new Error();
+      if (!["prepare", "resolve", "review", "publish"].includes(body.operation) || !body.input || typeof body.input !== "object" || Array.isArray(body.input)) throw new Error();
       operation = body.operation; input = body.input;
     } catch { return reply({ error: "Solicitud inválida." }, 400); }
+  }
+  if (operation === "prepare") {
+    try { return reply(await prepareHistoricalBlocks(supabase, id)); }
+    catch (error) { return reply({ error: error instanceof Error ? error.message : "Preparación sin confirmar. Conservá esta carga y reintentá." }, 502); }
+  }
+  if (operation === "resolve") {
+    const selected = input as { child_id?: string; evidence?: string; confirm_exact?: boolean };
+    if (!UUID.test(selected.child_id ?? "") || selected.confirm_exact !== true || typeof selected.evidence !== "string" || selected.evidence.trim().length < 10 || selected.evidence.length > 2000)
+      return reply({ error: "Confirmá la identidad exacta por custodio e indicá evidencia (10 a 2.000 caracteres)." }, 400);
+    const { data, error } = await supabase.rpc("resolve_historical_accounts", { target_id: id, child_id: selected.child_id, evidence: selected.evidence });
+    if (error) return reply({ error: "No se confirmó el bloque de correspondencias. Conservá esta carga y revisá el estado antes de reintentar; no se publicaron datos." }, error.code === "42501" ? 403 : 409);
+    return reply(data);
   }
   if (operation !== "inspect") {
     const { data: upload, error: sourceError } = await supabase.from("admin_import_uploads").select("storage_object_path,file_hash,file_size,options").eq("id", id).single();

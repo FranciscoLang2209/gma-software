@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowDownToLine, ArrowUpRight, Landmark, Layers3, Users, Wallet, Info } from "lucide-react";
 import type { Report } from "@/lib/queries/contracts";
-import { exact, exportHref, monthLabel, reportHref, usd } from "@/lib/queries/presentation";
+import { exportHref, monthLabel, percent, reportHref, usdRounded } from "@/lib/queries/presentation";
 import { MetricCard } from "./metric-card";
 import { ReportChart } from "./report-chart";
 
@@ -17,20 +17,20 @@ export function SummaryOverview({ report, params }: { report: Report; params: UR
   const closing = monthLabel(report.period.to), range = `${monthLabel(report.period.from)} — ${closing}`;
   const comparison = last ? `${closing} vs. ${monthLabel(last.previous_period)}` : "Comparación N/D";
   const change = (amount: string | null | undefined, percentage: string | null | undefined) => <>
-    <strong>{usd(amount)}</strong><span className="change-percent">{percentage == null ? "N/D" : `${exact(percentage)} %`}</span>
+    <strong>{usdRounded(amount)}</strong><span className="change-percent">{percent(percentage)}</span>
   </>;
   return <>
     <section className="metric-grid primary-metrics" aria-label="Indicadores principales">
-      <MetricCard primary title="AUM al cierre" value={usd(t.aum_usd)} period={`Foto mensual · ${closing}`} icon={<Landmark size={20} />} note={<><span>{comparison}</span><div>{change(last?.aum_change_usd, last?.aum_change_percent)}</div></>} />
-      <MetricCard primary title="Revenue del rango" value={usd(t.revenue_usd)} period={`Acumulado · ${range}`} icon={<Layers3 size={20} />} note={<><span>SUM(Payout broker) · USD</span><div>Comparación del acumulado: N/D</div></>} />
+      <MetricCard primary title="AUM al cierre" value={usdRounded(t.aum_usd)} period={`Foto mensual · ${closing}`} icon={<Landmark size={20} />} note={<><span>{comparison}</span><div>{change(last?.aum_change_usd, last?.aum_change_percent)}</div></>} />
+      <MetricCard primary title="Revenue del rango" value={usdRounded(t.revenue_usd)} period={`Acumulado · ${range}`} icon={<Layers3 size={20} />} note={<><span>SUM(Payout broker) · USD</span><div>Comparación del acumulado: N/D</div></>} />
     </section>
     <section className="metric-grid secondary-metrics" aria-label="Cuentas, clientes y variación mensual">
       <MetricCard title="Cuentas con AUM" value={String(t.accounts_with_aum)} period={`Al cierre · ${closing}`} icon={<Wallet size={17} />} note="Con registro, incluso cero o importe ausente. Sin comparación de actividad." />
-      <MetricCard title="Clientes con AUM" value={String(t.clients_with_aum)} period={`Conocidos · ${closing}`} icon={<Users size={17} />} note={`${t.aum_accounts_without_client} cuentas sin cliente. Comparación N/D.`} />
+      <MetricCard title="Clientes identificados con AUM" value={String(t.clients_with_aum)} period={`Conocidos · ${closing}`} icon={<Users size={17} />} note={<>{t.aum_accounts_without_client} cuentas sin identidad de cliente. {report.reference_classification && <><a href="#clasificacion-ref">{report.reference_classification.aum_client_labels} etiquetas de cliente en REF</a>. </>}Comparación N/D.</>} />
       <MetricCard title="Cuentas con Revenue" value={String(t.accounts_with_revenue)} period={range} icon={<Wallet size={17} />} note="Con registros en el rango; no equivale a cuentas activas. Comparación N/D." />
-      <MetricCard title="Variación mensual de Revenue" value={usd(last?.revenue_change_usd)} period={comparison} note={<>{last?.revenue_change_percent == null ? "N/D" : `${exact(last.revenue_change_percent)} %`} · Compara el flujo mensual, no el acumulado.</>} />
+      <MetricCard title="Variación mensual de Revenue" value={usdRounded(last?.revenue_change_usd)} period={comparison} note={<>{percent(last?.revenue_change_percent)} · Compara el flujo mensual, no el acumulado.</>} />
     </section>
-    <p className="summary-disclaimer"><Info size={15} aria-hidden="true" /><span>Importes conocidos, sujetos a cobertura. La variación mensual de AUM no es rendimiento. Revenue no es ganancia neta. <a href="#cobertura">Revisar cobertura</a></span></p>
+    <p className="summary-disclaimer"><Info size={15} aria-hidden="true" /><span>Indicadores redondeados a centavos; detalle y CSV con precisión completa. Importes conocidos, sujetos a cobertura. La variación mensual de AUM no es rendimiento. Revenue no es ganancia neta. <a href="#cobertura">Revisar cobertura</a></span></p>
     <div className="section-heading"><div><p className="eyebrow">EVOLUCIÓN DEL NEGOCIO</p><h2>Historia mensual</h2></div><span>USD · escalas independientes</span></div>
     <div className="report-charts"><ReportChart report={report} source="aum" /><ReportChart report={report} source="revenue" /></div>
     <section className="panel summary-explore" aria-label="Distribución del negocio">

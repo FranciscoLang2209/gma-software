@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { exact, exportHref, percent, reportHref, screenParameters } from "../src/lib/queries/presentation.ts";
+import { exact, exportHref, percent, reportHref, reportWarnings, screenParameters, usd, usdRounded } from "../src/lib/queries/presentation.ts";
+import type { Report } from "../src/lib/queries/contracts.ts";
 
 test("presentación: decimales exactos, negativos, cero y ausencia sin redondear", () => {
   assert.equal(exact("100.123456789123456789"), "100,123456789123456789");
@@ -12,6 +13,48 @@ test("presentación: decimales exactos, negativos, cero y ausencia sin redondear
   assert.equal(percent("99.999"), "100 %");
   assert.equal(percent("-0.004"), "0 %");
   assert.equal(exact(null), "N/D");
+});
+test("indicadores: redondeo decimal a centavos sin perder precisión en detalle", () => {
+  const original = "1234567.556789123456789123"; // SINTÉTICO
+  assert.equal(usdRounded(original), "USD 1.234.567,56");
+  assert.equal(usd(original), "USD 1.234.567,556789123456789123");
+  assert.equal(usdRounded("999.995"), "USD 1.000,00");
+  assert.equal(usdRounded("-0.005"), "USD -0,01");
+  assert.equal(usdRounded("-0.004"), "USD 0,00");
+  assert.equal(usdRounded("9007199254740993.015"), "USD 9.007.199.254.740.993,02");
+  assert.equal(usdRounded("0"), "USD 0,00");
+  assert.equal(usdRounded(null), "N/D");
+  assert.equal(usdRounded(undefined), "N/D");
+});
+
+test("avisos: separan ausencia, cero, importe desconocido y clasificación pendiente", () => {
+  const report: Pick<Report, "total" | "period" | "coverage"> = {
+    period: { from: "2026-01-01", to: "2026-09-01", aum_closing_month: "2026-09-01" },
+    coverage: [],
+    total: {
+      key: "total", label: "SINTÉTICO", aum_usd: "0", revenue_usd: "0",
+      aum_rows: 1, aum_values: 1, revenue_rows: 1, revenue_values: 1,
+      accounts_with_aum: 1, clients_with_aum: 1, aum_accounts_without_client: 0, accounts_with_revenue: 1,
+      aum_missing_accounts: 0, revenue_missing_account_months: 0,
+      aum_accounts_without_advisor: 0, revenue_accounts_without_advisor: 0,
+      aum_accounts_without_team: 0, revenue_accounts_without_team: 0,
+      aum_without_advisor_usd: null, revenue_without_advisor_usd: null,
+    },
+  };
+  assert.deepEqual(reportWarnings(report), [], "cero publicado y conocido no es ausencia");
+  const missing = { ...report, total: { ...report.total, aum_rows: 0, aum_values: 0, aum_usd: null, revenue_rows: 2, revenue_values: 1 } };
+  assert.match(reportWarnings(missing).join(" "), /Sin registros de AUM al cierre de 09\/2026/);
+  assert.match(reportWarnings(missing).join(" "), /1 registros sin Payout broker/);
+  assert.ok(!reportWarnings(missing).join(" ").includes("Sin registros de Revenue"));
+  const unassigned = { ...report, total: { ...report.total, aum_accounts_without_client: 1, revenue_accounts_without_advisor: 1, revenue_accounts_without_team: 1 } };
+  assert.match(reportWarnings(unassigned).join(" "), /clientes pendiente/);
+  assert.match(reportWarnings(unassigned).join(" "), /Vincular cuentas entre fuentes no acredita un comercial/);
+  assert.match(reportWarnings(unassigned).join(" "), /Sin equipo/);
+  const partial = { ...report, coverage: [{ period: "2026-09-01", source: "aum" as const, custodian_id: "SINTETICO", published: false }], total: { ...report.total, aum_missing_accounts: 2, aum_values: 0, revenue_rows: 0, revenue_values: 0 } };
+  assert.match(reportWarnings(partial).join(" "), /2 cuentas del universo observado sin foto/);
+  assert.match(reportWarnings(partial).join(" "), /1 registros sin importe/);
+  assert.match(reportWarnings(partial).join(" "), /Sin registros de Revenue/);
+  assert.match(reportWarnings(partial).join(" "), /sin publicación de AUM o Revenue/);
 });
 test("pantallas: parámetros compartidos, rango explícito y validación del contrato", () => {
   const now = new Date("2026-03-01T01:00:00Z");

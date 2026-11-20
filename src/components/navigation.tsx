@@ -7,6 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 const sections = [
   ["/", "Resumen", LayoutDashboard],
   ["/analisis-comercial", "Análisis comercial", ChartNoAxesCombined],
+  ["/rentabilidad", "Rentabilidad / ROA", ChartNoAxesCombined],
   ["/cuentas", "Cuentas", Wallet],
   ["/importaciones", "Importaciones", Upload],
   ["/comisiones", "Comisiones", GitCompareArrows],
@@ -22,6 +23,12 @@ export function Navigation({ role }: { role: "admin" | "reader" }) {
     const value = search.get(key);
     if (value) filters.set(key, value);
   }
+  const roaFilters = new URLSearchParams();
+  for (const key of ["anio", "trimestre", "custodio", "equipo", "comercial", "cliente", "cuenta"]) {
+    const value = search.get(key); if (value) roaFilters.set(key, value);
+  }
+  const service = search.get("servicio");
+  if (service && ["Advisory", "Brokerage", "sin_clasificar"].includes(service)) roaFilters.set("servicio", service);
   return (
     <nav aria-label="Navegación principal" className="navigation">
       {sections
@@ -33,7 +40,7 @@ export function Navigation({ role }: { role: "admin" | "reader" }) {
         .map(([href, label, Icon]) => (
           <Link
             key={href}
-            href={(href === "/" || href === "/analisis-comercial" || href === "/cuentas") && filters.size ? `${href}?${filters}` : href}
+            href={href === "/rentabilidad" ? `${href}${roaFilters.size ? `?${roaFilters}` : ""}` : (href === "/" || href === "/analisis-comercial" || href === "/cuentas") && filters.size ? `${href}?${filters}` : href}
             aria-current={(pathname === href || (href === "/cuentas" && pathname.startsWith("/cuentas/"))) ? "page" : undefined}
           >
             <Icon size={18} aria-hidden="true" strokeWidth={1.7} />

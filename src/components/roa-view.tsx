@@ -1,0 +1,58 @@
+import Link from "next/link";
+import { Badge, Button, Table } from "@radix-ui/themes";
+import { Select } from "./ui/select";
+import type { RoaMetrics, RoaReport } from "@/lib/roa/contracts";
+import { FEE_STATUS, ROA_FILTERS, ROA_STATUS, roaHref } from "@/lib/roa/presentation";
+import { DIMENSIONS, exact, percent, usd } from "@/lib/queries/presentation";
+import type { Report } from "@/lib/queries/contracts";
+
+export function RoaFilters({ params, options }: { params: URLSearchParams; options?: Report["options"] }) {
+  return <section className="panel report-filters" aria-label="Filtros de rentabilidad">
+    <form action="/rentabilidad" className="import-form">
+      <label htmlFor="roa-year">Año<input id="roa-year" name="anio" type="number" min="1900" max="9998" required defaultValue={params.get("anio") ?? ""} /></label>
+      <label htmlFor="roa-quarter">Trimestre<Select id="roa-quarter" aria-label="Trimestre" name="trimestre" required defaultValue={params.get("trimestre") ?? ""}>
+        <option value="">Seleccionar trimestre</option>{[1, 2, 3, 4].map(q => <option key={q} value={q}>T{q}</option>)}
+      </Select></label>
+      {Object.entries(ROA_FILTERS).map(([key, label]) => <label htmlFor={`roa-${key}`} key={key}>{label}<Select id={`roa-${key}`} aria-label={label} name={key} defaultValue={params.get(key) ?? ""}>
+        <option value="">Todos · incluye sin asignar</option>
+        {params.has(key) && !options?.[key]?.some(o => o.id === params.get(key)) && <option value={params.get(key)!}>Selección actual · {params.get(key)}</option>}
+        {options?.[key]?.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+      </Select></label>)}
+      <label htmlFor="roa-service">Servicio<Select id="roa-service" aria-label="Servicio" name="servicio" defaultValue={params.get("servicio") ?? ""}>
+        <option value="">Todos · incluye sin clasificar</option><option value="Advisory">Advisory</option><option value="Brokerage">Brokerage</option><option value="sin_clasificar">Sin clasificar</option>
+      </Select></label>
+      <label htmlFor="roa-group">Desglose<Select id="roa-group" aria-label="Desglose" name="agrupar" defaultValue={params.get("agrupar") ?? "account"}>
+        {Object.entries(DIMENSIONS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+      </Select></label>
+      <div className="report-actions"><Button type="submit" highContrast>Aplicar filtros</Button><Link href="/rentabilidad">Limpiar filtros</Link></div>
+    </form>
+    <p id="roa-filter-help">Todos los filtros se combinan con AND. Elegí primero un trimestre para cargar opciones observadas (hasta 100 por selector). Limpiá filtros para ampliar opciones. Vacío incluye sin asignar. El trimestre se elige explícitamente.</p>
+  </section>;
+}
+
+export function RoaClassification({ metric }: { metric: RoaMetrics }) {
+  return <Badge highContrast color={metric.classification === "Bajo" ? "red" : metric.classification === "OK" ? "amber" : metric.classification === "Muy bien" ? "green" : "gray"} variant="soft">
+    {metric.classification ?? "N/D"} · {ROA_STATUS[metric.calculation_status]}
+  </Badge>;
+}
+export function RoaCoverageFacts({ metric: m }: { metric: RoaMetrics }) {
+  return <>
+    <p>{m.accounts} cuentas · {m.account_months} cuenta-meses incluidos. AUM: {m.aum_values}/{m.aum_rows} filas con importe; Revenue: {m.revenue_values}/{m.revenue_rows}.</p>
+    <p>Sin foto AUM: {m.missing_aum_account_months}; sin Revenue: {m.missing_revenue_account_months}; con importe nulo AUM/Revenue: {m.null_aum_account_months}/{m.null_revenue_account_months} cuenta-meses.</p>
+    <p>Sin comercial/equipo/cliente: {m.unassigned_advisor_account_months}/{m.unassigned_team_account_months}/{m.unassigned_client_account_months} cuenta-meses. Permanecen en el conjunto sin esos filtros.</p>
+    <p>Suma de fotos conocidas: {usd(m.aum_known_sum_usd)} · divisor fijo {m.aum_average_divisor}. {m.has_negative_aum ? "Incluye fotos negativas." : ""}</p>
+  </>;
+}
+export function RoaMetricTable({ rows, params, report }: { rows: RoaMetrics[]; params?: URLSearchParams; report?: RoaReport }) {
+  return <div className="table-scroll roa-table" role="region" tabIndex={0} aria-label={report ? "Desglose ROA, importes exactos y cobertura" : "Comparación ROA por servicio y cobertura"}>
+    <Table.Root className="data-table"><Table.Header><Table.Row>
+      {["Grupo", "AUM promedio · USD", "Revenue trimestral · USD", "ROA anualizado", "Clasificación", "Fee anual ponderado", "Diferencia · pp", "Cobertura y motivos"].map(label => <Table.ColumnHeaderCell key={label}>{label}</Table.ColumnHeaderCell>)}
+    </Table.Row></Table.Header><Table.Body>{rows.map((m, i) => <Table.Row key={`${i}-${m.key}`}>
+      <Table.RowHeaderCell>{report?.group_by === "account" && params && i > 0 ? <Link href={roaHref(params, { cuenta: m.key, agrupar: "account" }) + "#meses"}>{m.label} · ver tres meses</Link> : m.label}</Table.RowHeaderCell>
+      <Table.Cell className="money">{usd(m.aum_average_usd)}</Table.Cell><Table.Cell className="money">{usd(m.revenue_quarter_usd)}</Table.Cell>
+      <Table.Cell>{m.roa_percent === null ? "N/D" : `${exact(m.roa_percent)} %`}</Table.Cell><Table.Cell><RoaClassification metric={m} /></Table.Cell>
+      <Table.Cell>{m.advisory_fee_percent === null ? "N/D" : `${exact(m.advisory_fee_percent)} %`}</Table.Cell><Table.Cell>{m.advisory_difference_pp === null ? "N/D" : `${exact(m.advisory_difference_pp)} pp`}</Table.Cell>
+      <Table.Cell><details><summary>Ver cobertura de {m.label}</summary><RoaCoverageFacts metric={m} /><p>{FEE_STATUS[m.advisory_fee_status]}. Sin tasa/obsoleta: {m.missing_rate_account_months}/{m.obsolete_rate_account_months} cuenta-meses.</p><p>Exposición Advisory: {usd(m.advisory_aum_month_sum_usd)}; con tasa: {usd(m.rate_covered_aum_month_sum_usd)}. ROA: {percent(m.roa_percent)} presentado; la clasificación proviene del cálculo exacto.</p></details></Table.Cell>
+    </Table.Row>)}</Table.Body></Table.Root>
+  </div>;
+}

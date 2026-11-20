@@ -40,10 +40,16 @@ done
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/historical-imports.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/multicustodian-history.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/historical-capacity.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/historical-resolution.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/historical-aum-resolution.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/queries.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/report-capacity.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/accounts.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/commissions.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quarterly-roa.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quarterly-roa-capacity.test.sql
 bash scripts/test-commission-concurrency.sh "$pg_bin" "$test_root"
+bash scripts/test-roa-concurrency.sh "$pg_bin" "$test_root"
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/concurrency.sql
 # Dos sesiones intentan publicar versiones diferentes con la misma revisión inicial.
 for version in 1 2; do

@@ -1,4 +1,7 @@
 \ir query-fixture.sql
+create or replace function app_private.advisor_at(target_account uuid,target_period date)
+returns uuid language plpgsql stable security invoker set search_path='' as $$
+begin raise exception 'El reporte no debe consultar un comercial por cada cuenta/mes'; end $$;
 set local role authenticated;
 select public.aggregate_report('2026-01-01','2026-02-01') as admin_report \gset
 reset role;
@@ -13,6 +16,10 @@ select pg_temp.assert_true((:'a_report'::jsonb->'months'->1->>'aum_change_percen
 select pg_temp.assert_true(:'a_report'::jsonb->'months'->0->>'aum_change_percent' is null,'base ausente N/D');
 select pg_temp.assert_true(public.aggregate_report('2026-01-01','2026-01-01',team=>'50000000-0000-0000-0000-000000000001')->'total' @> '{"aum_usd":"150","revenue_usd":"10"}','lector atribuye FA activo al cierre y no exige originales');
 select pg_temp.assert_true(public.aggregate_report('2026-05-01','2026-05-01')->'total' @> '{"aum_usd":"100.123456789123456789","revenue_usd":"0.15","revenue_rows":3}','numeric exacto, repetición idéntica y ajuste');
+-- Un rango hasta noviembre conserva once meses y no arrastra un cierre anterior.
+select public.aggregate_report('2026-01-01','2026-11-01') long_report \gset
+select pg_temp.assert_true(:'long_report'::jsonb->'total' @> '{"aum_usd":null,"revenue_usd":"38.15"}' and jsonb_array_length(:'long_report'::jsonb->'months')=11,'enero–noviembre: Revenue disponible y AUM del cierre ausente');
+select pg_temp.assert_true(not exists(select 1 from jsonb_array_elements(:'long_report'::jsonb->'months') m where m->>'period'>='2026-09-01' and (m->>'aum_usd' is not null or m->>'revenue_usd' is not null)),'septiembre–noviembre siguen N/D');
 select public.aggregate_report('2026-01-01','2026-02-01') full_report \gset
 select pg_temp.assert_true(:'full_report'::jsonb->'total' @> '{"aum_usd":"119","revenue_usd":"38","accounts_with_aum":5,"accounts_with_revenue":6,"aum_missing_accounts":2,"aum_rows":5,"aum_values":4}', 'solo fuentes, negativos, nulls y ceros conservados');
 select pg_temp.assert_true(:'full_report'::jsonb->'months'->1->>'revenue_change_percent' is null,'poblaciones distintas no son comparables');

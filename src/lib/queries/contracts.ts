@@ -39,6 +39,14 @@ export type Metrics = {
   revenue_without_advisor_usd: string | null;
 };
 export type Report = {
+  reference_classification?: {
+    snapshot_id: string; published_at: string; basis: "REF_snapshot_without_historical_validity";
+    dimension: "client" | "advisor" | "team"; observed_accounts: number; matched_accounts: number;
+    accounts_without_client_label: number; accounts_without_advisor_label: number; accounts_without_team_label: number;
+    aum_client_labels: number; group_count: number;
+    groups: { label: string | null; accounts: number; aum_usd: string | null; revenue_usd: string | null;
+      aum_rows: number; aum_values: number; revenue_rows: number; revenue_values: number }[];
+  } | null;
   published_at?: string | null;
   options?: Record<string, { id: string; label: string }[]>;
   revision: string;
@@ -146,6 +154,14 @@ export function reportCsv(report: Report): string {
     ...report.months.map((m) => row([m.period, m.aum_usd, m.revenue_usd, m.aum_change_usd, m.aum_change_percent, m.revenue_change_usd, m.revenue_change_percent], [1, 2, 3, 4, 5, 6])),
     row(["mes_cobertura", "custodio", "fuente", "publicado"]),
     ...report.coverage.map((c) => row([c.period, c.custodian_id, c.source, c.published])),
+    ...(report.reference_classification ? [
+      row(["clasificacion_REF", report.reference_classification.snapshot_id, report.reference_classification.published_at,
+        "Snapshot sin vigencia histórica. Agrupa etiquetas literales de origen, no identidades de personas o clientes."]),
+      row(["REF_cuentas_observadas", report.reference_classification.observed_accounts, "REF_cuentas_vinculadas", report.reference_classification.matched_accounts]),
+      row(["REF_dimension", report.reference_classification.dimension, "grupos_totales", report.reference_classification.group_count, "grupos_exportados", report.reference_classification.groups.length]),
+      row(["REF_etiqueta", "cuentas", "AUM_cierre_USD", "Revenue_rango_USD", "filas_AUM", "importes_AUM", "filas_Revenue", "importes_Revenue"]),
+      ...report.reference_classification.groups.map((g) => row([g.label ?? "Sin referencia", g.accounts, g.aum_usd, g.revenue_usd, g.aum_rows, g.aum_values, g.revenue_rows, g.revenue_values], [2, 3])),
+    ] : []),
   ];
   return `\uFEFF${lines.join("\r\n")}\r\n`;
 }

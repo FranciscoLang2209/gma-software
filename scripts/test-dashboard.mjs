@@ -9,6 +9,7 @@ import { once } from "node:events";
 import { createServerClient } from "@supabase/ssr";
 import { verifyCommissions } from "./test-commissions-http.mjs";
 import { verifyImportWorkflow } from "./test-import-workflow.mjs";
+import { verifyRoa } from "./test-roa-http.mjs";
 
 const root = mkdtempSync(join(tmpdir(), "app-papa-dashboard-"));
 const bin = execFileSync("pg_config", ["--bindir"], { encoding: "utf8" }).trim();
@@ -18,7 +19,7 @@ const pg = (command, args, input) => execFileSync(join(bin, command), args, { en
 const sql = (input, variables = []) => pg("psql", ["-X", "-A", "-t", "-q", "-v", "ON_ERROR_STOP=1", ...variables], input);
 let app, backend, gate, cookieValues, adminCookies, appOrigin, failure = false;
 const files = new Map();
-let failNextStorageWrite = false, failNextHistoryRegistration = false;
+let failNextStorageWrite = false, failNextHistoryRegistration = false, reportTimeout = false;
 const asRole = (actor, statement) => `begin; set local request.jwt.claim.sub='${actor}'; set local request.jwt.claims='{"session_id":"${actor}"}'; set local role authenticated; ${statement}; commit;`;
 const stopped = new Promise((resolve) => { process.once("SIGINT", resolve); process.once("SIGTERM", resolve); });
 const sub = "00000000-0000-0000-0000-000000000002";
@@ -36,10 +37,14 @@ const signatures = {
   prepare_import_chunk: "target_id uuid,expected_cursor integer,configuration jsonb,chunk jsonb,summary jsonb",
   manage_import: "target_id uuid,operation text,input jsonb",
   manage_historical: "target_id uuid,operation text,input jsonb",
+  resolve_historical_revenue: "target_id uuid,child_id uuid,evidence text",
+  resolve_historical_accounts: "target_id uuid,child_id uuid,evidence text",
   source_file: "target_id uuid",
   commission_report: "filters jsonb",
   commission_dashboard: "filters jsonb",
   manage_commission: "request_id uuid,operation text,target_id uuid,input jsonb",
+  quarterly_roa_report: "report_year integer,report_quarter integer,custodian uuid,team uuid,advisor uuid,client uuid,account uuid,service_filter text,group_by text,page_size integer,page_offset integer,expected_revision text",
+  publish_roa_rate: "request_id uuid,source_event_id uuid,expected_rate_id uuid,evidence text",
 };
 const query = (rpc, actor) => `begin; set local request.jwt.claim.sub='${actor}'; set local request.jwt.claims='{"session_id":"${actor}"}'; set local role authenticated;
 select ${rpc === "source_file" ? "(select coalesce(jsonb_agg(f),'[]') from public.source_file(p.target_id) f)" : `to_jsonb(public.${rpc}(${signatures[rpc].split(",").map((f) => `p.${f.split(" ")[0]}`).join(",")}))`}
@@ -84,8 +89,17 @@ try {
       const view = url.pathname.split("/").at(-1);
       const id = url.searchParams.get("id")?.replace(/^eq\./, "") ?? "";
       const batch = url.searchParams.get("batch_id")?.replace(/^eq\./, "") ?? "";
+      const upload = url.searchParams.get("upload_id")?.replace(/^eq\./, "") ?? "";
+      const statusFilter = url.searchParams.get("status");
+      const statuses = statusFilter?.startsWith("in.(") ? statusFilter.slice(4, -1).split(",").map((s) => s.replaceAll('"', "")) : null;
+      const limit = url.searchParams.get("limit");
+      assert.ok(limit === null || /^\d{1,5}$/.test(limit));
       try {
-        const result = JSON.parse(sql(asRole(actor, `select coalesce(jsonb_agg(to_jsonb(t)),'[]') from public.${view} t where (:'id'='' or t.id::text=:'id')${view === "admin_import_rows" ? " and (:'batch'='' or t.batch_id::text=:'batch')" : ""}`), ["-v", `id=${id}`, "-v", `batch=${batch}`]).trim());
+        const where = `( :'id'='' or t.id::text=:'id')${view === "admin_import_rows" ? " and (:'batch'='' or t.batch_id::text=:'batch')" : ""}`
+          + (view === "admin_import_batches" ? " and (:'upload'='' or t.upload_id::text=:'upload')" : "")
+          + (statuses ? " and t.status in(select jsonb_array_elements_text(:'statuses'::jsonb))" : "");
+        const order = view === "admin_import_batches" && url.searchParams.get("order") ? " order by t.period,t.custodian_id,t.id" : "";
+        const result = JSON.parse(sql(asRole(actor, `select coalesce(jsonb_agg(to_jsonb(t)),'[]') from (select * from public.${view} t where ${where}${order}${limit ? ` limit ${limit}` : ""})t`), ["-v", `id=${id}`, "-v", `batch=${batch}`, "-v", `upload=${upload}`, "-v", `statuses=${JSON.stringify(statuses)}`]).trim());
         return res.end(JSON.stringify(req.headers.accept?.includes("vnd.pgrst.object") ? result[0] : result));
       } catch { res.writeHead(403); return res.end('{"code":"42501"}'); }
     }
@@ -107,10 +121,12 @@ try {
     const rpc = req.url.split("/").at(-1);
     if (Object.hasOwn(signatures, rpc)) {
       const chunks = []; for await (const c of req) chunks.push(c);
+      if (["aggregate_report", "quarterly_roa_report"].includes(rpc) && reportTimeout) { res.writeHead(500); return res.end(JSON.stringify({ code: "57014", message: "SYNTHETIC PRIVATE TIMEOUT" })); }
       if (failure) { res.writeHead(503); return res.end('{"message":"SYNTHETIC PRIVATE FAILURE"}'); }
       try {
         const defaults = rpc === "manage_model" ? { entity: null, target_id: null, input: {}, reason: null, review_id: null, page_offset: 0 } : {};
         const payload = { ...defaults, ...JSON.parse(Buffer.concat(chunks)) };
+        if (rpc === "aggregate_report") assert.ok(Object.keys(payload).every(key => signatures[rpc].split(",").some(field => field.startsWith(key + " "))), "aggregate_report no admite parámetros exclusivos de ROA");
         if (rpc === "manage_historical" && payload.operation === "begin" && failNextHistoryRegistration) {
           failNextHistoryRegistration = false; res.writeHead(500);
           return res.end(JSON.stringify({ code: "57014", message: "SYNTHETIC PRIVATE SQL TIMEOUT" }));
@@ -169,6 +185,22 @@ try {
   const missing = await (await request(`/api/consultas?desde=2026-01&hasta=2026-05`)).json();
   assert.equal(missing.months[2].aum_usd, null); assert.equal(missing.months[3].revenue_usd, null);
   assert.equal(missing.total.aum_usd, "100.123456789123456789");
+  const longRange = await (await request("/api/consultas?desde=2026-01&hasta=2026-11")).json();
+  assert.equal(longRange.months.length, 11); assert.equal(longRange.total.aum_usd, null);
+  assert.equal(longRange.total.revenue_usd, "38.15");
+  assert.ok(longRange.months.slice(8).every((month) => month.aum_usd === null && month.revenue_usd === null));
+  const longRangeHtml = await (await request("/?desde=2026-01&hasta=2026-11")).text();
+  assert.ok(longRangeHtml.includes("Cobertura y actualización") && !longRangeHtml.includes("Consulta no disponible"));
+  assert.ok(longRangeHtml.includes("Datos disponibles y pendientes") && longRangeHtml.includes("Sin registros de AUM al cierre de 11/2026"));
+  assert.match(longRangeHtml, /Ver cierre con registros de AUM: (?:<!-- -->)?05\/2026/);
+  assert.ok(longRangeHtml.includes("hasta=2026-05") && !longRangeHtml.includes("Clasificación de clientes pendiente"));
+  const preciseHtml = await (await request(`/?desde=2026-01&hasta=2026-05&cuenta=${account}`)).text();
+  assert.ok(preciseHtml.includes("USD 100,12") && preciseHtml.includes("USD 100,123456789123456789"));
+  const filteredMissing = await (await request(`/?desde=2026-01&hasta=2026-11&cuenta=${account}`)).text();
+  assert.ok(filteredMissing.includes(`href="/?desde=2026-01&amp;hasta=2026-05&amp;cuenta=${account}&amp;agrupar=account"`), "el enlace al cierre conserva el filtro de cuenta");
+  const unassignedHtml = await (await request(`/?${base}`)).text();
+  assert.ok(unassignedHtml.includes("Clasificación de clientes pendiente") && unassignedHtml.includes("Sin asignación comercial"));
+  assert.ok(unassignedHtml.includes("registros sin Payout broker"));
   const empty = await (await request(`/?desde=2027-01&hasta=2027-02`)).text(); assert.ok(empty.includes("Sin datos publicados para estos filtros"));
   const invalid = await (await request(`/?desde=2026-13`)).text(); assert.ok(invalid.includes("Revisá los filtros"));
   const accounts = await (await request(`/cuentas?${base}&buscar=0001`)).text();
@@ -194,8 +226,24 @@ try {
   const savedCatalog = await (await request("/configuracion?entidad=teams", true)).text();
   assert.ok(savedCatalog.includes("Equipo SINTETICO nuevo") && savedCatalog.includes("Alta SINTETICA de integración"));
   await verifyCommissions({ request, appOrigin, sql });
+  await verifyRoa({ request, appOrigin, sql });
   await verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage: () => { failNextStorageWrite = true; }, interruptHistory: () => { failNextHistoryRegistration = true; } });
+  reportTimeout = true;
+  const timedOutRoa = await (await request('/rentabilidad?anio=2026&trimestre=1')).text();
+  assert.ok(timedOutRoa.includes('Consulta ROA no disponible') && timedOutRoa.includes('tiempo disponible') && !timedOutRoa.includes('SYNTHETIC PRIVATE TIMEOUT'));
+  assert.equal((await request('/api/rentabilidad?anio=2026&trimestre=1')).status, 504);
+  const timedOut = await (await request(`/analisis-comercial?${base}&agrupar=team&offset=25&revision=${page.revision}`)).text();
+  assert.ok(timedOut.includes("La consulta tardó demasiado") && timedOut.includes("Consultar rango") && !timedOut.includes("SYNTHETIC PRIVATE TIMEOUT"));
+  assert.match(timedOut, /name="desde"/); assert.match(timedOut, /name="hasta"/);
+  assert.match(timedOut, /name="agrupar" value="team"/);
+  assert.ok(!timedOut.includes('name="offset"') && !timedOut.includes('name="revision"'));
+  const timeoutResponse = await request(`/api/consultas?${base}`);
+  assert.equal(timeoutResponse.status, 504); assert.match((await timeoutResponse.json()).error, /tiempo disponible/);
+  reportTimeout = false;
   failure = true;
+  assert.equal((await request('/api/rentabilidad?anio=2026&trimestre=1')).status, 503);
+  const failedRoa = await (await request('/rentabilidad?anio=2026&trimestre=1')).text();
+  assert.ok(failedRoa.includes('Consulta ROA no disponible') && !failedRoa.includes('SYNTHETIC PRIVATE FAILURE'));
   const failed = await (await request(`/?${base}`)).text(); assert.ok(failed.includes("Consulta no disponible") && !failed.includes("SYNTHETIC PRIVATE FAILURE")); failure = false;
   assert.ok(!appOutput.includes("Error:"), appOutput);
   console.log("OK: Next → RPC → PostgreSQL → HTML/API; 120/22, global119/38, ranking, cuentas, ceros, historia, originales por rol, administración revisada, auditoría, faltantes y errores.");

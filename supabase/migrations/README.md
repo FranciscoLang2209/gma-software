@@ -1,5 +1,14 @@
 # Migraciones de App Papá
 
+`20261120155740_quarterly_roa_backend.sql`: nueva consulta trimestral independiente,
+numeric/texto, filtros históricos, cobertura y referencias Advisory publicadas.
+Agrega `roa_rate_versions`, `roa_rate_invalidations`, RPC `quarterly_roa_report` y
+`publish_roa_rate`; el trigger invoker invalida la referencia al corregirse su
+evento fuente de Comisiones. No reemplaza aggregate_report ni abre originales al
+lector. Generada con CLI3.1.0, probada en PostgreSQL sintético local y aplicada
+a GMA el2026-11-20 por autorización expresa, como20261120155740. Archivo renombrado
+al timestamp MCP conservando SQL; permisos e invariantes remotos verificados. Contrato en [quarterly-roa.md](../../docs/quarterly-roa.md).
+
 `20261111174240_financial_schema.sql`: esquema privado, 15 tablas, identidad,
 procedencia, vigencias, hechos financieros, versiones, auditoría, RLS cerrado y
 vistas invoker. La tabla auxiliar `import_scopes` permite un único puntero vigente

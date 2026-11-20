@@ -1,7 +1,7 @@
 import { getAccess } from "@/lib/auth/access";
 import { privateHeaders, reply } from "@/lib/imports/server";
 import { parseReportParameters, reportCsv } from "@/lib/queries/contracts";
-import { queryReport } from "@/lib/queries/server";
+import { queryReport, REPORT_TIMEOUT_MESSAGE } from "@/lib/queries/server";
 
 export const runtime = "nodejs";
 export async function GET(request: Request) {
@@ -20,6 +20,7 @@ export async function GET(request: Request) {
     const { data, error } = await queryReport(access.supabase, parameters);
     if (error || !data) {
       if (error?.code === "40001") return reply({ error: "Los datos cambiaron. Reiniciá la consulta y la exportación." }, 409);
+      if (error?.code === "57014") return reply({ error: REPORT_TIMEOUT_MESSAGE }, 504);
       if (error?.code === "42501") return reply({ error: "Acceso no autorizado." }, 403);
       return reply({ error: "No se pudo consultar la información publicada." }, 503);
     }
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
       for (let offset = data.limit; offset < data.row_count; offset += data.limit) {
         const page = await queryReport(access.supabase, { ...parameters, page_offset: offset, expected_revision: data.revision });
         if (page.error?.code === "40001") return reply({ error: "Los datos cambiaron. Reiniciá la consulta y la exportación." }, 409);
+        if (page.error?.code === "57014") return reply({ error: REPORT_TIMEOUT_MESSAGE }, 504);
         if (page.error?.code === "42501") return reply({ error: "Acceso no autorizado." }, 403);
         if (page.error || !page.data) return reply({ error: "No se pudo completar la exportación. Reintentá más tarde." }, 503);
         if (page.data.revision !== data.revision || page.data.row_count !== data.row_count)
