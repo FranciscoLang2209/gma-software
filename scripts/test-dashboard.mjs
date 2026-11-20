@@ -44,6 +44,7 @@ const signatures = {
   commission_report: "filters jsonb",
   commission_dashboard: "filters jsonb",
   import_master: "request_id uuid,operation text,input jsonb",
+  import_master_rates: "request_id uuid,operation text,input jsonb",
   manage_commission: "request_id uuid,operation text,target_id uuid,input jsonb",
   quarterly_roa_report: "report_year integer,report_quarter integer,custodian uuid,team uuid,advisor uuid,client uuid,account uuid,service_filter text,group_by text,page_size integer,page_offset integer,expected_revision text",
   publish_roa_rate: "request_id uuid,source_event_id uuid,expected_rate_id uuid,evidence text",

@@ -323,3 +323,28 @@ en GMA (ver progress.md); el archivo privado no se incluye en Git ni en fixtures
 Consulta documental: [funciones SQL](https://supabase.com/docs/guides/database/functions),
 [Storage upload](https://supabase.com/docs/reference/javascript/storage-from-upload)
 y changelog oficial, sin actualizar paquetes ni lockfile.
+
+
+### Vigencia por rango y clasificación confirmada — 2026-11-20
+
+El flujo visible publica sólo tasas mediante `import_master_rates`: primer y último
+inicio de trimestre inclusivos; último vacío equivale al primero. Máximo 20
+trimestres por carga. Para todo 2023–2026: 2023-01-01 a2026-10-01,16referencias por
+cuenta elegida. La evidencia y el checkbox de vigencia deben acreditar cada
+trimestre del rango. El corte del Balance es independiente y no genera importes
+esperados de comisiones históricas. Balance ausente no impide una tasa acreditada.
+
+Checkbox separado de clasificación: por confirmación del dueño, sólo Fee type
+exactamente Advisory puede clasificar cuentas resueltas con servicio sin_clasificar,
+incluso cuando la tasa es pendiente. No sobrescribe Brokerage/otros servicios ni
+crea identidades por nombre. La revisión muestra cuántas cuentas se clasificarán,
+cuántas tasas se publicarán y las versiones anteriores por trimestre. Una cuenta
+pendiente o un tipo distinto de Advisory conserva sus originales, fuera de la
+proyección. No se infiere historia de comerciales ni nuevas fechas de servicio.
+
+La transacción guarda snapshot, clasificaciones (con auditoría/motivo) y referencias
+ROA con FK al snapshot/fila. Las fuentes de tasas ahora admiten alternativamente
+un evento de Comisiones verificado o un snapshot Master revisado; nunca ambos ni
+ninguno. No se modifica la fórmula ROA. La RPC anterior `import_master` sigue
+admitiendo revisiones trimestrales del flujo anterior; no se reinterpreta un
+comando antiguo como un rango ni se editan migraciones que ya fueron aplicadas.

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     if (error || !data) return reply({ error: "Preparación no disponible. Revisá el UUID de carga." }, 404);
     const master = JSON.parse(await data.text());
     if (operation === "preview" && !review) return reply({ id, master });
-    const result = await supabase.rpc("import_master", { request_id, operation, input: { master, storage_path: `${path}/original.xlsx`, review } });
+    const result = await supabase.rpc(review?.rate_only === true ? "import_master_rates" : "import_master", { request_id, operation, input: { master, storage_path: `${path}/original.xlsx`, review } });
     if (result.error) return reply({ error: result.error.code === "40001" ? "Las tasas cambiaron. Volvé a conciliar antes de publicar." : "No se guardó la revisión. Revisá cuentas, selección, trimestre y evidencia; no se publicó parcialmente." }, 409);
     return reply(result.data);
   } catch (error) {

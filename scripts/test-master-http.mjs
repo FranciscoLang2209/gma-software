@@ -33,5 +33,15 @@ export async function verifyMaster({ request, appOrigin, sql, interruptStorage }
   assert.equal((await post(command)).status, 200);
   assert.equal((await post(command, false)).status, 403);
   assert.equal((await post({ ...command, request_id: randomUUID() })).status, 409);
-  console.log("OK Master HTTP: XLSX → Storage privado → revisión → PostgreSQL → fee publicado; pendientes, original, retry, origen y roles.");
+  const rangedReview = { ...review, rate_only: true, quarter: "2023-01-01", quarter_to: "2026-10-01", validity_confirmed: true, classify_advisory: true, selected: [3] };
+  const rangedPreview = await post({ id: load.id, request_id: randomUUID(), operation: "preview", review: rangedReview });
+  assert.equal(rangedPreview.status, 200); const rangeData = await rangedPreview.json();
+  assert.equal(rangeData.quarter_count, 16); assert.equal(rangeData.ready, 1);
+  const rangedCommand = { id: load.id, request_id: randomUUID(), operation: "publish", review: { ...rangedReview, revision: rangeData.revision } };
+  const beforeEvents = sql("select count(*) from app_private.commission_events").trim();
+  const ranged = await post(rangedCommand); assert.equal(ranged.status, 200); assert.equal((await ranged.json()).published, 16);
+  assert.equal(sql("select count(*) from app_private.commission_events").trim(), beforeEvents, "rango sólo tasa, no nuevas obligaciones de comisiones");
+  assert.equal((await post(rangedCommand)).status, 200);
+  assert.equal((await post(rangedCommand, false)).status, 403);
+  console.log("OK Master HTTP: XLSX → Storage privado → revisión → PostgreSQL → fee publicado; rango 2023-2026 sin comisiones nuevas, pendientes, original, retry, origen y roles.");
 }

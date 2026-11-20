@@ -1,5 +1,52 @@
 # App Papá — Decisiones y pendientes
 
+## Tasas Master con vigencia 2023–2026 — 2026-11-20
+
+El dueño aclara que las mismas tasas rigen desde 2023 hasta 2026 y confirma usar
+Fee type exactamente Advisory para clasificar esas cuentas. Se supera el límite
+anterior de un solo trimestre: la interfaz registra primer/último trimestre de
+vigencia (inclusivos, hasta 20 trimestres) y confirma el rango completo. El corte
+30/09/2026 del Balance se conserva como procedencia, sin usarlo como saldo pasado.
+
+Nuevo flujo `import_master_rates`, independiente de las obligaciones de Comisiones:
+publica referencias de tasa por cuenta/trimestre desde un snapshot Master privado,
+con actor, fila original y vigencia. ROA consume esas referencias mediante las
+versiones existentes; no genera esperados, cobros ni comisiones históricas. La RPC
+trimestral anterior se conserva para compatibilidad de revisiones ya existentes.
+
+La clasificación explícita sólo cambia cuentas resueltas cuyo servicio actual es
+sin_clasificar y cuyo Fee type es exactamente Advisory; también conserva como
+Advisory cuentas con tasa pendiente. Brokerage/Retrocession/otros tipos no se
+convierten, otros servicios no se sobrescriben y las identidades ambiguas quedan
+pendientes. Es una clasificación actual de la cuenta según el modelo existente,
+no una nueva historia de servicio ni de comerciales. Selección de tasas y revisión
+de versiones siguen siendo explícitas; las condiciones textuales no son cero.
+
+Snapshot, clasificación auditada y referencias se publican en una sola transacción,
+idempotente y con correcciones limitadas a cuenta/trimestre seleccionados. Una tasa
+acreditada no requiere Balance; tasas negativas o no numéricas no se fuerzan.
+Cada corrección conserva versiones previas y la fuente privada permanece inmutable.
+
+Verificaciones locales: 54/54 unitarias, lint, TypeScript y build; suite SQL completa
+con permisos administrados/concurrencia/restauración, nueva suite de rango y HTTP
+integral Next/PostgreSQL con Auth/transporte/Storage sintéticos. Chrome mediante
+extensión: retoma de preparación sintética, 2023-Q1 a 2026-Q4, selección/conciliación
+y publicación de 16 referencias; pendientes preservados y sin eventos Comisiones
+nuevos. Probados rango invertido/excesivo, ausencia de Balance, tasa pendiente,
+clasificación no autorizada/conflictiva, corrección de sólo dos trimestres, reader,
+retry y fallo durante escritura con rollback de snapshot/clasificación/tasas.
+
+Migración aplicada sólo en GMA (`zwdqnrbqqszjrtkhyqnz`) como **20261120173038**
+`master_rate_validity_range`; archivo local renombrado sin alterar SQL. Antes de la
+carga operativa: 18.800 AUM,17.893 Revenue,0 eventos Comisiones,0 tasas y0 snapshots
+publicados. Los datos fuente reales no se incorporan al repositorio. El pedido de
+completar la carga y la confirmación de vigencia/clasificación autorizan retomar su
+preparación existente en Chrome; resultado operativo y despliegue informados al cierre.
+
+Próximo paso: conservar sin publicar las tasas/identidades pendientes, completar su
+evidencia individual y conciliar ROA con las coberturas de AUM/Revenue existentes.
+La clasificación actual y la vigencia de fee no certifican completitud financiera.
+
 ## Master Owners: aplicación remota y push autorizados — 2026-11-20
 
 El pedido posterior autoriza aplicar `master_owners_import` en el Supabase GMA y
