@@ -348,3 +348,10 @@ un evento de Comisiones verificado o un snapshot Master revisado; nunca ambos ni
 ninguno. No se modifica la fórmula ROA. La RPC anterior `import_master` sigue
 admitiendo revisiones trimestrales del flujo anterior; no se reinterpreta un
 comando antiguo como un rango ni se editan migraciones que ya fueron aplicadas.
+
+
+Publicación por rango: referencias y clasificación se escriben por conjuntos,
+conservando los mismos locks/revisión/RLS/auditoría por cuenta. Corrige el timeout
+real del guardado individual al publicar miles de trimestres; no amplía el límite
+remoto ni omite filas para ocultarlo. Un error conserva intactos los datos publicados;
+el mismo comando puede reintentarse sin duplicar referencias.

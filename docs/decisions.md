@@ -1,5 +1,49 @@
 # App Papá — Decisiones y pendientes
 
+## Master: publicación operativa y corrección de capacidad — 2026-11-20
+
+Completada en Chrome por pedido del dueño, mediante su sesión administrativa y
+sin volver a subir el Excel. Se restauraron y comprobaron sus nueve asociaciones
+de custodio. Vigencia confirmada: 2023-Q1 a 2026-Q4; corte de Balance corregido al
+30/09/2026. La evidencia conserva la confirmación del dueño de tasas anuales en
+puntos básicos y clasificación de Fee type exactamente Advisory.
+
+Resultado verificado en pantalla y Supabase: **1 snapshot privado de 412 filas,
+164 cuentas con tasa × 16 trimestres = 2.624 referencias**, desde 2023-01-01 hasta
+2026-10-01. **176 cuentas Advisory**, con 176 cambios de servicio auditados. Todas las
+referencias tienen FK al snapshot/fila; no se crearon eventos Comisiones. Las
+12 cuentas resueltas con tasa textual/ausente se clasifican por Fee type pero su
+tasa sigue pendiente. Ocho filas Advisory sin identidad acreditada permanecen
+pendientes (dos tienen tasa numérica). Las 228 filas de otro Fee type se conservan
+sin convertirse a Advisory. No se infiere correspondencia por nombre ni se fuerza
+una tasa dudosa. La historia de cliente/servicio sigue siendo la del modelo actual.
+
+AUM 18.800 y Revenue 17.893 filas; punteros activos con hash
+`71d8ab9671e1d861d5289dc40a56a034`, idénticos antes/después. Cero eventos Comisiones;
+no se utilizó Balance 2026 para fabricar importes históricos. La publicación de
+referencias no certifica cobertura completa ni idoneidad económica de Payout broker.
+
+El primer intento real falló por SQLSTATE 57014 durante inserciones individuales:
+confirmado rollback total (0 snapshots / 0 tasas / 0 clasificaciones). Se corrigió la causa
+con escritura conjunta de referencias y UPDATE conjunto de clasificación, conservando
+revisión, RLS, autor y auditoría por cuenta. El reintento de la misma revisión quedó
+publicado una sola vez. Migración adicional aplicada sólo en GMA como
+**20261120174311_master_rate_bulk_publication**, sin editar la migración ya aplicada.
+Hash SQL `4d26dc177566efb724e38e30237f3d862478c589842926de4f5291f59e8e9214`.
+
+Verificación sintética adicional: 180 cuentas × 16 = 2.880 tasas,180 clasificaciones y
+180 eventos de auditoría bajo límite local 8 s; escritura 132,7 ms en esta máquina.
+Suites Master de compatibilidad/rango/rollback/roles correctas. Suite SQL completa
+repetida con operador administrado, concurrencia y restauración correcta. Evidencia
+en `/tmp/gma-master-bulk-db.log` y `/tmp/gma-master-bulk-db-full.log`. El tiempo local
+no es un SLA remoto; el resultado real quedó confirmado por la pantalla y la base.
+Código de vigencia ya entregado en 297ca6e y Vercel READY. El cierre versiona también
+esta optimización y su prueba de capacidad. Ningún original/identificador/monto real
+se incorporó al repositorio ni a fixtures; sólo conteos agregados en esta documentación.
+
+Próximo paso: revisar las condiciones de tasa y correspondencias pendientes con
+evidencia individual y conciliar un trimestre de ROA con sus fuentes financieras.
+
 ## Tasas Master con vigencia 2023–2026 — 2026-11-20
 
 El dueño aclara que las mismas tasas rigen desde 2023 hasta 2026 y confirma usar
