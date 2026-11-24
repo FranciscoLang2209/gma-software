@@ -1,3 +1,5 @@
+import { verifyReferenceFilters } from "./test-reference-filters-http.mjs";
+import { verifyDataQuality } from "./test-data-quality-http.mjs";
 // Recorrido SINTÉTICO: PostgreSQL temporal real + Auth/HTTP simulado. Nunca conecta destinos remotos.
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -48,7 +50,10 @@ const signatures = {
   manage_commission: "request_id uuid,operation text,target_id uuid,input jsonb",
   quarterly_roa_report: "report_year integer,report_quarter integer,custodian uuid,team uuid,advisor uuid,client uuid,account uuid,service_filter text,group_by text,page_size integer,page_offset integer,expected_revision text",
   publish_roa_rate: "request_id uuid,source_event_id uuid,expected_rate_id uuid,evidence text",
+  quality_report: "filters jsonb",
+  quality_apply_alias: "batch_id uuid,row_id uuid,evidence text,expected_revision text",
 };
+for (const name of ["aggregate_report", "account_directory", "account_detail", "quarterly_roa_report"]) signatures[name + "_ref"] = "reference_filters jsonb," + signatures[name];
 const query = (rpc, actor) => `begin; set local request.jwt.claim.sub='${actor}'; set local request.jwt.claims='{"session_id":"${actor}"}'; set local role authenticated;
 select ${rpc === "source_file" ? "(select coalesce(jsonb_agg(f),'[]') from public.source_file(p.target_id) f)" : `to_jsonb(public.${rpc}(${signatures[rpc].split(",").map((f) => `p.${f.split(" ")[0]}`).join(",")}))`}
 from jsonb_to_record(:'payload'::jsonb) as p(${signatures[rpc]}); commit;`;
@@ -124,12 +129,12 @@ try {
     const rpc = req.url.split("/").at(-1);
     if (Object.hasOwn(signatures, rpc)) {
       const chunks = []; for await (const c of req) chunks.push(c);
-      if (["aggregate_report", "quarterly_roa_report"].includes(rpc) && reportTimeout) { res.writeHead(500); return res.end(JSON.stringify({ code: "57014", message: "SYNTHETIC PRIVATE TIMEOUT" })); }
+      if (["aggregate_report", "quarterly_roa_report", "aggregate_report_ref", "quarterly_roa_report_ref", "quality_report"].includes(rpc) && reportTimeout) { res.writeHead(500); return res.end(JSON.stringify({ code: "57014", message: "SYNTHETIC PRIVATE TIMEOUT" })); }
       if (failure) { res.writeHead(503); return res.end('{"message":"SYNTHETIC PRIVATE FAILURE"}'); }
       try {
         const defaults = rpc === "manage_model" ? { entity: null, target_id: null, input: {}, reason: null, review_id: null, page_offset: 0 } : {};
         const payload = { ...defaults, ...JSON.parse(Buffer.concat(chunks)) };
-        if (rpc === "aggregate_report") assert.ok(Object.keys(payload).every(key => signatures[rpc].split(",").some(field => field.startsWith(key + " "))), "aggregate_report no admite parámetros exclusivos de ROA");
+        if (["aggregate_report", "aggregate_report_ref"].includes(rpc)) assert.ok(Object.keys(payload).every(key => signatures[rpc].split(",").some(field => field.startsWith(key + " "))), "aggregate_report no admite parámetros exclusivos de ROA");
         if (rpc === "manage_historical" && payload.operation === "begin" && failNextHistoryRegistration) {
           failNextHistoryRegistration = false; res.writeHead(500);
           return res.end(JSON.stringify({ code: "57014", message: "SYNTHETIC PRIVATE SQL TIMEOUT" }));
@@ -137,7 +142,7 @@ try {
         const result = sql(query(rpc, actor), ["-v", `payload=${JSON.stringify(payload)}`]).trim();
         return res.end(result);
       }
-      catch (error) { res.writeHead(400); return res.end(JSON.stringify({ code: /changed;|changed; restart|Model changed/i.test(error.stderr ?? "") ? "40001" : /permission denied|administrator required/i.test(error.stderr ?? "") ? "42501" : "22023", message: "SYNTHETIC QUERY REJECTED" })); }
+      catch (error) { res.writeHead(400); return res.end(JSON.stringify({ code: /changed;|changed; restart|Model changed|Quality (snapshot|resolution) changed/i.test(error.stderr ?? "") ? "40001" : /permission denied|administrator required/i.test(error.stderr ?? "") ? "42501" : /query returned no rows/i.test(error.stderr ?? "") ? "P0002" : /Only valid pending Revenue|Conflicting rows/i.test(error.stderr ?? "") ? "P0001" : "22023", message: "SYNTHETIC QUERY REJECTED" })); }
     }
     res.writeHead(404); res.end('{}');
   });
@@ -228,11 +233,18 @@ try {
   assert.equal((await postModel({ operation: "save", review_id: preview.review_id })).status, 200);
   const savedCatalog = await (await request("/configuracion?entidad=teams", true)).text();
   assert.ok(savedCatalog.includes("Equipo SINTETICO nuevo") && savedCatalog.includes("Alta SINTETICA de integración"));
+  if (!process.argv.includes("--reference-only") && !process.argv.includes("--quality-only")) {
   await verifyCommissions({ request, appOrigin, sql });
   await verifyRoa({ request, appOrigin, sql });
   await verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage: () => { failNextStorageWrite = true; }, interruptHistory: () => { failNextHistoryRegistration = true; } });
   await verifyMaster({ request, appOrigin, sql, interruptStorage: () => { failNextStorageWrite = true; } });
+  }
+  await verifyReferenceFilters({ request, sql, appOrigin, cookies: cookieValues });
+  if (!process.argv.includes("--reference-only")) await verifyDataQuality({ request,sql,asRole,adminSub,appOrigin });
   reportTimeout = true;
+  assert.equal((await request('/api/calidad-datos', true)).status, 504);
+  const qualityTimeout = await (await request('/calidad-datos', true)).text();
+  assert.ok(qualityTimeout.includes('Diagnóstico no disponible') && !qualityTimeout.includes('SYNTHETIC PRIVATE TIMEOUT'));
   const timedOutRoa = await (await request('/rentabilidad?anio=2026&trimestre=1')).text();
   assert.ok(timedOutRoa.includes('Consulta ROA no disponible') && timedOutRoa.includes('tiempo disponible') && !timedOutRoa.includes('SYNTHETIC PRIVATE TIMEOUT'));
   assert.equal((await request('/api/rentabilidad?anio=2026&trimestre=1')).status, 504);
@@ -245,6 +257,7 @@ try {
   assert.equal(timeoutResponse.status, 504); assert.match((await timeoutResponse.json()).error, /tiempo disponible/);
   reportTimeout = false;
   failure = true;
+  assert.equal((await request('/api/calidad-datos', true)).status, 503);
   assert.equal((await request('/api/rentabilidad?anio=2026&trimestre=1')).status, 503);
   const failedRoa = await (await request('/rentabilidad?anio=2026&trimestre=1')).text();
   assert.ok(failedRoa.includes('Consulta ROA no disponible') && !failedRoa.includes('SYNTHETIC PRIVATE FAILURE'));

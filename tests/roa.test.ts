@@ -33,7 +33,7 @@ test("ROA: adaptador usa la RPC independiente y preserva texto/null y fallos", a
   const parameters = parse("anio=2026&trimestre=1");
   const report = { total: { roa_percent: "0.400000000000000000001", advisory_difference_pp: null } };
   const client = { rpc: async (name: string, input: unknown) => {
-    assert.equal(name, "quarterly_roa_report"); assert.deepEqual(input, parameters);
+    assert.equal(name, "quarterly_roa_report_ref"); assert.deepEqual(input, { ...parameters, reference_filters: {} });
     return { data: report, error: null };
   } } as unknown as SupabaseClient;
   assert.deepEqual(await queryQuarterlyRoa(client, parameters), { data: report, error: null });

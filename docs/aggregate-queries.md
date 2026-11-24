@@ -4,7 +4,16 @@ Implementado localmente el 2026-11-13. Contrato común para dashboard, tablas y 
 
 ## Entrada y salidas
 
-`public.aggregate_report(...)` es la única consulta de negocio. Recibe fechas de inicio de mes (`date`), UUID opcionales de custodio/equipo/comercial/cliente/cuenta, servicio (`text`), dimensión permitida (`text` validado), tamaño/offset (`integer`) y revisión (`text`). No construye SQL dinámico. El wrapper público es invoker y la implementación privada usa el ejecutor existente NOLOGIN/NOBYPASSRLS, sujeto a RLS y a perfil/sesión vigente. Administrador y lector reciben exactamente la misma proyección publicada; nunca originales, archivos, candidatos ni historia sustituida.
+Resumen, Análisis y CSV comparten la consulta de cierre/rango. Fase 5 agrega localmente
+`public.aggregate_report_ref(...)` con selección REF separada; ver
+[contrato y migración pendiente de aplicación](data-quality-filters.md). La firma
+anterior `public.aggregate_report(...)` se conserva. Reciben fechas de inicio de mes
+(`date`), UUID opcionales de custodio/equipo/comercial/cliente/cuenta, servicio (`text`),
+dimensión permitida, tamaño/offset y revisión. Los wrappers públicos son invoker;
+la implementación privada usa el ejecutor NOLOGIN/NOBYPASSRLS sujeto a RLS y sesión.
+Admin y lector reciben la misma proyección publicada, sin originales/preparados.
+ROA conserva su motor trimestral independiente, con la misma selección REF en su
+versión nueva. Las consultas no construyen SQL dinámico a partir de filtros de usuario.
 
 El adaptador servidor `src/lib/queries/server.ts::queryReport` usa el cliente SSR del usuario y los parámetros tipados de `contracts.ts`; no usa service_role. El endpoint `GET /api/consultas` valida antes de llamar a la misma RPC:
 

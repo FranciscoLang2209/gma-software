@@ -1,3 +1,5 @@
+import { SearchSelect } from "./search-select";
+import { ReferenceFilters } from "./reference-filters";
 import Link from "next/link";
 import { Badge, Button, Table } from "@radix-ui/themes";
 import { Select } from "./ui/select";
@@ -6,18 +8,15 @@ import { FEE_STATUS, ROA_FILTERS, ROA_STATUS, roaHref } from "@/lib/roa/presenta
 import { DIMENSIONS, exact, percent, usd } from "@/lib/queries/presentation";
 import type { Report } from "@/lib/queries/contracts";
 
-export function RoaFilters({ params, options }: { params: URLSearchParams; options?: Report["options"] }) {
+export function RoaFilters({ params, options, references }: { params: URLSearchParams; options?: Report["options"]; references?: Report["reference_options"] }) {
   return <section className="panel report-filters roa-filters" aria-label="Filtros de rentabilidad">
     <form action="/rentabilidad" className="import-form">
       <label htmlFor="roa-year">Año<input id="roa-year" name="anio" type="number" min="1900" max="9998" required defaultValue={params.get("anio") ?? ""} /></label>
       <label htmlFor="roa-quarter">Trimestre del detalle<Select id="roa-quarter" aria-label="Trimestre" name="trimestre" required defaultValue={params.get("trimestre") ?? ""}>
         <option value="">Seleccionar trimestre</option>{[1, 2, 3, 4].map(q => <option key={q} value={q}>T{q} · {q === 1 ? "Ene–Mar" : q === 2 ? "Abr–Jun" : q === 3 ? "Jul–Sep" : "Oct–Dic"}</option>)}
       </Select></label>
-      {Object.entries(ROA_FILTERS).map(([key, label]) => <label htmlFor={`roa-${key}`} key={key}>{label}<Select id={`roa-${key}`} aria-label={label} name={key} defaultValue={params.get(key) ?? ""}>
-        <option value="">Todos · incluye sin asignar</option>
-        {params.has(key) && !options?.[key]?.some(o => o.id === params.get(key)) && <option value={params.get(key)!}>Selección actual · {params.get(key)}</option>}
-        {options?.[key]?.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-      </Select></label>)}
+      {Object.entries(ROA_FILTERS).map(([key, label]) => <SearchSelect key={`${key}-${params.get(key) ?? ""}`} name={key} label={label} options={options?.[key] ?? []} selected={params.get(key) ?? ""} />)}
+      <ReferenceFilters params={params} references={references} />
       <label htmlFor="roa-service">Servicio<Select id="roa-service" aria-label="Servicio" name="servicio" defaultValue={params.get("servicio") ?? ""}>
         <option value="">Todos · incluye sin clasificar</option><option value="Advisory">Advisory</option><option value="Brokerage">Brokerage</option><option value="sin_clasificar">Sin clasificar</option>
       </Select></label>
@@ -26,7 +25,7 @@ export function RoaFilters({ params, options }: { params: URLSearchParams; optio
       </Select></label>
       <div className="report-actions"><Button type="submit" highContrast>Aplicar filtros</Button><Link href="/rentabilidad">Limpiar filtros</Link></div>
     </form>
-    <p id="roa-filter-help">Comparación T1–T4 del año elegido. El trimestre selecciona el detalle y sus opciones (hasta 100 por filtro). Todos los filtros se combinan; vacío incluye sin asignar.</p>
+    <p id="roa-filter-help">Comparación T1–T4 del año elegido. El trimestre selecciona el detalle y sus opciones completas con búsqueda. Todos los filtros se combinan; vacío incluye sin asignar.</p>
   </section>;
 }
 

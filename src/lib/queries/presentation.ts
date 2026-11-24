@@ -1,6 +1,7 @@
+import { REFERENCE_PARAMETERS } from "./references.ts";
 import { parseReportParameters, type Report } from "./contracts.ts";
 
-export const FILTERS = ["desde", "hasta", "custodio", "equipo", "comercial", "cliente", "cuenta", "servicio"] as const;
+export const FILTERS = ["desde", "hasta", "custodio", "equipo", "comercial", "cliente", "cuenta", "servicio", ...REFERENCE_PARAMETERS] as const;
 export const DIMENSIONS = { custodian: "Custodio", team: "Equipo", advisor: "Comercial", client: "Cliente", account: "Cuenta", service: "Servicio" } as const;
 export const ENTITY_FILTERS = { custodio: "Custodio", equipo: "Equipo", comercial: "Comercial", cliente: "Cliente", cuenta: "Cuenta", servicio: "Servicio" } as const;
 export type Search = Record<string, string | string[] | undefined>;

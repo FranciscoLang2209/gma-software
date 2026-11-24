@@ -1,5 +1,20 @@
 # Migraciones de App Papá
 
+Actualización 2026-11-24: migraciones de Fases 5 y 8 aplicadas en GMA por pedido
+del dueño. Archivos alineados a las versiones asignadas por MCP:
+20261124202626 (antes 20261124172735) y 20261124202631 (antes 20261124193823),
+SQL idéntico al probado. Las 32 versiones locales coinciden con el registro remoto.
+No se reejecutaron las 30 previas ni se modificaron hechos financieros.
+Las notas de pendientes siguientes registran el estado al preparar cada fase.
+
+`20261124202631_data_quality_admin_panel.sql`: Fase 8 local. Vista privada de
+diagnóstico y RPC admin quality_report / quality_apply_alias, con RLS/guards,
+paginación revisada, originales privados e historial. Solo aplica una equivalencia
+Revenue acreditada a preparación del mismo lote/literal/custodio; no publica ni
+cambia hechos financieros. Creada con CLI 3.1.0, sin aplicar en GMA. Contrato y
+retiro sin borrar auditoría en [data-quality-panel.md](../../docs/data-quality-panel.md).
+Revisar/aplicar las migraciones pendientes en orden antes de desplegar el runtime.
+
 `20261120155740_quarterly_roa_backend.sql`: nueva consulta trimestral independiente,
 numeric/texto, filtros históricos, cobertura y referencias Advisory publicadas.
 Agrega `roa_rate_versions`, `roa_rate_invalidations`, RPC `quarterly_roa_report` y
@@ -167,3 +182,10 @@ JOIN con versión activa actual y estado pending; no altera cálculos, guards ni
 transacción de publicación. Probado con 18.080 coordenadas/226 alcances y límite 8s,
 retry, revisión obsoleta y regresiones completas. Aplicado en GMA y renombrado al
 timestamp MCP conservando SQL. Sin cambios de timeouts, roles o datos financieros.
+
+
+`20261124202626_reference_filters_and_complete_options.sql`: Fase 5 local, no aplicada
+a GMA. RPC versionadas *_ref, selección de cuentas por foto/ID de grupo REF, opciones
+completas, detalle AUM filtrado y revisión ligada a REF. Conserva wrappers anteriores,
+fórmulas, RLS y permisos de originales; sin tablas/hechos nuevos. Aplicar antes del
+runtime nuevo, por autorización expresa. Ver docs/data-quality-filters.md y validación.

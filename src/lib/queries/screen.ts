@@ -9,6 +9,7 @@ export async function loadScreen(supabase: SupabaseClient, search: Search, comme
   catch (error) { return { error: error instanceof Error ? error.message : "Filtros inválidos.", kind: "filters" } as const; }
   try {
     const { data, error } = await queryReport(supabase, parsed.parameters);
+    if (error?.code === "22023" || error?.code === "22P02") return { error: "La selección de filtros no es válida. Reiniciá la selección REF.", kind: "filters", params: parsed.params } as const;
     if (error?.code === "40001") return { error: "Los datos cambiaron. Reiniciá la consulta para ver una única revisión.", kind: "revision", params: parsed.params } as const;
     if (error?.code === "57014") return { error: REPORT_TIMEOUT_MESSAGE, kind: "timeout", params: parsed.params } as const;
     if (error || !data) return { error: "No se pudo consultar la información publicada. Reintentá más tarde.", kind: "query", params: parsed.params } as const;

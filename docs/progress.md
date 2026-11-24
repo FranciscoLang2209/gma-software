@@ -1,5 +1,307 @@
 # App Papá — Progreso
 
+## Migraciones de calidad aplicadas y entrega a main autorizada — 2026-11-24
+
+Pedido del dueño: aplicar las migraciones y pushear el trabajo a main. Destino
+confirmado: conexión app papa, gma-software-prueba (zwdqnrbqqszjrtkhyqnz),
+sa-east-1, PostgreSQL 17.11.0.019, ACTIVE_HEALTHY. Aplicadas en orden por MCP:
+20261124202626_reference_filters_and_complete_options y
+20261124202631_data_quality_admin_panel. Las 30 anteriores no se reejecutaron.
+
+MCP asignó las versiones de ejecución. Se renombraron únicamente los dos archivos
+locales originales 20261124172735 y 20261124193823 para coincidir con el registro
+remoto, sin cambiar su SQL ni modificar el historial remoto. Huellas del SQL
+idénticas a las probadas/aplicadas; historial local/remoto: 32 migraciones.
+
+Verificación remota: seis wrappers públicos invoker; implementaciones privadas
+bajo ejecutor NOLOGIN/NOBYPASSRLS y search_path vacío. Vista de calidad invoker,
+sin SELECT de authenticated/anon/service_role. Sin EXECUTE de anon/service_role;
+26 tablas privadas con RLS habilitado/forzado. CREATE transitorio retirado y cero
+membresías con INHERIT/SET. Rechazo SQL de anónimo y authenticated sin sesión,
+incluida operación de equivalencias; transacción revertida, sin JWT inventado.
+
+Recuentos y huellas de nueve tablas iguales antes/después: 18.800 AUM,
+17.893 Revenue, 658 alcances, 2.329 identificadores, 36.693 resoluciones,
+807 referencias REF y su puntero, 2.624 tasas y un snapshot Master.
+No se importaron archivos, publicaron hechos ni repararon los pares ambiguos.
+Advisors sin hallazgos nuevos: conserva WARN previo de contraseñas filtradas,
+14 auth_rls_initplan y 16 multiple_permissive_policies; INFO de 49 FK sin índice
+y cinco índices sin uso. No se cambiaron Auth, planes ni índices fuera del alcance.
+
+Entrega reúne Fases 1–8 ya verificadas localmente. La alineación de nombres no
+cambia el contenido SQL ni el runtime probado. Evidencia local/sintética y límites
+en [data-quality-validation.md](data-quality-validation.md); el control remoto de
+esquema no acredita sesión HTTP/UI real ni conciliación económica. Sin despliegue
+manual. Fase 9 no iniciada; próximo prompt sigue siendo estados vacíos diferenciados.
+
+## Calidad de datos: Fase 8 local — 2026-11-24
+
+Panel /calidad-datos exclusivo del administrador, integrado a la navegación y a
+los permisos existentes. Recuentos/porcentaje de relación técnica separados por
+fuente y grano; cola por fuente, custodio, meses y problema. Cobertura observada,
+originales privados, candidatos acreditados e historiales paginados de importación
+y cambios. Enlaces retoman Correspondencias en la página correcta y Master por UUID.
+Anterior/posterior auditados como texto SQL conservan los decimales exactos.
+Contrato y límites en [data-quality-panel.md](data-quality-panel.md).
+
+Operación explícita por lote para Revenue en preparación sin errores: mismo
+ACCOUNT literal/custodio, alias ya acreditado, evidencia, vista previa y confirmación
+con revisión. Reutiliza manage_import, locks, transacción y auditoría; reintento
+idéntico idempotente. No publica ni modifica hechos financieros o equivalencias
+acreditadas a otro destino. Preparaciones Master solo en Storage no se incluyen
+en el inventario SQL. Fuente antigua ausente se muestra sin identificar.
+
+Migración local 20261124202631_data_quality_admin_panel.sql, creada por CLI 3.1.0;
+vista privada invoker y RPC con guards/RLS, sin ampliar acceso del lector, anon o
+service_role. Permanece pendiente junto con REF de Fase 5. Sin lecturas/escrituras
+GMA, despliegue, dependencias nuevas o cambios de fórmulas financieras.
+
+92 unitarias, lint, typecheck completo, build y suite SQL completa correctos con
+Node 24.22.3/PostgreSQL 17.12 locales. Nuevas pruebas de contratos, roles, granos,
+faltantes, historia >50, stale revision, rollback, reintentos, precisión y conservación
+de publicados. Capacidad sintética de 38.400 hechos / 800 cuentas / 24 meses:
+426,666 ms bajo límite local de 8 s tras corregir el plan de cobertura bajo RLS;
+no es SLA remoto. Ver evidencia final HTTP/navegador y límites en
+[data-quality-validation.md](data-quality-validation.md).
+HTTP integral Next → PostgreSQL correcto, con transportes Auth/PostgREST/Storage
+sintéticos. Chrome admin/lector 1440/390 confirma filtros, preview/aplicación,
+paginación, auditoría y denegaciones; capturas revisadas, tablas móviles corregidas
+con scroll interno y sin errores JS. No acredita accesibilidad manual completa.
+
+Persisten los dos pares reales ambiguos, clasificación/cobertura económica y el
+adaptador versionado para reparaciones publicadas. No se validó una importación
+real ni una sesión Supabase remota. Se detiene al completar Fase 8.
+
+Próximo prompt: «Continuá con Fase 9: diferenciá los estados vacíos según período
+sin registros, filtros sin coincidencias, relaciones pendientes, cobertura incompleta,
+cálculo insuficiente y error de consulta, reutilizando diagnósticos existentes sin
+ocultar fallos ni imputar cero; sin modificar producción ni desplegar».
+
+## Calidad de datos: Fase 7 local — 2026-11-24
+
+Reutilizados staging, vista previa, correspondencias y publicación versionada
+existentes. Controles compartidos mensual/histórico/REF/Master: encabezados literales,
+cuentas seguras y avisos de espacios/invisibles sin cambiar el original. Ciencia
+textual con espacios, booleanos/fechas usados como períodos o importes/tasas Master
+ya no se aceptan por su valor escalar. REF devuelve fila/columna, conserva errores
+y bloquea el conjunto. Consentimiento numérico acotado menciona archivo y REF.
+
+Resumen agrupado mensual e histórico aun sin excepciones; avisos Master visibles.
+validationVersion=1 en configuración/manifiesto evita mezclar reglas al retomar:
+conservar preparaciones antiguas y crear otras con sus originales. Publicados y
+preparaciones terminadas no se revalidan ni modifican. Sin nueva migración, cambios
+de dependencias o fórmulas financieras. Contrato en
+[data-import-quality.md](data-import-quality.md).
+
+87 unitarias (8 nuevas), lint, typecheck completo, build y suite SQL completa
+correctos con Node 24.22.3/PostgreSQL 17.12 locales. HTTP Auth pasa; recorrido Next
+→ PostgreSQL local conserva importación/publicación/corrección/reintentos y agrega
+calidad REF, originales por rol, versión anterior rechazada y publicados intactos.
+Auth/PostgREST/Storage sintéticos explícitos, sin fallback de la aplicación.
+Chrome administrador 1440/390: carga/validación mensual, Revenue repetido, avisos
+agrupados, bloqueo REF con coordenadas, revisión deshabilitada, sin errores JS ni
+desbordes del documento; capturas sintéticas revisadas. No es QA remoto ni revisión
+manual completa de accesibilidad. Evidencia en data-quality-validation.md.
+
+Sin lecturas/escrituras remotas nuevas, reimportación real ni despliegue. Los dos
+pares ambiguos, clasificación/cobertura económica y migración REF de Fase 5 siguen
+pendientes; no se infieren tipos/unidades para campos Revenue no acordados.
+Se detiene al cerrar Fase 7.
+
+Próximo prompt: «Continuá con Fase 8: implementá el panel administrativo Calidad
+de datos con diagnósticos por fuente/período/custodio, pendientes e historial.
+Reutilizá permisos y circuitos de revisión existentes; conservá originales privados
+y las reparaciones ambiguas para revisión, sin modificar producción ni desplegar».
+
+## Calidad de datos: Fase 6 verificada — 2026-11-24
+
+Validado el ROA existente con oráculo SQL independiente de totales mensuales:
+ejemplo 10/11/12 millones + Revenue 13.750 → promedio 11 millones y ROA 0,50%;
+varias cuentas con pesos distintos, Revenue repetido, Fee ponderado, diferencia
+en pp y población mixta. No cambian fórmulas, tasas, reglas, runtime ni migraciones.
+Metodología y resultados en [data-financial-metrics-validation.md](data-financial-metrics-validation.md).
+
+Diagnóstico remoto solo lectura, conteos/estados/booleanos sin identidades ni
+montos: 64 cohortes 2023–2026 conservan AUM y Revenue contra sumas independientes;
+30 incompletas y 34 sin hechos, ninguna calculable como grupo completo. Advisory
+T1/T2 2026 tiene 47/46 cuentas matemáticamente comparables con Fee, sin certificar
+Payout broker ni cobertura económica. Ponderación de grupos reales no evaluable;
+sí verificada sintéticamente. No se excluyen faltantes para forzar un agregado.
+
+79 unitarias, lint, typecheck completo, build y suite SQL completa correctos con
+Node 24.22.3/PostgreSQL 17.12 locales. Incluye migraciones no SUPERUSER, roles,
+concurrencia, capacidad y restauración; nuevo test SQL financiero integrado.
+No se repitió HTTP/navegador al no cambiar aplicación. Sin escrituras Supabase,
+publicación ni despliegue; migración REF de Fase 5 aún pendiente de aplicación.
+No acredita importaciones reales, reparaciones ambiguas o sesión remota por rol.
+
+Próximo prompt: «Continuá con Fase 7: mejorá las importaciones Excel para prevenir
+inconsistencias, reutilizando normalización, staging, vista previa y publicación
+atómica existentes. Conservá originales, ceros y duplicados Revenue legítimos;
+probá errores/advertencias y reintentos sin modificar producción ni desplegar».
+
+## Calidad de datos: Fase 5 local — 2026-11-24
+
+Implementados filtros REF independientes en Resumen, Análisis, Cuentas/detalle,
+ROA y CSV; combinan AND con UUID canónicos, período y servicio. Snapshot/fila
+representativa, Sin referencia y conflictos de revisión explícitos. Selección por
+UUID antes de agregar cada fuente; no se inventan clientes/personas/vigencias.
+El detalle AUM ahora respeta los filtros que ya aplicaba su lista Revenue.
+
+Selectores financieros completos con búsqueda: prueba SQL de 800 opciones con
+página de una fila y prueba Chrome de selección 00M250 en el dataset de 253 cuentas.
+La selección se conserva al buscar o fallar opciones. Se mantiene el sistema visual;
+capturas sintéticas 1440/390 px revisadas. Los límites administrativos de
+Correspondencias quedan para la sección de calidad/revisión, no se declararon resueltos.
+
+Migración local 20261124202626_reference_filters_and_complete_options.sql, creada
+por CLI 3.1.0. Nuevas RPC *_ref con wrappers invoker, ejecutor privado/RLS, guards y
+huella REF; conserva las firmas anteriores. No se aplicó a Supabase ni se desplegó.
+No cambió identidad, importes, tasas, periodización ni fórmulas ROA/comisiones.
+Aplicar la migración revisada antes de desplegar el runtime nuevo; sin ella falla
+la consulta, sin fallback. Contrato y límites en [data-quality-filters.md](data-quality-filters.md).
+
+Entorno local reparado para verificar: Homebrew Node 24.22.3 y PostgreSQL 17.12,
+sin servicio persistente ni cambios al lockfile. El Node local carga SWC: typecheck
+completo y build pasan. 79 unitarias, lint y suite SQL completa correctos, incluidas
+migraciones con operador no SUPERUSER, roles, concurrencia y restauración.
+HTTP Next→SQL real local pasa, Auth/PostgREST/Storage sintéticos; conserva circuitos
+históricos, Master, Comisiones, ROA, originales por rol y exportación completa.
+Chrome lector 1440/390: REF, formulario, snapshot/UUID, búsqueda fuera de primeras100,
+sin errores JS/desbordes. No certifica sesión remota ni accesibilidad manual completa.
+Regresión REF de errores/selección comprobada también mediante recorrido focalizado.
+Detalle y límites en data-quality-validation.md; clústeres/servidores de test eliminados.
+
+Próximo prompt: «Continuá con Fase 6: validá ROA y métricas financieras a partir de
+la cobertura real, sin cambiar las reglas acordadas ni modificar producción;
+separá conciliación sintética de validación económica con fuentes reales».
+
+## Calidad de datos: Fase 4, preparación local — 2026-11-24
+
+Pedido explícito: seguir Fase 4. Implementados planRepair, huellas/verificación de
+snapshot y CLI --dry-run; contrato y procedimiento en [data-repair.md](data-repair.md).
+Conserva relación anterior/propuesta por hecho, evidencia, originales, alcance/lote/
+versión, controles exactos y copias backup/rollback. El CLI crea archivos privados
+fuera del repo, no sobrescribe y no acepta apply. No cambia importes ni deduplica.
+
+76 unitarias (9 nuevas), lint y tsc aislado correctos. Ensayos de snapshot incompleto,
+revisión obsoleta, custodio incorrecto, colisión AUM, nulos/negativos/Revenue repetido,
+meses AUM separados, idempotencia, restauración de imagen previa y CLI/privacidad.
+La primera pasada detectó referencia compartida en fixture y escritura a array
+readonly en otro fixture; corregidos antes de repetir los checks correctamente.
+Ejemplo CLI real exclusivamente sintético: 1 cambio / 4 Revenue / total exacto
+0,15 antes/después; artefactos privados en la ruta documentada. No es backup SQL
+restaurado ni prueba de transacciones remotas.
+
+Lectura agregada GMA nueva: 18.800 AUM, 17.893 Revenue, 433+225 alcances con cero
+discrepancias; cero duplicados AUM; persisten 2 pares/4 UUID con 55 AUM/64 REV.
+Sin exportar originales, identidades individuales o sumas reales. Sin escrituras,
+migración ni despliegue. No hay manifiesto real aprobado para reparar esos pares.
+
+La RPC existente bloquea reasignar aliases acreditados; el planner no intenta
+sortearla. No se creó una migración especulativa ni un apply incompleto. Para una
+reparación real faltan evidencia/alcance, backup restaurable y adaptador/migración
+versionados con revisión bajo locks y aprobación explícita del dueño. La preparación
+local de Fase 4 está entregada; la reparación productiva permanece pendiente.
+Build/typegen conservan el bloqueo SWC; no se repitieron SQL local/HTTP/navegador.
+
+Próximo prompt: «Continuá con Fase 5: filtros/dashboards locales según auditoría,
+REF separado, búsqueda de opciones y pruebas, sin modificar Supabase ni desplegar;
+conservá pendientes las reparaciones ambiguas y las reglas financieras».
+
+## Calidad de datos: Fase 3 local — 2026-11-24
+
+Pedido explícito de continuar Fase 3. Implementado reconcileAccounts en
+src/lib/data/reconciliation.ts y documentado en [motor](data-reconciliation-engine.md).
+Función pura: proyecta registros con procedencia + catálogo revisado y produce
+matched/auto-resolved/needs review/unmatched/conflict, versión de regla, revisión,
+proponente, evidencia y relación anterior/propuesta. No cambia datos ni crea aliases.
+
+Coincidencia literal por fuente/namespace/custodio; solo aliases aprobados permiten
+auto-resolved. Espacios/caso/nombres son sugerencias. Todas las referencias deben
+coincidir en un destino acreditado; contradicciones y relación anterior incompatible
+bloquean. Catálogo huérfano/sin evidencia o procedencia inválida aborta el lote.
+Las filas Revenue repetidas siguen siendo registros independientes.
+
+67 unitarias (7 nuevas), lint y tsc aislado correctos. Pruebas de idempotencia,
+orden de catálogo, copia independiente y conservación de entradas. No se ejecutó
+contra datos reales, ni hubo SQL/HTTP/navegador nuevo, migraciones o despliegue.
+Build/typegen siguen sin validarse por el bloqueo SWC anterior; no se repitieron.
+Trazabilidad disponible como propuesta local; persistencia/rollback real son Fase 4.
+
+Los dos pares ambiguos no se resolvieron. Próximo prompt: «Continuá con Fase 4:
+prepará dry-run privado y scripts de reparación versionada/rollback, controles de
+colisión AUM y totales exactos, sin ejecutar cambios en producción ni desplegar;
+presentá el impacto y conservá ambiguos para revisión».
+
+## Calidad de datos: Fase 2 local — 2026-11-24
+
+Continuación «Continua» de la auditoría: implementada normalización compartida y
+modelo/diseño de filtros REF en [data-normalization.md](data-normalization.md).
+Se conserva todo el trabajo de Fase 1. Sin lecturas/escrituras remotas nuevas,
+migraciones, publicación financiera, despliegue ni modificaciones de identidad.
+
+Módulo puro normalization.ts: clave de búsqueda común para headers/códigos y
+etiquetas; identificadores de cuenta literales con indicadores diagnósticos;
+fechas ISO reales y períodos de importación 1900–2200. Integrado en validación,
+enrutamiento histórico y contrato de opciones. No agrega advertencias persistidas
+que cambien manifiestos congelados ni transforma las etiquetas de REF en personas.
+El Master mantiene su contrato estricto. Los dos pares siguen pendientes.
+
+Contrato diseñado para filtros REF independientes: snapshot/fila representativa,
+selección por UUID de cuenta, Sin referencia, AND, revisión, paginación y permisos.
+Aún no se implementaron en RPC/API/UI; corresponde al trabajo posterior de filtros.
+No se agregaron parámetros que aparenten funcionar sin soporte SQL.
+
+Verificado: 60 unitarias, lint y tsc aislado correctos. Ocho comparaciones completas
+contra HEAD previo con fuentes sintéticas CSV/XLSX AUM/Revenue/FA y manifiestos
+históricos idénticas. Un error de tipado del fixture nuevo fue corregido; tsc y
+suite unitarias se repitieron correctamente. No se repitieron build/typegen ante
+el bloqueo SWC ya documentado, ni SQL/HTTP/navegador (sin cambios de esas capas).
+Comandos y límites en data-quality-validation.md. Sin dependencias nuevas.
+
+Próximo prompt: «Continuá con Fase 3: motor local de propuestas de reconciliación,
+reglas/evidencia, conflictos y pruebas, sin modificar Supabase ni desplegar; mantené
+los casos ambiguos para revisión y conservá las reglas financieras».
+
+## Calidad de datos: Fase 1, auditoría de solo lectura — 2026-11-24
+
+Pedido adjunto: comenzar por Fase 1 y presentar diagnóstico/plan antes de reparar.
+Completada auditoría de código, esquema real y controles agregados en Supabase
+app papa / GMA `zwdqnrbqqszjrtkhyqnz`; Git inicial limpio, base `40e95f7`.
+Sin cambios de datos, Auth, esquema remoto, equivalencias, publicación ni despliegue.
+
+Entregados [informe](data-quality-audit.md), [plan](data-reconciliation-plan.md),
+[validación](data-quality-validation.md) y `scripts/audit-data-quality.sql`.
+Los seis bloques SQL fueron ejecutados realmente; solo devuelven agregados.
+18.800 AUM/17.893 Revenue, cero huérfanos/discrepancias de custodio; los 658
+alcances activos coinciden exactamente con métricas revisadas. Conservación de
+sumas en los 44 meses al agregar fuentes por separado y relacionar cuentas/REF.
+
+Causas de vacíos comprobadas: 839 cuentas sin cliente canónico, cero comerciales/
+equipos/asignaciones fechadas, 663 servicios sin clasificar y cero Brokerage;
+REF es una foto de etiquetas separada. Noviembre está fuera de cobertura
+(último mes agosto 2026), ROA exige bases completas y Comisiones tiene cero eventos
+(Master publicó 2.624 tasas, no expectativas/cobros). Selectores limitados a 100
+opciones frente a 629 cuentas del rango; Correspondencias limita lotes/cuentas.
+
+Pendientes cuantificados: 2 pares candidatos por espacios (4 UUID, 55 AUM/64 REV),
+34 filas REF sin cuenta, 20 filas Master sin cuenta (8 Advisory), 12 Advisory con
+cuenta/sin tasa, 12 Revenue sin importe. No se fusionó ni se convirtió ausencia
+en cero. Los 697 AUM/1.312 Revenue negativos y movimientos repetidos se conservan.
+
+Validación nueva: 54 unitarias, lint y tsc aislado correctos. Next typegen/build
+fallan por firma/Team ID del SWC nativo frente a Node firmado de la app; typecheck
+completo no validado. Suite SQL local no ejecutada: npm/pg_config/PostgreSQL no
+disponibles en el entorno; unitarias ejecutadas directamente con Node 24.22.3.
+Sin navegador/HTTP autenticado nuevo ni certificación externa de fuentes. Detalle
+de comandos, logs y límites en data-quality-validation.md. No se instalaron paquetes.
+
+Fases 2–10 no iniciadas; no hay dry-run de escritura ni backup restaurado nuevo.
+Próximo prompt: «Continuá con Fase 2 según data-reconciliation-plan.md: normalización
+y filtros de referencia separados de vigencias, implementación y pruebas locales,
+sin modificar Supabase ni desplegar; mantené los dos pares en revisión manual».
+
 ## ROA: comparación anual y tasas visibles — 2026-11-20
 
 Pedido vigente: mejorar `/rentabilidad`, explicar la asociación de Advisory Fees y

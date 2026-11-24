@@ -176,7 +176,7 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
       </details>}
       {multiple && <details><summary>Revisión de datos cargados a mano</summary>
         <p>Las decisiones se conservan con esta carga y requieren publicación revisada. El original no cambia y no se descartan movimientos.</p>
-        <label><input type="checkbox" name="numericIdentifiersAsWritten" disabled={busy} /> Confirmo las cuentas numéricas tal como están escritas, dentro de cada custodio, sin agregar ceros. Solo enteros de hasta 15 dígitos, sin fórmulas ni notación científica.</label>
+        <label><input type="checkbox" name="numericIdentifiersAsWritten" disabled={busy} /> Confirmo las cuentas numéricas del archivo y del REF adjunto tal como están escritas, dentro de cada custodio, sin agregar ceros. Solo enteros de hasta 15 dígitos, sin fórmulas ni notación científica.</label>
         {source === "revenue" && <>
           <label><input type="checkbox" name="missingRevenueAsUnknown" disabled={busy} /> Conservar Payout broker vacío como N/D y publicar la suma conocida con cobertura incompleta.</label>
           <label><input type="checkbox" name="metadataErrorsAsWarnings" disabled={busy} /> Conservar errores de Excel en columnas descriptivas de REV como advertencias. Cuenta, custodio, período e importe siguen protegidos.</label>
@@ -209,13 +209,16 @@ export function HistoricalImport({ custodians, initialId = "" }: { custodians: {
         </form>
       </details>}
       <p>Hoja incluida: {manifest.sheet}. Encabezados en fila {manifest.headerRow ?? 1}. Filas excluidas con motivo: {manifest.excludedRows?.length ?? 0}. Hojas excluidas: {manifest.excludedSheets.join(", ") || "ninguna"}. Filas vacías: {manifest.blankRows}. Filas sin alcance válido: {manifest.unroutable.length}.</p>
-      {manifest.errors.map((e, i) => <p role="alert" key={i}>{e.message}</p>)}
+      {manifest.errors.map((e, i) => <p role="alert" key={i}>{e.row && `Fila ${e.row} · `}{e.column && `${e.column}: `}{e.message}</p>)}
+      {!!manifest.warnings?.length && <details><summary>Advertencias del REF ({manifest.warnings.length})</summary>
+        <ul>{manifest.warnings.map((e, i) => <li key={i}>Fila {e.row} · {e.column}: {e.message}</li>)}</ul>
+      </details>}
       {!!manifest.unroutable.length && <details open><summary>Filas sin mes/custodio válido ({manifest.unroutable.length})</summary>
         <ul>{[...new Set(manifest.unroutable.map((r) => r.errors[0].message))].slice(0, 50).map((message) => <li key={message}>{message}</li>)}</ul>
         <p>Primeras filas: {manifest.unroutable.slice(0, 25).map((r) => r.row).join(", ")}. Descargá los errores para revisar el detalle. Si falta un custodio, registralo en Configuración y volvé a analizar los mismos originales.</p>
       </details>}
       {manifest.exceptionSummary && <section aria-label="Resumen de excepciones">
-        <h3>Excepciones agrupadas</h3>
+        <h3>Errores y advertencias agrupados</h3>
         <p>Importes conocidos: {manifest.partitions.reduce((n, p) => n + p.summary.valueCount, 0)} / {totalRows} movimientos. Importes N/D: {manifest.partitions.reduce((n, p) => n + p.summary.missingValues, 0)}. La suma de importes conocidos no representa un total completo si hay faltantes.</p>
         {manifest.sourceReview && <p>Decisiones de esta carga: {manifest.sourceReview.reason || "Sin excepciones autorizadas."}</p>}
         <ul>{manifest.exceptionSummary.map((e) => <li key={`${e.severity}/${e.code}/${e.column}`}>

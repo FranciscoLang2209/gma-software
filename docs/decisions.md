@@ -1,5 +1,155 @@
 # App Papá — Decisiones y pendientes
 
+## Aplicación y publicación autorizadas — 2026-11-24
+
+El dueño autoriza aplicar las dos migraciones pendientes y pushear a main las
+Fases 1–8. Aplicadas sólo en GMA: 20261124202626 (REF) y 20261124202631 (panel).
+Archivos locales renombrados a las versiones asignadas por MCP, SQL idéntico y
+sin reescribir registros remotos. Supera la condición de pendientes de los registros
+históricos siguientes; no autoriza reparar identidades ni publicar archivos.
+Huellas financieras/relacionales conservadas, ACL/RLS y rechazo sin sesión
+verificados. No cambia reglas de negocio ni resuelve cobertura económica.
+La sesión/UI remota y los pares ambiguos siguen pendientes; próxima fase: 9.
+
+## Calidad de datos: Fase 8 local — 2026-11-24
+
+Panel administrativo con la sesión existente y RLS, sin acceso del lector a cola,
+originales o auditoría. Recuentos separados por fuente y grano; relación técnica
+no certifica identidad económica. Cobertura por cuenta/trimestre observado, sin
+inventar cuentas esperadas ni interpretar faltantes como cero. Fuentes antiguas
+sin identificar permanecen explícitas. Meses no atribuyen fechas a catálogos/REF.
+
+Cola e historiales con páginas de 25 y revisión obligatoria al avanzar; cambios
+invalidan la consulta. Imágenes auditadas se transportan como texto PostgreSQL
+para conservar numeric exacto. Preparaciones Master solo en Storage no tienen
+índice SQL y se retoman por UUID en su circuito existente.
+
+Selección/aprobación individual reutiliza Correspondencias. Operación por lote
+solo para Revenue needs_resolution/preparation_only sin errores: mismo ACCOUNT
+literal, lote y custodio, alias ya acreditado, evidencia, preview y confirmación.
+Se usa manage_import bajo lock/transacción y revisión; no cambia publicados ni
+crea equivalencias por similitud. Los dos pares reales siguen pendientes, junto
+con el adaptador de reparación de Fase 4.
+
+Migración 20261124202631 local; permanece pendiente junto con la de Fase 5.
+Sin acceso/escritura remota, despliegue ni cambios de fórmulas/dependencias.
+Contrato y límites en [data-quality-panel.md](data-quality-panel.md).
+Próxima fase: 9, estados vacíos diferenciados; detener al completar Fase 8.
+
+## Calidad de datos: Fase 7 local — 2026-11-24
+
+Se completa prevención sobre staging/publicación existentes, sin segundo circuito.
+Control común de headers/cuentas para financiero, REF y Master; formatos sospechosos
+advierten conservando el literal y ciencia/tipos inválidos bloquean. No se eliminan
+ceros, espacios ni caracteres para unir cuentas. El consentimiento numérico previo
+se explicita también para REF; no habilita recuperar dígitos o aceptar fórmulas.
+No se valida financieramente lo que aún carece de unidades/bases acordadas en REV.
+
+Se fija validationVersion=1 separada del formato parserVersion. Preparaciones en
+curso de versión anterior deben conservarse y analizarse de nuevo con otra solicitud;
+no se parchea historia ni se mezclan reglas entre bloques. Publicaciones existentes
+no se revalidan retrospectivamente. Se mantiene idempotencia dentro de cada versión.
+Sin migración nueva, publicación remota o despliegue. Detalles en
+[data-import-quality.md](data-import-quality.md). Próxima fase: 8, panel de calidad.
+
+## Calidad de datos: Fase 6 — 2026-11-24
+
+Se validan las reglas existentes, sin modificar fórmula ROA, umbrales Brokerage,
+unidades o ponderación Advisory. Referencia anual proporcional ponderada por los
+mismos AUM cuenta/mes del conjunto Advisory, no promedio simple de tasas/ratios.
+No se compara el ROA mixto con un Fee de subconjunto ni se suplen fotos con Master.
+Metodología previa y oráculo independiente en
+[data-financial-metrics-validation.md](data-financial-metrics-validation.md).
+
+La conservación de sumas reales pasa para 64 cohortes; sus grupos son incompletos
+o sin hechos. Las cuentas matemáticamente comparables no autorizan excluir al resto
+ni certificar rendimiento/impagos. Se mantiene pendiente cobertura esperada y
+validación económica Payout broker/Fee. La migración REF sigue local y no aplicada;
+no hay escritura remota ni cambio financiero en esta fase. Próxima fase: 7.
+
+## Calidad de datos: Fase 5 local — 2026-11-24
+
+Se implementa el diseño REF separado: no sustituye cliente/comercial/equipo
+canónicos ni acredita vigencias. Filtros AND por población UUID, con snapshot/fila
+de grupo literal y Sin referencia. Cambiar la foto exige reiniciar explícitamente;
+no se reasigna una selección antigua. CSV y navegación conservan esa misma base.
+
+Se retira el corte de 100 opciones financieras y se agrega búsqueda local sobre
+la lista completa. No se promete un buscador remoto ilimitado; paginar al medir
+volumen que lo requiera. Comisiones conserva beneficiarios/bases y su permiso
+administrativo. Límites de Correspondencias quedan para su circuito de revisión.
+
+Se agregan RPC versionadas *_ref y se conservan las anteriores, con guards/RLS
+existentes. Migración local 20261124202626 pendiente de revisión/aplicación expresa;
+sin despliegue. No autoriza fusiones, cambios de hechos ni aprobación de reparaciones.
+Node/PostgreSQL locales permiten retomar build/typecheck/suites SQL; no cambian
+el stack remoto ni dependencias bloqueadas. Próxima fase: 6, validación de métricas.
+Ver [contrato y verificación](data-quality-filters.md).
+
+## Calidad de datos: Fase 4 de preparación — 2026-11-24
+
+Se autoriza preparar dry-run/scripts y rollback, no modificar producción. El planner
+local requiere revisión explícita por hecho para proyectar una reasignación existente;
+esa revisión JSON no equivale a permiso de sesión ni aprobación remota del dueño.
+Todos los manifiestos son no ejecutables. Las colisiones AUM o identidades sin
+resolver bloquean el lote; no se publica parcialmente. Se comparan sumas/recuentos/
+valores conocidos por fuente/mes/custodio, conservando originales y movimientos.
+
+No se inventa una migración de identidad antes de aprobar los dos pares ambiguos.
+La resolución existente bloquea aliases de otra cuenta; aplicar la proyección exige
+un adaptador versionado con preservación de dependencias/historia, aún pendiente.
+No desactivar triggers ni actualizar hechos publicados para evitar ese control.
+Backup/rollback locales son imágenes para ensayo, no recuperación PostgreSQL probada.
+Ver [preparación y límites](data-repair.md). Lectura GMA conserva los controles de
+Fase 1. Próximo paso de producto: Fase 5; reparaciones reales pendientes de evidencia.
+
+## Calidad de datos: Fase 3 autorizada — 2026-11-24
+
+El dueño solicita explícitamente Fase 3. Se implementa un motor local de propuestas,
+sin adaptar aún escrituras/consultas remotas. Las propuestas con alias aprobado
+se denominan auto-resolved por clasificación; no significan reparación ejecutada.
+No hay normalización automática de cuenta más allá de identidad literal. No usar
+el orden de prioridad para ocultar destinos contradictorios; exigir respaldo de
+todas las referencias y respetar la relación anterior. Nombres solo sugieren.
+
+Trazabilidad: procedencia, proponente, revisión, versión de reglas y evidencia en
+cada resultado. Persistencia y rollback productivo pendientes; no simular un evento
+publicado. La fase termina con 67 unitarias/lint/tsc aislado correctos. Fase 4 es el
+siguiente paso; producción sigue requiriendo dry-run y aprobación específica.
+Ver [motor](data-reconciliation-engine.md) y [plan](data-reconciliation-plan.md).
+
+## Calidad de datos: Fase 2 autorizada por continuación — 2026-11-24
+
+«Continua» retoma el próximo paso documentado: normalización implementada localmente
+y diseño de filtros REF separados de vigencias. Ver [data-normalization.md](data-normalization.md).
+La búsqueda comparte regla textual; la identidad de cuenta conserva fuente,
+namespace, custodio y literal. No se eliminan ceros, espacios ni signos de cuentas.
+Se reutilizan UUID/aliases/auditoría existentes; no hay migración nueva en esta fase.
+
+Los filtros REF propuestos usan snapshot/fila representativa y selección de cuentas
+mediante EXISTS, sin crear clientes/comerciales ni historia. Es diseño, todavía no
+es un contrato aceptado por la API. No se cambian permisos, tasas ni fórmulas.
+Los dos pares candidatos siguen sin resolver; producción requiere el dry-run y
+aprobación explícita pedidos. Fase 3 es el próximo paso, no iniciada.
+
+## Calidad de datos: alcance de Fase 1 — 2026-11-24
+
+El pedido adjunto ordena comenzar por auditoría de solo lectura y presentar plan
+antes de reparar. Esta etapa entrega diagnóstico cuantitativo y SQL diagnóstico;
+no ejecuta Fases 2–10. Toda futura modificación de producción exige dry-run con
+impacto revisable y aprobación explícita del dueño, según el pedido vigente.
+
+Se conserva la separación entre foto REF y cliente/comercial/equipo canónicos
+con vigencia. No se convierte sin_clasificar en Brokerage ni Revenue ausente en
+cero. Dos pares con espacios quedan como candidatos de revisión; no se aprueba
+trim/fuzzy para modificar identidades financieras. No se cambian ROA, umbrales,
+ponderación ni método de publicación. Las decisiones de negocio del
+[plan](data-reconciliation-plan.md) permanecen propuestas.
+
+Ver [auditoría](data-quality-audit.md), [validación](data-quality-validation.md) y
+[progreso](progress.md). Los controles remotos no prueban una sesión de lector;
+no se certifica la importación económicamente ni el QA integral posterior.
+
 ## ROA: comparación anual y tasas visibles — 2026-11-20
 
 La pantalla compara T1–T4 del mismo año con iguales filtros y revisiones

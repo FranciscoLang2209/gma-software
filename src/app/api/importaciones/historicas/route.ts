@@ -1,4 +1,4 @@
-import { UUID, validateOptions, validateSourceReview } from "@/lib/imports/contracts";
+import { ImportValidationVersionError, UUID, requireCurrentValidation, validateOptions, validateSourceReview } from "@/lib/imports/contracts";
 import { prepareHistorical, referencePairs, type HistoricalOptions } from "@/lib/imports/historical";
 import { checkFile, HISTORICAL_LIMITS, readBook, sha256 } from "@/lib/imports/read";
 import { boundedBody, importAccess, reply } from "@/lib/imports/server";
@@ -26,9 +26,10 @@ export async function POST(request: Request) {
     if (multi && raw.source !== "aum" && raw.source !== "revenue") throw new Error("Elegí AUM o Revenue.");
     const [{ data: available, error: custodianError }, { data: previous, error: previousError }] = await Promise.all([
       supabase.from("admin_custodians").select("id,code").eq("active", true).order("id"),
-      supabase.from("admin_import_uploads").select("options").eq("id", id).limit(1),
+      supabase.from("admin_import_uploads").select("options,manifest,status").eq("id", id).limit(1),
     ]);
     if (previousError) throw new Error("No se pudo verificar el reintento. Conservá los archivos y la solicitud.");
+    if (previous?.[0]) requireCurrentValidation(previous[0].manifest);
     // Una recuperación reutiliza el catálogo congelado, aunque después se registren otros custodios.
     const custodians = multi && previous?.[0]?.options.multiCustodian ? previous[0].options.custodians : available;
     if (custodianError || !custodians?.length) throw new Error("Registrá los custodios en Configuración.");
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
         const referenceBook = await readBook(referenceBytes, references.name, validated.delimiter);
         const requestedSheet = raw.referenceSheet ?? raw.references?.sheet ?? "";
         if (!requestedSheet && referenceBook.sheets.length !== 1) throw new Error("Indicá la hoja de REF si tiene varias.");
-        const parsed = referencePairs(referenceBook, requestedSheet || referenceBook.sheets[0].name);
+        const parsed = referencePairs(referenceBook, requestedSheet || referenceBook.sheets[0].name, options.sourceReview);
         options.references = { fileName: references.name, fileHash: sha256(referenceBytes), fileSize: referenceBytes.length, ...parsed };
       }
     }
@@ -82,6 +83,6 @@ export async function POST(request: Request) {
     }
     return reply({ id });
   } catch (e) {
-    return reply({ error: e instanceof Error ? e.message : "Carga inválida." }, 400);
+    return reply({ error: e instanceof Error ? e.message : "Carga inválida." }, e instanceof ImportValidationVersionError ? 409 : 400);
   }
 }

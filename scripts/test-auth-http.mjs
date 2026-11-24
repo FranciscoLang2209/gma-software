@@ -82,9 +82,9 @@ const backend = createServer(async (req, res) => {
     assert.equal(user?.app_role, "admin");
     return res.end(JSON.stringify({ review_id: id, ...p }));
   }
-  if (["/rest/v1/rpc/aggregate_report", "/rest/v1/rpc/account_directory"].includes(url.pathname)) {
+  if (["/rest/v1/rpc/aggregate_report_ref", "/rest/v1/rpc/account_directory_ref"].includes(url.pathname)) {
     assert.ok(["admin", "reader"].includes(user?.app_role));
-    if (url.pathname.endsWith("/aggregate_report")) reportCalls++;
+    if (url.pathname.endsWith("/aggregate_report_ref")) reportCalls++;
     const p = JSON.parse(await body(req));
     lastReportParameters = p;
     if (reportFailure) {
@@ -111,7 +111,7 @@ const backend = createServer(async (req, res) => {
       coverage: [], group_by: p.group_by, row_count: exportRowCount, offset: p.page_offset, limit: p.page_size,
       rows: p.page_size === 250 ? Array.from({ length: exportFailure === "short" ? 1 : Math.max(0, Math.min(p.page_size, exportRowCount - p.page_offset)) }, (_, i) => ({ ...metrics, key: `synthetic-${p.page_offset + i}`, label: "=SINTETICO" })) : [{ ...metrics, key: "synthetic-row", label: "=SINTETICO" }],
     };
-    return res.end(JSON.stringify(url.pathname.endsWith("/account_directory") ? { revision: "a".repeat(32), rows: [], row_count: 0, offset: 0, limit: 25, report } : report));
+    return res.end(JSON.stringify(url.pathname.endsWith("/account_directory_ref") ? { revision: "a".repeat(32), rows: [], row_count: 0, offset: 0, limit: 25, report } : report));
   }
   if (url.pathname === "/rest/v1/admin_custodians")
     return res.end(

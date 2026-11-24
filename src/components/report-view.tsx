@@ -1,3 +1,5 @@
+import { SearchSelect } from "./search-select";
+import { ReferenceFilters } from "./reference-filters";
 import { DatePicker } from "./ui/date-picker";
 import { Select } from "./ui/select";
 import type { ReactNode } from "react";
@@ -27,11 +29,7 @@ export function ReportFilters({ params, report, path, commercial = false, childr
   const entityField = (key: string, label: string) => {
     if (key === "cuenta" && accountId) return <input key={key} type="hidden" name="cuenta" value={accountId} />;
     const options = report.options?.[key] ?? [], selected = params.get(key) ?? "";
-    return <label key={key}>{label}<Select name={key} defaultValue={selected}>
-      <option value="">Todos · incluye sin asignar</option>
-      {selected && !options.some((o) => o.id === selected) && <option value={selected}>{selected}</option>}
-      {options.map((o) => <option value={o.id} key={o.id}>{o.label}</option>)}
-    </Select></label>;
+    return <SearchSelect key={`${key}-${selected}`} name={key} label={label} options={options} selected={selected} />;
   };
   return <section className={`panel report-filters${compact ? " compact-filters" : ""}`} aria-label="Filtros compartidos">
     <form action={path} className="import-form">
@@ -45,10 +43,11 @@ export function ReportFilters({ params, report, path, commercial = false, childr
       {commercial && <label>Desglose<Select name="agrupar" defaultValue={report.group_by}>
         {Object.entries(DIMENSIONS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </Select></label>}
+      <ReferenceFilters params={params} references={report.reference_options} />
       {children}
       <div className="report-actions"><Button type="submit" highContrast>Aplicar filtros</Button><Link href={path}>Limpiar filtros</Link></div>
     </form>
-    <p className="section-note">Rango inclusivo · hasta 120 meses. Opciones observadas bajo estos filtros, hasta 100 por selector; limpiá para ampliar. AUM usa el cierre de {monthLabel(report.period.to)}; Revenue suma el rango.</p>
+    <p className="section-note">Rango inclusivo · hasta 120 meses. Opciones completas observadas bajo estos filtros, con búsqueda; limpiá para ampliar. AUM usa el cierre de {monthLabel(report.period.to)}; Revenue suma el rango.</p>
     <nav className="report-actions" aria-label="Vistas del informe">
       <Link href={reportHref("/", params)}>Ver resumen filtrado</Link>
       <Link href={reportHref("/analisis-comercial", params)}>Ver análisis comercial filtrado</Link>

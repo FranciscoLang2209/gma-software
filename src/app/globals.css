@@ -366,6 +366,10 @@ footer {
   overflow-x: auto;
   margin-top: 24px;
 }
+.quality-table table { min-width: 850px; }
+.quality-table th { white-space: nowrap; overflow-wrap: normal; }
+.quality-table td { min-width: 110px; }
+.quality-table td:first-child { min-width: 200px; }
 .data-table {
   min-width: 680px;
   font-size: 12px;
@@ -1145,3 +1149,7 @@ footer { color: var(--gma-muted); }
 @media (max-width: 1200px) { .roa-quarter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .roa-quarter-grid { grid-template-columns: minmax(0, 1fr); } .roa-unit { display: none; } }
 .roa-table .roa-cell-note .rt-Badge { white-space: normal; }
+
+.reference-filters { grid-column: 1 / -1; border: 1px solid var(--gray-6); border-radius: 8px; padding: 1rem; min-width: 0; }
+.reference-filters p { margin: 0 0 1rem; }
+.search-select { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }

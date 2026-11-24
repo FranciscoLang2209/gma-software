@@ -46,6 +46,7 @@ select pg_temp.assert_true(:'report'::jsonb->'months'->0->>'aum_usd' is null,'no
 select pg_temp.assert_true(:'report'::jsonb-'revision'=pg_temp.previous_report('2024-01-01','2026-08-01',service_filter=>'SINTETICO capacidad',group_by=>'custodian')-'revision','misma proyección que antes de optimizar');
 select public.aggregate_report('2024-01-01','2026-08-01',service_filter=>'SINTETICO capacidad',page_size=>1) first_page \gset
 select pg_temp.assert_true(public.aggregate_report('2024-01-01','2026-08-01',service_filter=>'SINTETICO capacidad',page_size=>1,page_offset=>799,expected_revision=>:'first_page'::jsonb->>'revision')->>'revision'=:'first_page'::jsonb->>'revision','huella estable entre páginas distantes');
+select pg_temp.assert_true(jsonb_array_length(public.aggregate_report_ref('{}','2024-01-01','2026-08-01',service_filter=>'SINTETICO capacidad',page_size=>1)->'options'->'cuenta')=800,'800 opciones, no solo primeras 100 ni página de resultados');
 reset role;
 rollback;
 \o

@@ -1,5 +1,13 @@
 # Validación — evidencia local y pendientes
 
+## Calidad de datos, migraciones aplicadas — 2026-11-24
+
+Fases 1–8 y aplicación remota autorizada de REF/panel documentadas en
+[data-quality-validation.md](data-quality-validation.md). Treinta y dos versiones
+alineadas local/remoto; SQL, guards/ACL/RLS y conservación de nueve tablas
+comprobados. Mantiene separados los tests sintéticos y la lectura/DDL remotos.
+Sin reparaciones reales, publicación financiera o QA de sesión HTTP remota.
+
 ## ROA: comparación anual y tasas visibles — 2026-11-20
 
 - 54 unitarias correctas; TypeScript, lint y build correctos.

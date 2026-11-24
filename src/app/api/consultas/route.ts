@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     const parameters = complete ? { ...parsed.parameters, page_size: 250 } : parsed.parameters;
     const { data, error } = await queryReport(access.supabase, parameters);
     if (error || !data) {
+      if (error?.code === "22023" || error?.code === "22P02") return reply({ error: "La selección de filtros no es válida. Reiniciá la selección REF." }, 400);
       if (error?.code === "40001") return reply({ error: "Los datos cambiaron. Reiniciá la consulta y la exportación." }, 409);
       if (error?.code === "57014") return reply({ error: REPORT_TIMEOUT_MESSAGE }, 504);
       if (error?.code === "42501") return reply({ error: "Acceso no autorizado." }, 403);

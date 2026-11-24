@@ -1,4 +1,4 @@
-import { LIMITS, UUID, validateOptions } from "@/lib/imports/contracts";
+import { IMPORT_VALIDATION_VERSION, ImportValidationVersionError, LIMITS, UUID, requireCurrentValidation, validateOptions } from "@/lib/imports/contracts";
 import { HISTORICAL_LIMITS, readBook, sha256 } from "@/lib/imports/read";
 import { prepare } from "@/lib/imports/validate";
 import { prepareHistorical, reportSummary } from "@/lib/imports/historical";
@@ -138,7 +138,7 @@ export async function POST(
       );
     if (batch.upload_id && (options.sheet !== uploaded.sheet || options.numericFormat !== uploaded.numericFormat))
       return reply({ error: "Hoja y formato históricos están fijados. Retomá desde la carga histórica." }, 409);
-    const configuration = { ...options, parserVersion: batch.upload_id ? 2 : 1 };
+    const configuration = { ...options, parserVersion: batch.upload_id ? 2 : 1, validationVersion: IMPORT_VALIDATION_VERSION };
     const existing = batch.parsing_conventions.configuration;
     if (
       existing &&
@@ -147,7 +147,7 @@ export async function POST(
       return reply(
         {
           error:
-            "La configuración quedó fijada. Cargá otra preparación para cambiarla.",
+            "La configuración o las reglas de validación cambiaron. Conservá esta preparación y creá otra para usar las reglas actuales.",
         },
         409,
       );
@@ -159,6 +159,7 @@ export async function POST(
       if (batch.upload_id) {
         const { data: upload, error } = await supabase.from("admin_import_uploads").select("options,manifest").eq("id", batch.upload_id).single();
         if (error || !upload) throw new Error("Operación histórica no disponible.");
+        requireCurrentValidation(upload.manifest);
         const parentOptions = validateOptions({ ...upload.options, period: batch.period, custodianId: batch.custodian_id, custodianCode: uploaded.custodianCode });
         if (JSON.stringify(options) !== JSON.stringify(parentOptions)) throw new Error("La configuración histórica está congelada.");
         if (upload.options.references) {
@@ -173,6 +174,7 @@ export async function POST(
         if (!report) throw new Error("El período ya no coincide con el manifiesto.");
       } else report = prepare(book, options);
     } catch (e) {
+      if (e instanceof ImportValidationVersionError) return reply({ error: e.message }, 409);
       // El original ya fue analizado al crear el manifiesto; una indisponibilidad no invalida sus hijos.
       if (batch.upload_id)
         return reply({ error: "No se confirmó el bloque histórico. Verificá o reponé el original desde la carga y reintentá; se conservaron los cursores." }, 502);
@@ -215,20 +217,7 @@ export async function POST(
       chunk.push(row);
       bytes += size;
     }
-    const summary = {
-      rowCount: report.rows.length,
-      blockingErrors: report.blockingErrors,
-      total: report.total,
-      valueCount: report.valueCount,
-      missingValues: report.missingValues,
-      distinctAccounts: report.distinctAccounts,
-      duplicateRows: report.duplicateRows,
-      errors: report.errors,
-      warnings: report.warnings,
-      headers: report.headers,
-      sheets: book.sheets.map((s) => s.name),
-      ...(batch.upload_id ? reportSummary(report, book) : {}),
-    };
+    const summary = reportSummary(report, book);
     const { data: processed, error } = await supabase.rpc(
       "prepare_import_chunk",
       { target_id: id, expected_cursor: cursor, configuration, chunk, summary },

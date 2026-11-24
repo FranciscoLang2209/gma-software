@@ -12,6 +12,7 @@ const sections = [
   ["/importaciones", "Importaciones", Upload],
   ["/comisiones", "Comisiones", GitCompareArrows],
   ["/correspondencias", "Correspondencias", GitCompareArrows],
+  ["/calidad-datos", "Calidad de datos", GitCompareArrows],
   ["/configuracion", "Configuración", Settings2],
 ] as const;
 
@@ -35,7 +36,7 @@ export function Navigation({ role }: { role: "admin" | "reader" }) {
         .filter(
           ([href]) =>
             role === "admin" ||
-            !["/importaciones", "/correspondencias", "/comisiones"].includes(href),
+            !["/importaciones", "/correspondencias", "/comisiones", "/calidad-datos"].includes(href),
         )
         .map(([href, label, Icon]) => (
           <Link

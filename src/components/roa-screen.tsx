@@ -1,3 +1,4 @@
+import { clearReferenceFilters } from "@/lib/queries/references";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Table } from "@radix-ui/themes";
@@ -65,19 +66,20 @@ export async function RoaScreen({ search }: { search: Search }) {
     if (result.error || !result.data) failure = roaFailure(result.error?.code).message;
     else report = result.data;
   } catch { /* El transporte nunca expone errores privados en la pantalla. */ }
-  if (!report) return <><RoaFilters params={params} /><section className="panel report-section" role="alert"><h2>Consulta ROA no disponible</h2><p>{failure}</p><Link href={roaHref(params)}>Reiniciar consulta con estos filtros</Link></section></>;
+  if (!report) return <><RoaFilters params={params} /><section className="panel report-section" role="alert"><h2>Consulta ROA no disponible</h2><p>{failure}</p><Link href={roaHref(params)}>Reintentar con estos filtros</Link><Link href={roaHref(params, clearReferenceFilters())}>Reiniciar consulta · limpiar selección REF</Link></section></>;
   // Solo reutiliza etiquetas públicas; ninguna métrica ROA proviene del reporte de cierre.
   const options = await queryReport(supabase, {
+    reference_filters: parameters.reference_filters,
     month_from: report.period.from, month_to: report.period.to,
     custodian: parameters.custodian, team: parameters.team, advisor: parameters.advisor,
     client: parameters.client, account: parameters.account,
     group_by: "account", page_size: 1, page_offset: 0, expected_revision: null,
     service_filter: parameters.service_filter === "sin_clasificar" ? null : parameters.service_filter,
-  }).then(result => result.error ? undefined : result.data?.options).catch(() => undefined);
+  }).then(result => result.error ? undefined : result.data).catch(() => undefined);
   const t = report.total, period = `T${report.period.quarter} ${report.period.year}`;
   const page = (offset: number) => roaHref(params, { offset: String(offset), limite: String(report.limit), revision: report.revision }) + "#detalle";
   return <>
-    <RoaFilters params={params} options={options} />
+    <RoaFilters params={params} options={options?.options} references={report.reference_options} />
     {!options && <p role="status">No se pudieron cargar las opciones de entidades. Los resultados ROA conservan los filtros seleccionados; reintentá para cambiar entidades.</p>}
     <Suspense fallback={<section className="panel report-section" role="status">Cargando los cuatro trimestres…</section>}><RoaEvolution parameters={parameters} report={report} params={params} /></Suspense>
     <section className="panel report-section roa-methodology" aria-labelledby="roa-basis-title"><h2 id="roa-basis-title">{period} · cálculo provisional sobre cobertura observada</h2>

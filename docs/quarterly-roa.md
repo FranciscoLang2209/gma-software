@@ -7,6 +7,13 @@ Migración `20261120155740_quarterly_roa_backend.sql`, creada con CLI 3.1.0.
 Aplicada posteriormente el2026-11-20 a GMA por autorización expresa; ver validation.md.
 No cambia `aggregate_report` ni las métricas existentes.
 
+Continuidad 2026-11-24: la aplicación local de Fase 5 llama la variante
+`quarterly_roa_report_ref` con filtros REF separados. Su migración continúa sin
+aplicar en GMA, donde sigue la función anterior. La Fase 6 valida las mismas
+fórmulas/unidades con un oráculo SQL independiente y cobertura real de solo lectura;
+ver [data-financial-metrics-validation.md](data-financial-metrics-validation.md).
+No modifica reglas ni certifica la cobertura/economía pendiente.
+
 ## Consulta
 
 `GET /api/rentabilidad` → cliente SSR del usuario → `public.quarterly_roa_report`.

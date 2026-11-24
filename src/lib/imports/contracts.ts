@@ -1,3 +1,5 @@
+import { isImportPeriod } from "../data/normalization.ts";
+
 export const HEADERS = {
   aum: [
     "Top Level Holding Account",
@@ -78,7 +80,14 @@ export type Cell = {
 };
 export type RawRow = { number: number; cells: Cell[] };
 export type Book = { sheets: { name: string; rows: RawRow[] }[] };
-export type Issue = { code: string; column?: string; message: string };
+export type Issue = { code: string; column?: string; message: string; row?: number };
+// Independiente de la versión del formato/manifiesto: impide mezclar validadores.
+export const IMPORT_VALIDATION_VERSION = 1;
+export class ImportValidationVersionError extends Error {}
+export function requireCurrentValidation(value: { validationVersion?: unknown }) {
+  if (value.validationVersion !== IMPORT_VALIDATION_VERSION)
+    throw new ImportValidationVersionError("Esta preparación usa reglas de validación anteriores. Conservá el original y creá una nueva preparación; no se modificaron los datos publicados.");
+}
 export type SourceReview = {
   missingRevenueAsUnknown: boolean;
   numericIdentifiersAsWritten: boolean;
@@ -133,9 +142,7 @@ export function validateOptions(value: unknown): Options {
   if (
     !o ||
     !(o.source === "aum" || o.source === "revenue" || o.source === "fa") ||
-    !/^\d{4}-(0[1-9]|1[0-2])-01$/.test(o.period) ||
-    Number(o.period.slice(0, 4)) < 1900 ||
-    Number(o.period.slice(0, 4)) > 2200 ||
+    !isImportPeriod(o.period) ||
     !UUID.test(o.custodianId) ||
     typeof o.custodianCode !== "string" ||
     !o.custodianCode.trim() ||

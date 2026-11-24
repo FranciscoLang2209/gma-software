@@ -1,40 +1,52 @@
-import { HEADERS, validateSourceReview, type SourceReview, type Book, type Issue, type Options, type RawRow, type Report } from "./contracts.ts";
-import { prepare } from "./validate.ts";
+import { HEADERS, IMPORT_VALIDATION_VERSION, validateSourceReview, type SourceReview, type Book, type Issue, type Options, type RawRow, type Report } from "./contracts.ts";
+import { prepare, prepareHeaders, periodFromCells } from "./validate.ts";
+import { textSearchKey } from "../data/normalization.ts";
+import { identifierIssues } from "./identifiers.ts";
 
 export type Custodian = { id: string; code: string; name?: string };
 export type ReferenceFile = {
   fileName: string; fileHash: string; fileSize: number; sheet: string; headerRow: number;
   pairs: { holding: string; account: string; custodianCode: string; row: number }[];
   errors: Issue[];
+  warnings?: Issue[];
 };
 export type HistoricalOptions = Omit<Options, "period"> & {
   multiCustodian?: boolean; headerRow?: number; excludedRows?: number[]; exclusionReason?: string;
   custodians?: Custodian[]; references?: ReferenceFile;
   sourceReview?: SourceReview;
 };
-const normalize = (s: string) => s.trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
 export function historicalHeader(sheet: Book["sheets"][number], source: Options["source"], explicit = 0) {
   if (!Number.isInteger(explicit) || explicit < 0 || explicit > 100) throw new Error("Fila de encabezados inválida (1 a 100, o vacío para detectar).");
   const candidates = sheet.rows.filter((r) => explicit ? r.number === explicit : r.number <= 20).filter((row) =>
-    HEADERS[source].every((h) => row.cells.some((c) => normalize(c.value ?? "") === normalize(h))));
+    HEADERS[source].every((h) => row.cells.some((c) => textSearchKey(c.value ?? "") === textSearchKey(h))));
   if (candidates.length !== 1) throw new Error("No se detectó un encabezado único. Indicá su fila y verificá las columnas requeridas.");
   return candidates[0];
 }
-export function referencePairs(book: Book, sheetName: string) {
+export function referencePairs(book: Book, sheetName: string, sourceReview?: SourceReview) {
+  const review = validateSourceReview(sourceReview);
   const sheet = book.sheets.find((s) => s.name === sheetName);
   if (!sheet) throw new Error("Elegí la hoja de REF.");
   const header = historicalHeader(sheet, "fa");
-  const cell = (r: RawRow, name: string) => r.cells[header.cells.findIndex((c) => normalize(c.value ?? "") === normalize(name))];
-  const pairs: ReferenceFile["pairs"] = [], errors: Issue[] = [];
+  const checked = prepareHeaders(header, HEADERS.fa);
+  const cell = (r: RawRow, name: string) => r.cells[checked.headers.findIndex((c) => c.canonical === name)] ?? { value: null, kind: "empty" };
+  const pairs: ReferenceFile["pairs"] = [], errors: Issue[] = [...checked.errors], warnings: Issue[] = [];
+  if (errors.length) return { sheet: sheet.name, headerRow: header.number, pairs, errors, warnings };
   for (const r of sheet.rows.filter((r) => r.number > header.number)) {
     if (r.cells.every((c) => !c.value && c.formula === undefined)) continue;
-    const fields = ["ACC # Addepar", "ACCOUNT", "Broker"].map((h) => cell(r, h));
-    if (fields.some((c) => !c?.value?.trim() || c.kind === "e" || c.formula !== undefined)) {
-      errors.push({ code: "reference_fields", message: `REF fila ${r.number}: faltan referencias literales de cuenta/custodio.` }); continue;
+    const rowErrors: Issue[] = [];
+    for (const h of ["ACC # Addepar", "ACCOUNT"]) {
+      const result = identifierIssues(cell(r, h), h, review?.numericIdentifiersAsWritten);
+      rowErrors.push(...result.errors);
+      warnings.push(...result.warnings.map((e) => ({ ...e, row: r.number })));
     }
-    pairs.push({ holding: fields[0].value!, account: fields[1].value!, custodianCode: fields[2].value!, row: r.number });
+    const broker = cell(r, "Broker");
+    if (!broker.value?.trim() || !["s", "str", "inlineStr", "text"].includes(broker.kind) || broker.formula !== undefined)
+      rowErrors.push({ code: "reference_fields", column: "Broker", message: "REF requiere un código de custodio como texto literal, sin fórmulas." });
+    errors.push(...rowErrors.map((e) => ({ ...e, row: r.number })));
+    if (!rowErrors.length)
+      pairs.push({ holding: cell(r, "ACC # Addepar").value!, account: cell(r, "ACCOUNT").value!, custodianCode: broker.value!, row: r.number });
   }
-  return { sheet: sheet.name, headerRow: header.number, pairs, errors };
+  return { sheet: sheet.name, headerRow: header.number, pairs, errors, warnings };
 }
 export function prepareHistorical(book: Book, options: HistoricalOptions) {
   const sourceReview = validateSourceReview(options.sourceReview);
@@ -66,9 +78,8 @@ export function prepareHistorical(book: Book, options: HistoricalOptions) {
   for (const row of sheet.rows.filter((r) => r.number > header.number)) {
     if (excluded.has(row.number)) continue;
     if (row.cells.every((c) => !c.value && c.formula === undefined)) { blankRows++; continue; }
-    const month = value(row, options.source === "aum" ? "mes" : "MES").trim();
-    const year = value(row, options.source === "aum" ? "año" : "AÑO").trim();
-    if (!/^(0?[1-9]|1[0-2])$/.test(month) || !/^\d{4}$/.test(year) || Number(year) < 1900 || Number(year) > 2200) {
+    const period = periodFromCells(row.cells[index(options.source === "aum" ? "mes" : "MES")] ?? { kind: "empty", value: null }, row.cells[index(options.source === "aum" ? "año" : "AÑO")] ?? { kind: "empty", value: null });
+    if (period === null) {
       unroutable.push({ row, message: "Mes/año ausente o inválido; revisá la fila, no se descarta automáticamente." }); continue;
     }
     let custodian: Custodian = { id: options.custodianId, code: options.custodianCode };
@@ -76,15 +87,15 @@ export function prepareHistorical(book: Book, options: HistoricalOptions) {
       let code = value(row, "CUSTODIO");
       if (options.source === "aum") {
         const matches = references.get(JSON.stringify([value(row, "Holding Account Number"), value(row, "Account Number bd_REV")])) ?? [];
-        const codes = new Set(matches.map((p) => normalize(p.custodianCode)));
+        const codes = new Set(matches.map((p) => textSearchKey(p.custodianCode)));
         if (codes.size !== 1) { unroutable.push({ row, message: "Par de cuentas sin custodio único en REF. No se une por nombre ni por un solo número." }); continue; }
         code = matches[0].custodianCode;
       }
-      const matches = (options.custodians ?? []).filter((c) => normalize(c.code) === normalize(code));
+      const matches = (options.custodians ?? []).filter((c) => textSearchKey(c.code) === textSearchKey(code));
       if (matches.length !== 1) { unroutable.push({ row, message: `Custodio «${code || "vacío"}» sin un registro único en Configuración. Registralo y volvé a analizar.` }); continue; }
       custodian = matches[0];
     }
-    const period = `${year}-${month.padStart(2, "0")}-01`, key = `${period}/${custodian.id}`;
+    const key = `${period}/${custodian.id}`;
     const group = groups.get(key) ?? { period, custodian, rows: [] };
     group.rows.push(row); groups.set(key, group);
   }
@@ -95,7 +106,10 @@ export function prepareHistorical(book: Book, options: HistoricalOptions) {
   if (partitions.length > 1024 || partitions.some((p) => p.report.rows.length > 5000)) throw new Error("Máximo 1.024 alcances y 5.000 filas por mes/custodio. Dividí por alcances completos.");
   if (!partitions.length) errors.push({ code: "empty_history", message: "No hay alcances válidos. No se certifica ningún mes como cero." });
   const manifest = {
-    ...(sourceReview ? { sourceReview, exceptionSummary: summarizeExceptions(partitions) } : {}),
+    ...(sourceReview ? { sourceReview } : {}),
+    validationVersion: IMPORT_VALIDATION_VERSION,
+    exceptionSummary: summarizeExceptions(partitions),
+    warnings: options.references?.warnings ?? [],
     parserVersion: options.multiCustodian ? 3 : 2,
     sheet: sheet.name, headerRow: header.number,
     preamble: sheet.rows.filter((r) => r.number < header.number),
@@ -129,6 +143,7 @@ export function reportSummary(report: Report, book: Book) {
     total: report.total, valueCount: report.valueCount, missingValues: report.missingValues,
     distinctAccounts: report.distinctAccounts, duplicateRows: report.duplicateRows,
     duplicateAccounts: report.rows.filter((r) => r.errors.some((e) => e.code === "aum_duplicate")).length,
+    issues: summarizeExceptions([{ custodianId: "", report }]),
     errors: report.errors, warnings: report.warnings, headers: report.headers,
     sheets: book.sheets.map((s) => s.name),
   };

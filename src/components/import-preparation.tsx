@@ -15,6 +15,7 @@ import type {
   Source,
   NumericFormat,
 } from "@/lib/imports/contracts";
+import type { reportSummary } from "@/lib/imports/historical";
 type BatchLink = {
   id: string;
   source: string;
@@ -37,6 +38,7 @@ type Detail = {
       missingValues?: number;
       duplicateRows?: number;
       warnings?: Issue[];
+      issues?: ReturnType<typeof reportSummary>["issues"];
       headers?: {
         position: number;
         original: string | null;
@@ -371,10 +373,17 @@ export function ImportPreparation({
             ...detail.batch.errors,
           ].map((x, i) => (
             <p key={i}>
+              {x.row && `Fila ${x.row} · `}
               {x.column && `${x.column}: `}
               {x.message}
             </p>
           ))}
+          {!!detail.batch.totals.issues?.length && <details>
+            <summary>Resumen de errores y advertencias</summary>
+            <ul>{detail.batch.totals.issues.map((x) => <li key={`${x.severity}/${x.code}/${x.column}`}>
+              {x.severity === "error" ? "Bloqueante" : "Advertencia"}: {x.column || "Fila"} · {x.count} incidencias. {x.message} Primeras filas: {x.rows.join(", ")}.
+            </li>)}</ul>
+          </details>}
           {detail.batch.totals.headers && (
             <details>
               <summary>Mapeo explícito de headers</summary>

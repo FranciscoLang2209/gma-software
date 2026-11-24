@@ -1,3 +1,4 @@
+import { clearReferenceFilters } from "@/lib/queries/references";
 import Link from "next/link";
 import { DatePicker } from "./ui/date-picker";
 import { requireAccess } from "@/lib/auth/access";
@@ -22,7 +23,7 @@ export async function ReportScreen({ search, commercial = false }: { search: Sea
       <label>Hasta · cierre AUM<DatePicker type="month" name="hasta" required min="1900-01" max="9998-12" defaultValue={result.params.get("hasta")!} /></label>
       <button type="submit">Consultar rango</button>
     </form>}
-    <Link href={result.params ? reportHref(path, result.params, commercial ? { agrupar: result.params.get("agrupar") ?? "custodian" } : {}) : path}>Reiniciar consulta</Link>
+    <Link href={result.params ? reportHref(path, result.params, { ...((result.kind === "revision" || result.kind === "filters") ? clearReferenceFilters() : {}), ...(commercial ? { agrupar: result.params.get("agrupar") ?? "custodian" } : {}) }) : path}>Reiniciar consulta{(result.kind === "revision" || result.kind === "filters") && " · limpiar selección REF"}</Link>
   </section>;
   const { report, params, consultedAt } = result;
   const t = report.total;

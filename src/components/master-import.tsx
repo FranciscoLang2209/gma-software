@@ -8,8 +8,8 @@ import { Select } from "./ui/select";
 type Preview = { revision: string; ready: number; published: number; snapshot_rows: number; quarter_count: number; classifications: number; rows: { row: number; account_id: string | null; service: string | null; problem: string | null; selected: boolean; will_classify?: boolean; previous_rates?: {quarter: string; annual_rate: string}[]; previous_rate?: string | null }[] };
 type Custodian = { id: string; code: string; name: string };
 const endpoint = "/api/importaciones/master";
-export function MasterImport({ custodians }: { custodians: Custodian[] }) {
-  const [load, setLoad] = useState<{ id: string; master: MasterFile } | null>(null), [openId, setOpenId] = useState("");
+export function MasterImport({ custodians, initialId = "" }: { custodians: Custodian[]; initialId?: string }) {
+  const [load, setLoad] = useState<{ id: string; master: MasterFile } | null>(null), [openId, setOpenId] = useState(initialId);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState("");
   const [brokers, setBrokers] = useState<Record<string, string>>({}), [accounts, setAccounts] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<number[]>([]), [preview, setPreview] = useState<Preview | null>(null), [published, setPublished] = useState(false);
@@ -76,7 +76,7 @@ export function MasterImport({ custodians }: { custodians: Custodian[] }) {
         <div className="table-scroll" tabIndex={0} role="region" aria-label="Revisión de Master Owners"><Table.Root className="data-table"><Table.Header><Table.Row>{["Publicar fee", "Fila", "Broker / cuenta", "Owner / Fee type / Status", "Balance USD", "Tasa anual (pb)", "Cuenta UUID (opcional)", "Resultado de conciliación"].map(h => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header>
           <Table.Body>{load.master.rows.map(r => { const check = preview?.rows.find(p => p.row === r.row); return <Table.Row key={r.row}>
             <Table.Cell><input type="checkbox" aria-label={`Publicar fee fila ${r.row}`} checked={selected.includes(r.row)} disabled={published || r.annualRate === null || r.cells["Fee type"] !== "Advisory"} onChange={e => setSelected(e.target.checked ? [...selected, r.row] : selected.filter(n => n !== r.row))} /></Table.Cell>
-            <Table.Cell>{r.row}</Table.Cell><Table.Cell>{r.cells.Broker}<br />{r.account}{r.numericAccount && " · numérica"}</Table.Cell>
+            <Table.Cell>{r.row}</Table.Cell><Table.Cell>{r.cells.Broker}<br />{r.account}{r.numericAccount && " · numérica"}{r.warnings?.map((w, i) => <p key={i}>{w.message}</p>)}</Table.Cell>
             <Table.Cell>{r.cells["Owner Name payout"]}<br />{r.cells["Fee type"]} · {r.cells.Status}</Table.Cell>
             <Table.Cell>{usd(r.balance)}</Table.Cell><Table.Cell>{r.annualRate === null ? r.cells["Adv Fee / Retro"] ?? "N/D" : exact(r.rateBasisPoints)}</Table.Cell>
             <Table.Cell><input aria-label={`UUID cuenta fila ${r.row}`} disabled={published} value={accounts[r.row] ?? ""} onChange={e => setAccounts({ ...accounts, [r.row]: e.target.value })} /></Table.Cell>

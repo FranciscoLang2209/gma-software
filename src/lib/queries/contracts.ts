@@ -1,6 +1,9 @@
+import { REFERENCE_PARAMETERS, parseReferenceFilters, type ReferenceFilters, type ReferenceOptions } from "./references.ts";
+
 export const GROUPS = ["account", "custodian", "team", "advisor", "client", "service"] as const;
 export type Group = (typeof GROUPS)[number];
 export type ReportParameters = {
+  reference_filters?: ReferenceFilters;
   month_from: string;
   month_to: string;
   custodian: string | null;
@@ -39,6 +42,8 @@ export type Metrics = {
   revenue_without_advisor_usd: string | null;
 };
 export type Report = {
+  reference_filters?: ReferenceFilters | Record<string, never>;
+  reference_options?: ReferenceOptions | null;
   reference_classification?: {
     snapshot_id: string; published_at: string; basis: "REF_snapshot_without_historical_validity";
     dimension: "client" | "advisor" | "team"; observed_accounts: number; matched_accounts: number;
@@ -72,7 +77,7 @@ export type Report = {
 };
 
 export function parseReportParameters(params: URLSearchParams): { parameters: ReportParameters; format: "json" | "csv" | "csv-completo" } {
-  const allowed = ["desde", "hasta", "custodio", "equipo", "comercial", "cliente", "cuenta", "servicio", "agrupar", "limite", "offset", "revision", "formato"];
+  const allowed = ["desde", "hasta", "custodio", "equipo", "comercial", "cliente", "cuenta", "servicio", "agrupar", "limite", "offset", "revision", "formato", ...REFERENCE_PARAMETERS];
   for (const key of params.keys()) {
     if (!allowed.includes(key) || params.getAll(key).length !== 1)
       throw new Error("Filtro desconocido o repetido.");
@@ -110,8 +115,10 @@ export function parseReportParameters(params: URLSearchParams): { parameters: Re
   const offset = integer("offset", 0, 0, 1000000);
   if (format === "csv-completo" && offset !== 0) throw new Error("La exportación completa comienza en la primera fila.");
   if (offset > 0 && revision === null) throw new Error("Las páginas siguientes requieren la revisión del primer resultado.");
+  const references = parseReferenceFilters(params);
   return {
     parameters: {
+      ...(references ? { reference_filters: references } : {}),
       month_from: from, month_to: to, custodian: uuid("custodio"), team: uuid("equipo"),
       advisor: uuid("comercial"), client: uuid("cliente"), account: uuid("cuenta"), service_filter: service,
       group_by: group as Group, page_size: integer("limite", 100, 1, 250), page_offset: offset, expected_revision: revision,
@@ -140,6 +147,9 @@ export function reportCsv(report: Report): string {
     row(["desde", report.period.from, "hasta", report.period.to, "cierre_AUM", report.period.aum_closing_month]),
     row(["revision", report.revision, "desglose", report.group_by, "offset", report.offset, "filas_totales", report.row_count, "filas_exportadas", report.rows.length]),
     row(["publicado_en", report.published_at, "moneda", "USD", "decimales", "Punto decimal, sin separador de miles; importar sin convertir a precisión reducida."]),
+    ...Object.entries(report.reference_filters ?? {}).map(([key, value]) => row(["filtro_REF", key, value,
+      value === "sin_referencia" ? "Sin referencia" : report.reference_options?.options[{ client: "ref_cliente", advisor: "ref_comercial", team: "ref_equipo" }[key] ?? ""]?.find(o => o.id === value)?.label,
+      "Foto publicada sin vigencia histórica"])),
     ...Object.entries(report.filters).map(([key, value]) => row(["filtro", filterNames[key] ?? key, value ?? "Todos", report.options?.[filterNames[key] ?? key]?.find((o) => o.id === value)?.label])),
     row(["definiciones", "AUM: foto exclusivamente del último mes seleccionado, sin sumar meses ni arrastrar saldos. Revenue: SUM(Payout broker) en USD del rango inclusivo; no es ganancia neta. Atribución al cierre de cada mes dentro de vigencias [desde,hasta)."]),
     row(["definiciones", "N/D: información ausente, nunca cero. Importes conocidos sujetos a cobertura; faltantes y sin asignar permanecen en los totales. Cliente y servicio usan la clasificación actual sin historia modelada."]),

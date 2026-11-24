@@ -1,19 +1,20 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { LIMITS, validateOptions } from "./contracts";
+import { IMPORT_VALIDATION_VERSION, LIMITS, requireCurrentValidation, validateOptions } from "./contracts";
 import { prepareHistorical, reportSummary } from "./historical";
 import { HISTORICAL_LIMITS, readBook, sha256 } from "./read";
 
 // Reutilizar la lectura sólo dentro de esta petición; sin cachear originales entre peticiones.
 export async function prepareHistoricalBlocks(supabase: SupabaseClient, id: string) {
   const { data: upload, error: uploadError } = await supabase.from("admin_import_uploads")
-    .select("options,storage_object_path,file_hash,file_size,file_name,status").eq("id", id).single();
+    .select("options,manifest,storage_object_path,file_hash,file_size,file_name,status").eq("id", id).single();
   if (uploadError || !upload || upload.status !== "preparing") throw new Error("Preparación histórica no disponible.");
   const { data: children, error: childrenError } = await supabase.from("admin_import_batches")
     .select("id,period,custodian_id,parsing_conventions,totals").eq("upload_id", id)
     .in("status", ["uploaded", "validating"]).order("period").order("custodian_id").limit(5);
   if (childrenError || !children) throw new Error("No se pudieron consultar los cursores.");
   if (!children.length) return { children: [], done: true };
+  requireCurrentValidation(upload.manifest);
   const storage = supabase.storage.from("app-papa-imports");
   const original = await storage.download(upload.storage_object_path);
   if (original.error || !original.data || original.data.size !== upload.file_size || original.data.size > LIMITS.bytes)
@@ -34,7 +35,7 @@ export async function prepareHistoricalBlocks(supabase: SupabaseClient, id: stri
     const options = validateOptions(child.parsing_conventions.options);
     const parentOptions = validateOptions({ ...upload.options, period: child.period, custodianId: child.custodian_id, custodianCode: options.custodianCode });
     if (JSON.stringify(options) !== JSON.stringify(parentOptions)) throw new Error("La configuración histórica está congelada.");
-    const configuration = { ...options, parserVersion: 2 };
+    const configuration = { ...options, parserVersion: 2, validationVersion: IMPORT_VALIDATION_VERSION };
     const existing = child.parsing_conventions.configuration;
     if (existing && Object.entries(configuration).some(([key, value]) => existing[key] !== value))
       throw new Error("La configuración histórica está congelada.");

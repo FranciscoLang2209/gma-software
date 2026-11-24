@@ -1,4 +1,4 @@
-import { LIMITS, UUID } from "@/lib/imports/contracts";
+import { ImportValidationVersionError, LIMITS, UUID } from "@/lib/imports/contracts";
 import { sha256 } from "@/lib/imports/read";
 import { boundedBody, importAccess, privateHeaders, reply } from "@/lib/imports/server";
 import { prepareHistoricalBlocks } from "@/lib/imports/historical-preparation";
@@ -32,7 +32,7 @@ async function manage(request: Request, params: Promise<{ id: string }>) {
   }
   if (operation === "prepare") {
     try { return reply(await prepareHistoricalBlocks(supabase, id)); }
-    catch (error) { return reply({ error: error instanceof Error ? error.message : "Preparación sin confirmar. Conservá esta carga y reintentá." }, 502); }
+    catch (error) { return reply({ error: error instanceof Error ? error.message : "Preparación sin confirmar. Conservá esta carga y reintentá." }, error instanceof ImportValidationVersionError ? 409 : 502); }
   }
   if (operation === "resolve") {
     const selected = input as { child_id?: string; evidence?: string; confirm_exact?: boolean };

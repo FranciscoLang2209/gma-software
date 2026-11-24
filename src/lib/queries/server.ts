@@ -6,6 +6,6 @@ export const REPORT_TIMEOUT_MESSAGE = "La consulta superó el tiempo disponible.
 
 // Siempre con el cliente SSR del usuario; la misma RPC decide filtros, vigencias y permisos.
 export async function queryReport(supabase: SupabaseClient, parameters: ReportParameters) {
-  const { data, error } = await supabase.rpc("aggregate_report", parameters);
+  const { data, error } = await supabase.rpc("aggregate_report_ref", { ...parameters, reference_filters: parameters.reference_filters ?? {} });
   return { data: data as Report | null, error };
 }

@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RoaParameters, RoaReport } from "./contracts.ts";
 
 export async function queryQuarterlyRoa(supabase: SupabaseClient, parameters: RoaParameters) {
-  const { data, error } = await supabase.rpc("quarterly_roa_report", parameters);
+  const { data, error } = await supabase.rpc("quarterly_roa_report_ref", { ...parameters, reference_filters: parameters.reference_filters ?? {} });
   return { data: data as RoaReport | null, error };
 }
 

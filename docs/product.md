@@ -1,5 +1,9 @@
 # App Papá — Producto
 
+> Actualización 2026-11-24: migraciones REF y Calidad de datos aplicadas en GMA
+> con autorización del dueño. Las menciones históricas de pendientes siguientes
+> corresponden al cierre local previo; ver [progress.md](progress.md).
+
 > ROA trimestral (2026-11-20): `/rentabilidad` implementada sobre el motor existente,
 > con selección explícita de trimestre, cobertura y cálculo provisional. El dueño
 > autorizó después la migración en GMA y push a main. No resuelve idoneidad económica
@@ -16,7 +20,11 @@
 > local revisada. Supera para este motor las restricciones de sólo planificación
 > y la fórmula ACT/365 anteriores; el helper aislado previo se conserva sin integrar.
 
-Estado: definición funcional vigente; circuito local sintético hasta etapa 9 y entorno de prueba remoto de etapa 10 con Supabase/Preview verificados parcialmente. Sin datos de negocio; SMTP/invitación y puesta en uso pendientes. Ver `operations.md`. Actualizado: 2026-11-15.
+Estado actualizado al 2026-11-24: hay datos históricos reales publicados en GMA y tasas ROA de Master; las verificaciones sintéticas anteriores no certifican su completitud económica. Auditoría de calidad Fase 1 completada en solo lectura; faltan clasificaciones, correspondencias y cobertura descritas en [data-quality-audit.md](data-quality-audit.md). Acceso y operación: ver `operations.md` y los registros posteriores de `progress.md`.
+
+> Fase 5 (local, 2026-11-24): filtros REF independientes y opciones financieras
+> completas implementados. Migración pendiente de aplicar antes de desplegar;
+> no cambia identidades ni métricas. Ver [data-quality-filters.md](data-quality-filters.md).
 
 ## Objetivo y usuarios
 
@@ -30,6 +38,7 @@ MVP propuesto: administrador y lector con lectura global de datos publicados; ad
 - **Análisis comercial:** desgloses y rankings por custodio, equipo, comercial y cliente; mantener visibles los datos sin asignación.
 - **Cuentas:** búsqueda, filtros, paginación y detalle con identificadores, series mensuales, Revenue y procedencia; respetar permisos sobre originales.
 - **Importaciones y correspondencias:** preparación, vista previa, validación, resolución explícita de cuentas, conciliación, publicación y corrección versionada.
+- **Calidad de datos (administrador, Fase 8 local):** relación técnica por fuente, pendientes, cobertura observada e historial auditado; revisión de originales privados y equivalencias acreditadas. Migración pendiente, ver [data-quality-panel.md](data-quality-panel.md).
 - **Configuración:** administración mínima de custodios, clientes, equipos, comerciales, membresías, asignaciones y servicios.
 - **Exportación simple:** resumen filtrado y tabla comercial con las mismas definiciones, filtros y permisos que la consulta.
 
@@ -112,6 +121,11 @@ Relaciona referencias de cuenta, cliente y referencias comerciales. `Grupo` es u
 Ejemplo sintético de aceptación ejecutado en etapa 6: cuenta A con AUM 100 y Revenue 2, 3 y 5 en un mes debe dar AUM 100 y Revenue 10. Con un segundo mes de AUM 120 y Revenue 12, el rango de ambos meses debe dar AUM 120 y Revenue 22. Verificado en PostgreSQL temporal; no acredita conciliación con archivos reales.
 
 ## Importación y correcciones
+
+Fase 7 local (2026-11-24): controles de encabezados/cuentas compartidos con REF y
+Master, tipos seguros de período/importe, avisos sin cambiar literales y versión de
+validación congelada. Ver [data-import-quality.md](data-import-quality.md).
+No reimporta historia ni despliega el cambio.
 
 Flujo previsto: fuente/hoja/período/alcance → preparación y validación → correspondencias → conciliación → publicación explícita. Preparados y fallidos no afectan cifras publicadas. Errores bloqueantes impiden publicación parcial en el MVP.
 

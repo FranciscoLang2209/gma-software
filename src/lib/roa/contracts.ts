@@ -1,8 +1,10 @@
+import { REFERENCE_PARAMETERS, parseReferenceFilters, type ReferenceFilters, type ReferenceOptions } from "../queries/references.ts";
 import { UUID } from "../imports/contracts.ts";
 import { GROUPS, type Group } from "../queries/contracts.ts";
 
 export const ROA_SERVICES = ["Advisory", "Brokerage", "sin_clasificar"] as const;
 export type RoaParameters = {
+  reference_filters?: ReferenceFilters;
   report_year: number; report_quarter: number;
   custodian: string | null; team: string | null; advisor: string | null;
   client: string | null; account: string | null; service_filter: string | null;
@@ -27,6 +29,8 @@ export type RoaMetrics = {
   missing_rate_account_months: number; obsolete_rate_account_months: number;
 };
 export type RoaReport = {
+  reference_filters?: ReferenceFilters | Record<string, never>;
+  reference_options?: ReferenceOptions | null;
   revision: string; formula_version: "quarterly_roa_v1";
   period: { year: number; quarter: number; from: string; to: string; closed: boolean };
   filters: Record<string, string | null>; attribution: "month_end";
@@ -47,7 +51,7 @@ export type RoaReport = {
 };
 
 export function parseRoaParameters(params: URLSearchParams): RoaParameters {
-  const allowed = ["anio", "trimestre", "custodio", "equipo", "comercial", "cliente", "cuenta", "servicio", "agrupar", "limite", "offset", "revision"];
+  const allowed = ["anio", "trimestre", "custodio", "equipo", "comercial", "cliente", "cuenta", "servicio", "agrupar", "limite", "offset", "revision", ...REFERENCE_PARAMETERS];
   for (const key of params.keys()) {
     if (!allowed.includes(key) || params.getAll(key).length !== 1) throw new Error("Filtro desconocido o repetido.");
   }
@@ -71,7 +75,9 @@ export function parseRoaParameters(params: URLSearchParams): RoaParameters {
   if (revision !== null && !/^[a-f\d]{32}$/.test(revision)) throw new Error("Revisión inválida.");
   const offset = integer("offset", 0, 1000000, 0);
   if (offset > 0 && revision === null) throw new Error("Las páginas siguientes requieren revisión.");
+  const references = parseReferenceFilters(params);
   return {
+    ...(references ? { reference_filters: references } : {}),
     report_year: integer("anio", 1900, 9998), report_quarter: integer("trimestre", 1, 4),
     custodian: uuid("custodio"), team: uuid("equipo"), advisor: uuid("comercial"), client: uuid("cliente"), account: uuid("cuenta"),
     service_filter: service, group_by: group as Group, page_size: integer("limite", 1, 250, 25), page_offset: offset, expected_revision: revision,

@@ -7,39 +7,32 @@ import {
   type PreparedRow,
   type Report,
   type SourceReview,
+  type RawRow,
+  type Cell,
   validateSourceReview,
 } from "./contracts.ts";
 import { decimal, sumDecimals } from "./decimal.ts";
 import { sha256 } from "./read.ts";
-const normalized = (s: string) =>
-  s.trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
+import { textSearchKey, importPeriod } from "../data/normalization.ts";
+import { identifierIssues } from "./identifiers.ts";
 const issue = (code: string, message: string, column?: string): Issue => ({
   code,
   message,
   ...(column ? { column } : {}),
 });
 
-export function prepare(book: Book, o: Options, sourceReview?: SourceReview): Report {
-  const review = validateSourceReview(sourceReview);
-  const sheet = book.sheets.find((s) => s.name === o.sheet);
-  if (!sheet) throw new Error("Elegí una hoja existente.");
-  const errors: Issue[] = [],
-    warnings: Issue[] = [
-      issue(
-        "identifier_history",
-        "Los ceros ya perdidos en un archivo de texto no pueden detectarse ni reconstruirse. Revisá los identificadores contra su fuente.",
-      ),
-    ];
-  const expected = HEADERS[o.source];
+export function prepareHeaders(row: RawRow | undefined, expected: readonly string[]): { headers: Report["headers"]; errors: Issue[] } {
+  const errors: Issue[] = [];
   const used = new Set<string>();
-  const headers = (sheet.rows[0]?.cells ?? []).map((cell, position) => {
+  const headers = (row?.cells ?? []).map((cell, position) => {
     const original = cell.value;
-    const key = normalized(original ?? "");
+    const key = textSearchKey(original ?? "");
     if (key && used.has(key))
       errors.push(
         issue(
           "header_collision",
           `Dos columnas se corresponden con el header ${original}.`,
+          String(position + 1),
         ),
       );
     if (key) used.add(key);
@@ -51,17 +44,33 @@ export function prepare(book: Book, o: Options, sourceReview?: SourceReview): Re
         issue(
           "header_type",
           "Los headers deben ser texto literal, sin fórmulas.",
+          String(position + 1),
         ),
       );
     return {
       position: position + 1,
       original,
-      canonical: expected.find((h) => normalized(h) === key) ?? null,
+      canonical: expected.find((h) => textSearchKey(h) === key) ?? null,
     };
   });
   for (const h of expected)
     if (!headers.some((x) => x.canonical === h))
       errors.push(issue("missing_column", `Falta la columna ${h}.`, h));
+  return { headers, errors: errors.map((e) => ({ ...e, row: row?.number ?? 1 })) };
+}
+
+export function periodFromCells(month: Cell, year: Cell) {
+  if ([month, year].some((c) => !["n", "s", "str", "inlineStr", "text"].includes(c.kind))) return null;
+  return importPeriod(month.value ?? "", year.value ?? "");
+}
+
+export function prepare(book: Book, o: Options, sourceReview?: SourceReview): Report {
+  const review = validateSourceReview(sourceReview);
+  const sheet = book.sheets.find((s) => s.name === o.sheet);
+  if (!sheet) throw new Error("Elegí una hoja existente.");
+  const expected = HEADERS[o.source];
+  const { headers, errors } = prepareHeaders(sheet.rows[0], expected);
+  const warnings: Issue[] = [issue("identifier_history", "Los ceros ya perdidos en un archivo de texto no pueden detectarse ni reconstruirse. Revisá los identificadores contra su fuente.")];
   const rows: PreparedRow[] = [];
   const values: string[] = [],
     fingerprints = new Set<string>(),
@@ -147,43 +156,21 @@ export function prepare(book: Book, o: Options, sourceReview?: SourceReview): Re
           ? ["ACC # Addepar", "ACCOUNT"]
           : ["ACCOUNT"];
     for (const h of identifiers) {
-      const cell = get(h);
-      if (!cell.value?.trim())
-        rowErrors.push(issue("empty_identifier", "Identificador vacío.", h));
-      else if (
-        cell.kind === "n" ||
-        !["s", "str", "inlineStr", "text"].includes(cell.kind) ||
-        /^[+-]?\d+(?:[.,]\d+)?[eE][+-]?\d+$/.test(cell.value) ||
-        cell.formula !== undefined
-      ) {
-        // El dueño acredita el literal; nunca se recuperan ceros ni dígitos perdidos.
-        const accepted = review?.numericIdentifiersAsWritten && cell.kind === "n" && cell.formula === undefined && /^(0|[1-9]\d{0,14})$/.test(cell.value);
-        (accepted ? rowWarnings : rowErrors).push(
-          issue(
-            accepted ? "numeric_identifier_reviewed" : "identifier_loss",
-            accepted ? "Número de cuenta aceptado expresamente tal como está escrito, dentro de su custodio. Original conservado; no se agregan ceros." : "Cuenta numérica, científica o calculada: puede haber perdido ceros o precisión. Recuperá el texto original; no se inventan ceros.",
-            h,
-          ),
-        );
-      }
+      const checked = identifierIssues(get(h), h, review?.numericIdentifiersAsWritten);
+      rowErrors.push(...checked.errors);
+      rowWarnings.push(...checked.warnings);
     }
     const account = text(identifiers[0]);
     row.cell_metadata.account = account;
     if (account?.trim()) accounts.add(account);
     if (o.source !== "fa") {
-      const month = text(o.source === "aum" ? "mes" : "MES")?.trim();
-      const year = text(o.source === "aum" ? "año" : "AÑO")?.trim();
-      if (
-        !month ||
-        !/^(0?[1-9]|1[0-2])$/.test(month) ||
-        !year ||
-        !/^\d{4}$/.test(year) ||
-        `${year}-${month.padStart(2, "0")}-01` !== o.period
-      )
+      const period = periodFromCells(get(o.source === "aum" ? "mes" : "MES"), get(o.source === "aum" ? "año" : "AÑO"));
+      if (period === null || period !== o.period)
         rowErrors.push(
           issue(
             "period_mismatch",
             "Mes/año ausente, inválido o diferente del período elegido.",
+            o.source === "aum" ? "mes / año" : "MES / AÑO",
           ),
         );
       const h = o.source === "aum" ? "Value (USD)" : "Payout broker";
@@ -214,7 +201,7 @@ export function prepare(book: Book, o: Options, sourceReview?: SourceReview): Re
     }
     if (
       o.source === "revenue" &&
-      normalized(text("CUSTODIO") ?? "") !== normalized(o.custodianCode)
+      textSearchKey(text("CUSTODIO") ?? "") !== textSearchKey(o.custodianCode)
     )
       rowErrors.push(
         issue(

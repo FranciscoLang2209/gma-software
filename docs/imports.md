@@ -1,5 +1,16 @@
 # Importaciones — preparación, correspondencias y publicación (etapas 4–5)
 
+## Calidad de datos — Fase 7 local, 2026-11-24
+
+Controles de cuenta y encabezados compartidos con REF/Master, avisos de espacios e
+invisibles sin alterar literales, tipos de períodos/importes y resúmenes agrupados.
+validationVersion=1 impide retomar bloques con reglas anteriores; conservar esos
+preparados y crear otros con los originales. No se revalida ni cambia historia
+publicada. Sin migración nueva, escritura remota o despliegue. Contrato y límites
+en [data-import-quality.md](data-import-quality.md); evidencia en
+[data-quality-validation.md](data-quality-validation.md). El parserVersion histórico
+sigue describiendo el formato del manifiesto, separado de esta versión de reglas.
+
 ## AUM + REF y preparación compartida — 2026-11-18
 
 La preparación histórica procesa hasta cinco alcances por petición, compartiendo

@@ -1,3 +1,4 @@
+import { clearReferenceFilters } from "@/lib/queries/references";
 import { Select } from "./ui/select";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -80,9 +81,9 @@ export async function AccountScreen({ search, id }: { search: Search; id?: strin
   catch (error) { return <section className="panel report-section" role="alert"><h2>Revisá los filtros</h2><p>{error instanceof Error ? error.message : "Filtros inválidos."}</p><Link href={id ? `/cuentas/${id}` : "/cuentas"}>Reiniciar consulta</Link></section>; }
   const { params, parameters: p } = parsed;
   const path = id ? `/cuentas/${id}` : "/cuentas";
-  const result = await Promise.resolve(id ? supabase.rpc("account_detail", { target_id: id, month_from: p.month_from, month_to: p.month_to,
-    team: p.team, advisor: p.advisor, custodian: p.custodian, client: p.client, service_filter: p.service_filter, page_size: p.page_size, page_offset: p.page_offset, expected_revision: p.expected_revision }) : supabase.rpc("account_directory", p)).catch(() => ({ data: null, error: { code: "" } }));
-  if (result.error) return <section className="panel report-section" role="alert"><h2>Consulta no disponible</h2><p>{result.error.code === "40001" ? "Los datos cambiaron. Reiniciá la consulta para ver una única revisión." : "No se pudo consultar la información. Reintentá más tarde."}</p><Link href={accountHref(path, params)}>Reiniciar consulta</Link></section>;
+  const result = await Promise.resolve(id ? supabase.rpc("account_detail_ref", { reference_filters: p.reference_filters ?? {}, target_id: id, month_from: p.month_from, month_to: p.month_to,
+    team: p.team, advisor: p.advisor, custodian: p.custodian, client: p.client, service_filter: p.service_filter, page_size: p.page_size, page_offset: p.page_offset, expected_revision: p.expected_revision }) : supabase.rpc("account_directory_ref", { ...p, reference_filters: p.reference_filters ?? {} })).catch(() => ({ data: null, error: { code: "" } }));
+  if (result.error) return <section className="panel report-section" role="alert"><h2>Consulta no disponible</h2><p>{result.error.code === "40001" ? "Los datos cambiaron. Reiniciá la consulta para ver una única revisión." : ["22023", "22P02"].includes(result.error.code) ? "Selección de filtros inválida. Reiniciá la selección REF." : "No se pudo consultar la información. Reintentá más tarde."}</p><Link href={accountHref(path, params, ["40001", "22023", "22P02"].includes(result.error.code) ? clearReferenceFilters() : {})}>Reiniciar consulta{["40001", "22023", "22P02"].includes(result.error.code) && " · limpiar selección REF"}</Link></section>;
   if (id && !result.data) notFound();
   const data = result.data as Directory | AccountDetail;
   return <>

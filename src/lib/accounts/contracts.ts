@@ -30,7 +30,7 @@ export function accountParameters(search: Search) {
   const parsed = screenParameters(filters, false);
   if (parsed.parameters.group_by !== "account") throw new Error("El directorio se agrupa por cuenta.");
   const { month_from, month_to, custodian, team, advisor, client, account, service_filter, page_size, page_offset, expected_revision } = parsed.parameters;
-  const parameters = { month_from, month_to, custodian, team, advisor, client, account, service_filter, page_size, page_offset, expected_revision };
+  const parameters = { ...(parsed.parameters.reference_filters ? { reference_filters: parsed.parameters.reference_filters } : {}), month_from, month_to, custodian, team, advisor, client, account, service_filter, page_size, page_offset, expected_revision };
   const searchText = buscar ?? "", sortBy = orden || "identifier";
   parsed.params.set("buscar", searchText); parsed.params.set("orden", sortBy);
   return { params: parsed.params, parameters: { ...parameters, search_text: searchText, sort_by: sortBy } };

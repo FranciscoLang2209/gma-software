@@ -26,9 +26,9 @@ type Inspection = {
   page: number;
 };
 const labels: Record<string, string> = { uploaded: "Original registrado", validating: "Validando", needs_resolution: "Pendiente de resolución", ready: "Lista para publicar", published: "Publicada y activa", superseded: "Reemplazada; historia conservada", failed: "Errores bloqueantes" };
-export function ImportResolution({ batches, custodians, accounts, advisors, aliases, initialId }: {
+export function ImportResolution({ batches, custodians, accounts, advisors, aliases, initialId, initialPage = 0 }: {
   batches: Batch[]; custodians: { id: string; code: string; name: string }[];
-  accounts: { id: string; custodian_id: string }[]; advisors: { id: string; name: string }[]; aliases: Alias[]; initialId: string;
+  accounts: { id: string; custodian_id: string }[]; advisors: { id: string; name: string }[]; aliases: Alias[]; initialId: string; initialPage?: number;
 }) {
   const [id, setId] = useState(initialId);
   const [detail, setDetail] = useState<Inspection | null>(null);
@@ -75,7 +75,7 @@ export function ImportResolution({ batches, custodians, accounts, advisors, alia
     <WorkflowSteps status={detail?.batch.status ?? "needs_resolution"} />
     <section className="panel import-panel">
       <div className="section-heading"><div><p className="eyebrow">IDENTIDAD Y CONCILIACIÓN</p><h2><GitCompareArrows size={18} aria-hidden="true" /> Elegir importación</h2></div><span className="semantic-badge">Solo administrador</span></div>
-      <form className="import-form" onSubmit={(e) => { e.preventDefault(); void run(() => reload(id, 0)); }}>
+      <form className="import-form" onSubmit={(e) => { e.preventDefault(); void run(() => reload(id, id === initialId ? initialPage : 0)); }}>
         <label>Importación reciente o UUID
           <input list="batch-options" value={id} onChange={(e) => { setId(e.target.value); setDetail(null); }} required disabled={busy} />
           <datalist id="batch-options">{batches.map((b) => <option key={b.id} value={b.id}>{b.source.toUpperCase()} · {b.period} · {code(b.custodian_id)} · {b.file_name_original}</option>)}</datalist>

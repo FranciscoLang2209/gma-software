@@ -5,6 +5,7 @@ import { parse } from "csv-parse/sync";
 import { historicalRows } from "../tests/fixtures/imports/historical.ts";
 import { HEADERS } from "../src/lib/imports/contracts.ts";
 import { xlsx } from "../tests/fixtures/imports/build.ts";
+import { verifyImportQuality } from "./test-import-quality-http.mjs";
 
 export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage, interruptHistory }) {
   const json = async (response, status = 200) => {
@@ -58,6 +59,8 @@ export async function verifyImportWorkflow({ request, appOrigin, sql, asRole, ad
   const report = async (extra = "") => json(await request(`/api/consultas?${range}${extra}`));
   const aum = (month, value, account = "000123") => ({ "Top Level Holding Account": "Cliente SINTETICO privado", "Holding Account Number": account, "Account Number bd_REV": `REV-${account}`, "Value (USD)": value, mes: month, año: "2028" });
   const revenue = (month, value, custodian = custodians[0], account = "000123") => ({ CUSTODIO: custodian.code, MES: month, AÑO: "2028", ACCOUNT: account, NAME: "SECRETO SINTETICO DE ARCHIVO", "Payout broker": value });
+
+  await verifyImportQuality({ request, appOrigin, sql, asRole, adminSub, custodian: custodians[0] });
 
   const fa = await upload("fa", "2028-01-01", custodians[0], [{ "ACC # Addepar": "000AD", ACCOUNT: "000123", "Owner Name payout": "Conservar SINTETICO", Broker: "Comercial SINTETICO integral", Grupo: "Referencia SINTETICA", "OLD Owner Name payout": "No acredita historia", Client: "Cliente SINTETICO privado" }]);
   const accounts = await resolve(fa, {}, "Comercial SINTETICO integral");
