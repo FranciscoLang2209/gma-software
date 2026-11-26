@@ -64,6 +64,7 @@ done
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/data-quality.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/data-quality-capacity.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quality-history-capacity.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/commission-dashboard-capacity.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quarterly-roa-capacity.test.sql
 bash scripts/test-commission-concurrency.sh "$pg_bin" "$test_root"
 bash scripts/test-roa-concurrency.sh "$pg_bin" "$test_root"

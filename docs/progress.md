@@ -1,5 +1,27 @@
 # App Papá — Progreso
 
+## Cierre del recorrido real y Comisiones — 2026-11-26
+
+El commit 3cad1bc se pusheó a main, con controles de secretos correctos, y quedó
+READY en Vercel. Recorrido real de lectura verificado: Resumen/Análisis/Cuentas y
+detalle enero–agosto 2026, ROA T2, Importaciones, Correspondencias, Configuración,
+Calidad y sus historiales/filtro AUM, y período 2030 sin registros. Sin escrituras
+financieras, cookies exportadas ni capturas de datos reales.
+
+El recorrido detectó timeout de Comisiones por recalcular todo por cada 500 filas.
+Aplicada 20261126002949_commission_dashboard_single_pass: una lectura acotada,
+misma fórmula, guard explícito de 10.000 y API pública de 500 sin cambios. Dashboard
+admin y helper privado usan el lector interno sin escrituras/Auth/login/bypass.
+Comisiones T2 2026 y cambio a T1 desde el formulario verificados en la sesión real.
+
+Último estado: diez migraciones nuevas, historial 42/42. Nueva prueba de 2.400
+movimientos y suite SQL completa correctas, incluido operador no SUPERUSER,
+concurrencia y restauración; recorrido HTTP/Chrome 14 vistas 1440/390 correcto.
+Runtime TypeScript sin cambios desde los 98 unitarios, lint/typecheck/build y
+Auth HTTP anteriores. Evidencia final en [QA final](data-quality-final-qa.md).
+Entrega de esta última corrección a main autorizada en la misma solicitud.
+Los pendientes de identidad/negocio y límites de QA siguientes permanecen.
+
 ## Fase 10 — QA final y migraciones autorizadas, 2026-11-25
 
 Completado QA de Fases 9–10: 98 unitarias, lint, typecheck, build, Auth HTTP,

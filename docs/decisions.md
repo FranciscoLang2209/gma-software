@@ -1,5 +1,16 @@
 # App Papá — Decisiones y pendientes
 
+## Comisiones en el QA final — 2026-11-26
+
+La lectura del dashboard se hace una vez y conserva el guard explícito de 10.000;
+la API pública paginada mantiene su máximo de 500. Un helper privado, inaccesible
+a authenticated/anon/service_role, reutiliza el reporte y sus guards. Sólo el
+dashboard administrativo y ese helper se incorporan al lector interno de Calidad;
+las escrituras y commission_report público/privado conservan sus permisos.
+No se elige un período silenciosamente ni se deduplican Revenue o inventan cobros.
+Migración 20261126002949 aplicada en GMA; historial final 42/42. El cierre anterior
+de nueve migraciones queda ampliado por este hallazgo real. Ver [QA final](data-quality-final-qa.md).
+
 ## Fase 10 — cierre autorizado, 2026-11-25
 
 El dueño autoriza QA final, migraciones necesarias y push a main. Aplicadas nueve

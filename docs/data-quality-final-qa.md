@@ -1,4 +1,4 @@
-# Calidad de datos — QA final, 2026-11-25
+# Calidad de datos — QA final, 2026-11-25/26
 
 Solicitud: completar Fase 10, aplicar migraciones necesarias y entregar a main.
 Alcance: código Fases 9–10 y esquema GMA; no incluye resolver identidades ambiguas,
@@ -62,10 +62,11 @@ cambia población, filtros ni resultado. Por sí solo fue insuficiente en la ses
 real. El ejecutor compartido expandía también políticas recursivas de proyección
 para lectores, aunque Calidad es exclusivamente administrativa. Se aisló esta RPC
 en app_papa_quality_reader: NOLOGIN/NOBYPASSRLS/NOINHERIT, sin membresías ni escritura,
-sin acceso a Auth ni CREATE. Sólo SELECT de las 17 tablas y cinco vistas requeridas y tres
+sin acceso a Auth ni CREATE. Sólo SELECT de las 17 tablas y cinco vistas requeridas y cuatro
 helpers puros/de acceso; cada tabla conserva RLS forzado y una política SELECT que
 exige admin habilitado con sesión. No se modifican las políticas o el ejecutor
-de informes financieros, ni los permisos de clientes. Equivalencias continúa
+de Resumen, Análisis, Cuentas y ROA, ni los permisos de clientes. El cierre de
+Comisiones incorpora su dashboard al mismo lector interno, como se describe abajo. Equivalencias continúa
 bajo el ejecutor original y sus controles de escritura. quality-executor.test.sql
 verifica rol, ACL, ausencia de escritura y rechazo de lector; la suite conserva
 pruebas de sesión revocada/ausente y anon/service_role. La inspección del plan usó una transacción forzada a rollback:
@@ -90,6 +91,40 @@ resultados repetidos y padres sin hijos. El helper existe sólo en PostgreSQL te
 El test de historia combina 38.400 hechos, 1.600 lotes vacíos y 50.000 eventos sintéticos, payload expandido >100 MB, y verifica
 fuente vacía, páginas, filtros, exactitud decimal, historia inmutable y stale tras
 nuevo evento. La historia real no se modifica.
+
+## Comisiones: hallazgo del recorrido desplegado, 2026-11-26
+
+El despliegue 3cad1bc quedó READY y se navegaron con la sesión admin existente
+Resumen/Análisis/Cuentas/detalle con enero–agosto 2026, ROA T2 2026, Importaciones,
+Correspondencias, Configuración y período vacío 2030. No se capturaron importes,
+identificadores reales o cookies. Comisiones detectó el último fallo real: un
+trimestre con más de 500 movimientos repetía el cálculo del conjunto entero por
+cada página interna. T2 2026 agotaba los ocho segundos disponibles.
+
+commission_dashboard_single_pass agrega una variante interna acotada del reporte
+existente y lee una vez hasta 10.001 filas para comprobar el guard de 10.000. El
+reporte público conserva intacta la paginación máxima de 500. No se truncan datos
+silenciosamente: un conjunto superior al guard exige acotar filtros; el formulario
+sigue disponible también en el error. Las fórmulas, clasificación, conciliación,
+proyección por base y exactitud decimal se conservan. La disponibilidad reutiliza
+el recuento del período cuando no hay filtros excluyentes; en otro caso se calcula
+independientemente antes de esos filtros.
+
+El dashboard y la variante privada quedan bajo el ejecutor administrativo de sólo
+lectura. La variante privada no tiene EXECUTE de authenticated/anon/service_role;
+usa los mismos guards de sesión/rol. commission_report y las operaciones de escritura
+conservan sus dueños y permisos anteriores. Se concede sólo el helper puro adicional
+commission_decimal al lector interno. No se añadieron permisos de tabla ni políticas.
+
+commission-dashboard-capacity.test.sql prueba 2.400 movimientos, completitud más
+allá de páginas de 500, faltantes NULL sin comisiones inventadas, disponibilidad,
+guard de 10.000, límite público de 500, conservación de Revenue y roles. Prueba
+focal: 133,950 ms local; la suite SQL completa posterior y HTTP/Chrome completos
+pasaron. Comisiones T2 2026 cargó en la sesión real; cambiar a T1 desde el formulario
+también cargó sin error. No se publicaron expectativas o cobros para probarlo.
+Tras las diez migraciones se repitieron las once huellas originales: todas idénticas
+al inicio, incluidos los originales de auditoría. Advisors conserva los mismos
+recuentos previos, sin hallazgos nuevos.
 
 ## Evidencia y límites
 
@@ -117,9 +152,9 @@ restaurable. Los hallazgos de negocio y de advisors se conservan explícitamente
 ## Migraciones y conservación remota
 
 Aplicadas exclusivamente a gma-software-prueba, conexión app papa. Las 32 anteriores
-no se reejecutaron; historial final 41/41 versiones coincidentes. MCP asignó las
+no se reejecutaron; historial final 42/42 versiones coincidentes. MCP asignó las
 versiones y se renombraron sólo los archivos nuevos conservando SQL idéntico;
-MD5 de los nueve archivos coincide con statements remotos.
+MD5 de los diez archivos coincide con statements remotos.
 
 | Versión | Cambio |
 | --- | --- |
@@ -132,6 +167,7 @@ MD5 de los nueve archivos coincide con statements remotos.
 | 20261126001116 | quality_admin_read_executor |
 | 20261126001358 | quality_history_scoped_revisions |
 | 20261126001636 | quality_audit_generated_context |
+| 20261126002949 | commission_dashboard_single_pass |
 
 Recuentos y huellas de once proyecciones originales idénticos antes/después:
 AUM, Revenue, identificadores, resoluciones, alcances, filas/puntero REF, tasas ROA,
@@ -161,8 +197,8 @@ El runner sólo admite orígenes 127.0.0.1 y el fixture sintético del arnés.
 
 Últimos logs: /tmp/gma-phase10-{unit,types,build}-final.log,
 /tmp/gma-phase10-lint-delivery.log, /tmp/gma-phase10-auth-http.log,
-/tmp/gma-phase10-db-complete.log y
-/tmp/gma-phase10-http-browser-complete-release.log. Chrome: 14 vistas × 1440/390,
+/tmp/gma-phase10-db-final-commissions.log y
+/tmp/gma-phase10-http-browser-final-commissions.log. Chrome: 14 vistas × 1440/390,
 sin errores JS/consola ni overflow global; preview/confirmación conserva las
 métricas publicadas. Reinspeccionadas capturas sintéticas de escritorio/móvil.
 El antecedente intermitente ROA no se reprodujo en el recorrido integral y sus
@@ -171,5 +207,6 @@ muestras API/SSR; no se atribuye una causa sin evidencia.
 QA remoto comprobó Calidad completa, fuente vacía, importaciones, auditoría completa
 y filtro AUM con sesión admin existente. Son lecturas puntuales exitosas; no se
 certifica SLA ni concurrencia remota. El recorrido final de pantallas financieras
-se verifica en el despliegue del commit entregado. Los resultados de commit/push y
+se ejecutó en el despliegue 3cad1bc, READY. Comisiones se volvió a verificar tras
+aplicar 20261126002949, con filtros reales T2/T1 desde el formulario. Los resultados de commit/push y
 READY se informan en la entrega; no se inicia ninguna fase de reparación automáticamente.

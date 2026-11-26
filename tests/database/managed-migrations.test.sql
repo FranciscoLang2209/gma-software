@@ -34,7 +34,7 @@ do $$ begin
 end $$;
 
 do $$ begin
- assert (select pg_get_userbyid(proowner)='app_papa_executor' from pg_proc where oid='app_private.commission_dashboard(jsonb)'::regprocedure);
+ assert (select pg_get_userbyid(proowner)='app_papa_quality_reader' from pg_proc where oid='app_private.commission_dashboard(jsonb)'::regprocedure);
  assert has_function_privilege('authenticated','public.commission_dashboard(jsonb)','EXECUTE');
  assert not has_function_privilege('anon','public.commission_dashboard(jsonb)','EXECUTE');
  assert not has_function_privilege('service_role','public.commission_dashboard(jsonb)','EXECUTE');

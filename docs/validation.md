@@ -1,5 +1,14 @@
 # Validación — evidencia local y pendientes
 
+## Comisiones y cierre de QA real — 2026-11-26
+
+Corregido timeout real de Comisiones: una lectura del conjunto, conserva límites
+explícitos y cálculos. Prueba de 2.400 movimientos, suite SQL completa y recorrido
+HTTP/Chrome completos correctos tras la migración. Comisiones T2 2026 y cambio a
+T1 desde formulario verificados con sesión admin real. También se completó el
+recorrido de las demás pantallas sobre 3cad1bc READY. Diez migraciones nuevas,
+42 versiones alineadas; ver [QA final](data-quality-final-qa.md).
+
 ## Fase 10 verificada — 2026-11-25
 
 98/98 unitarias, lint/typecheck/build, Auth HTTP, suite SQL completa (incluidas

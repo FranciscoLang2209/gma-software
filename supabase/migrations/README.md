@@ -1,5 +1,13 @@
 # Migraciones de App Papá
 
+Cierre 2026-11-26: aplicada también
+20261126002949_commission_dashboard_single_pass.sql; total 42/42 versiones.
+Dashboard de Comisiones lee una vez el conjunto bajo el lector admin interno;
+helper privado sin EXECUTE de clientes. Se conservan el límite explícito de 10.000,
+la API paginada de 500 y las operaciones de escritura. SQL/MD5 local-remoto
+idénticos; nueva prueba de 2.400 movimientos y suites completas correctas.
+No se modificó el SQL ni el historial de las nueve migraciones anteriores.
+
 Fase 10 aplicada en GMA, 2026-11-25: nueve migraciones nuevas desde
 20261125234324_report_availability_diagnostics hasta
 20261126001636_quality_audit_generated_context; historial local/remoto 41/41.

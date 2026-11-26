@@ -1,5 +1,11 @@
 # Plan de reconciliación — basado en Fase 1
 
+Cierre ampliado 2026-11-26: el recorrido real del despliegue 3cad1bc detectó y
+corrigió recálculo por páginas en Comisiones. Migración 20261126002949 aplicada;
+42 versiones alineadas. Trimestres T2/T1 verificados con sesión admin real y
+nueva prueba de 2.400 movimientos, junto con suites SQL/HTTP/Chrome completas.
+No cambia las cantidades o pendientes de negocio. Ver [QA final](data-quality-final-qa.md).
+
 Cierre Fase 10, 2026-11-25: QA integral completado y nueve migraciones necesarias
 aplicadas con autorización expresa del dueño; 41 versiones alineadas. Entrega a
 main autorizada. Evidencia y límites en [QA final](data-quality-final-qa.md).
