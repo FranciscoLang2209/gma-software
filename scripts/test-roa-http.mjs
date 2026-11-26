@@ -41,7 +41,7 @@ export async function verifyRoa({ request, appOrigin, sql }) {
   assert.ok((await (await request('/rentabilidad?anio=2026&trimestre=9')).text()).includes('Revisá los filtros'));
   assert.ok((await (await request(screen + '&revision=' + 'a'.repeat(32))).text()).includes('Los datos cambiaron'));
   const empty = await (await request('/rentabilidad?anio=1900&trimestre=1')).text();
-  assert.ok(empty.includes('Sin datos publicados para estos filtros'));
+  assert.ok(empty.includes('No existen registros publicados para este período'));
   assert.ok(empty.includes('sin filas en esta página'), 'página vacía no anuncia una primera fila inexistente');
   const open = await (await request('/rentabilidad?anio=9998&trimestre=4')).text();
   assert.ok(open.includes('Trimestre abierto'));

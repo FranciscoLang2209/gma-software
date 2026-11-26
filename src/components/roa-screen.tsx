@@ -9,6 +9,8 @@ import { FEE_STATUS, ROA_STATUS, roaYearQuarters, roaHref, roaScreenParameters, 
 import type { RoaParameters, RoaReport } from "@/lib/roa/contracts";
 import { dateLabel, exact, monthLabel, percent, usd, usdRounded, type Search } from "@/lib/queries/presentation";
 import { EmptyState } from "./empty-state";
+import { DataNoticeView } from "./availability-notice";
+import { roaNotice } from "@/lib/queries/availability";
 import { MetricCard } from "./metric-card";
 import { RoaClassification, RoaCoverageFacts, RoaFilters, RoaMetricTable } from "./roa-view";
 import { RoaChart } from "./roa-chart";
@@ -46,14 +48,14 @@ async function RoaEvolution({ parameters, report, params }: { parameters: RoaPar
     </Table.Row></Table.Header><Table.Body>{points.map(p => <Table.Row key={p.label}><Table.RowHeaderCell>{p.label}</Table.RowHeaderCell>
       <Table.Cell>{usd(p.total?.aum_average_usd)}</Table.Cell><Table.Cell>{usd(p.total?.revenue_quarter_usd)}</Table.Cell><Table.Cell>{exact(p.total?.roa_percent)}{p.total?.roa_percent != null ? " %" : ""}</Table.Cell>
       <Table.Cell>{exact(p.advisory?.advisory_fee_percent)}{p.advisory?.advisory_fee_percent != null ? " %" : ""}</Table.Cell><Table.Cell>{percent(p.advisory?.roa_percent)}</Table.Cell><Table.Cell>{exact(p.advisory?.advisory_difference_pp)}{p.advisory?.advisory_difference_pp != null ? " pp" : ""}</Table.Cell>
-      <Table.Cell>{p.error ?? (p.total ? `${ROA_STATUS[p.total.calculation_status]} · ${FEE_STATUS[p.advisory?.advisory_fee_status ?? "not_applicable"]}` : "Sin datos")}</Table.Cell>
+      <Table.Cell>{p.error ?? (p.total ? `${ROA_STATUS[p.total.calculation_status]} · ${FEE_STATUS[p.advisory?.advisory_fee_status ?? "not_applicable"]}` : "Consulta sin resultado")}</Table.Cell>
     </Table.Row>)}</Table.Body></Table.Root></div>
     <p>Leé el Fee junto al ROA Advisory de la misma población. Los importes faltantes permanecen N/D.</p></details>
   </section>;
 }
 
 export async function RoaScreen({ search }: { search: Search }) {
-  const { supabase } = await requireAccess();
+  const { supabase, role } = await requireAccess();
   let parsed;
   try { parsed = roaScreenParameters(search); }
   catch (error) { return <><RoaFilters params={new URLSearchParams()} /><section className="panel report-section" role="alert"><h2>Revisá los filtros</h2><p>{error instanceof Error ? error.message : "Filtros inválidos."}</p><Link href="/rentabilidad">Reiniciar consulta</Link></section></>; }
@@ -90,7 +92,7 @@ export async function RoaScreen({ search }: { search: Search }) {
       {!report.period.closed && <p>Trimestre abierto: el ROA y la clasificación permanecen N/D.</p>}
       <p>Bajo: menos de 0,40%; OK: 0,40%–0,60% inclusive; Muy bien: más de 0,60%. Categorías calculadas en servidor antes del redondeo.</p></details>
     </section>
-    {t.calculation_status === "no_data" && <EmptyState title="Sin datos publicados para estos filtros">Una ausencia no equivale a cero. Cambiá el trimestre o limpiá los filtros.</EmptyState>}
+    <DataNoticeView notice={roaNotice(report)} availability={report.availability} params={params} path="/rentabilidad" admin={role === "admin"} />
     <div className="metric-grid roa-metrics">
       <MetricCard title="AUM promedio" value={usdRounded(t.aum_average_usd)} period={period} note="Tres fotos / 3. N/D si falta una base requerida." primary />
       <MetricCard title="Revenue trimestral" value={usdRounded(t.revenue_quarter_usd)} period={period} note="SUM(Payout broker) · importe conocido, puede ser parcial." />

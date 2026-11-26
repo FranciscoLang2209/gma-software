@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { exact, exportHref, percent, ratePercent, reportHref, reportWarnings, screenParameters, usd, usdRounded } from "../src/lib/queries/presentation.ts";
+import { dateLabel, exact, exportHref, percent, ratePercent, reportHref, reportWarnings, screenParameters, usd, usdRounded } from "../src/lib/queries/presentation.ts";
 import type { Report } from "../src/lib/queries/contracts.ts";
 
 test("presentación: redondeo visual a dos decimales, negativos, cero y ausencia", () => {
@@ -86,4 +86,9 @@ test("tasas anuales se muestran como porcentaje sin ocultar el fee por redondear
   assert.equal(ratePercent("0.00251234"), "0,25 %");
   assert.equal(ratePercent("0"), "0 %");
   assert.equal(ratePercent(null), "N/D");
+});
+
+test("fecha: hora Buenos Aires estable en 24 horas para servidor y navegador", () => {
+  assert.equal(dateLabel("2026-11-25T20:00:00Z"), "25/11/26, 17:00");
+  assert.equal(dateLabel("2026-11-25T03:00:00Z"), "25/11/26, 00:00");
 });

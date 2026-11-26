@@ -1,5 +1,12 @@
 # Plan de reconciliación — basado en Fase 1
 
+Cierre Fase 10, 2026-11-25: QA integral completado y nueve migraciones necesarias
+aplicadas con autorización expresa del dueño; 41 versiones alineadas. Entrega a
+main autorizada. Evidencia y límites en [QA final](data-quality-final-qa.md).
+Este cierre supera el estado Fase 9 local y Fase 10 no iniciada registrado debajo.
+No habilita reparaciones automáticas: permanecen las revisiones de negocio y el
+manifiesto individual real pendiente.
+
 Actualización posterior 2026-11-24: las dos migraciones REF/panel ya se aplicaron
 en GMA por pedido expreso del dueño; entrega de Fases 1–8 a main autorizada.
 No se autorizaron reparaciones de identidad. Ver [progreso](progress.md).
@@ -20,8 +27,10 @@ certificación económica. Fase 7 local implementada y verificada: controles com
 de importación, avisos y versión congelada; ver [data-import-quality.md](data-import-quality.md).
 Fase 8 implementada y verificada localmente: [panel administrativo](data-quality-panel.md),
 cola e historial paginados y equivalencias exactas por lote con vista previa.
-No modifica hechos publicados ni ejecuta las reparaciones pendientes. Fases 9–10
-no iniciadas; migraciones REF y panel pendientes de aplicación remota.
+No modifica hechos publicados ni ejecuta las reparaciones pendientes.
+Fase 9 local implementada: [estados vacíos diferenciados](data-empty-states.md),
+con disponibilidad publicada y acciones por causa; su migración permanece local.
+Fase 10 no iniciada. REF y panel ya aplicados según la actualización anterior.
 Ninguna modificación de producción queda autorizada por este documento.
 
 ## Orden de trabajo propuesto
@@ -128,7 +137,7 @@ aislamiento de otros custodios. No automatizar limpieza de historia o originales
 
 ## Próximo prompt
 
-«Continuá con Fase 9: diferenciá los estados vacíos según período sin registros,
-filtros sin coincidencias, relaciones pendientes, cobertura incompleta, cálculo
-insuficiente y error de consulta, reutilizando diagnósticos existentes sin ocultar
-fallos ni imputar cero; sin modificar producción ni desplegar».
+«Revisemos las evidencias privadas de los dos pares ambiguos y las clasificaciones
+pendientes; prepará un dry-run individual con conservación de importes, sin aplicar
+reparaciones hasta revisar el manifiesto». QA técnico de Fase 10 completado; no se
+crea una nueva fase automática.

@@ -1,5 +1,18 @@
 # Calidad de datos — auditoría de Fase 1
 
+Actualización Fase 10, 2026-11-25: repetidos los seis bloques de lectura agregada,
+con 658 alcances y totales exactos de 44 meses conservados. Once proyecciones
+originales conservan recuentos/huellas; cero huérfanos o conflictos de custodio.
+Se corrigieron los timeouts reales del panel/historial/auditoría y se aplicaron
+nueve migraciones; 41 versiones alineadas. Ver [QA final](data-quality-final-qa.md).
+No se resolvieron los dos pares ambiguos ni los faltantes de negocio. Las notas
+locales/pending de fases anteriores se conservan como historia, no como estado actual.
+
+Continuidad Fase 9 (local, 2026-11-25): [estados vacíos por causa](data-empty-states.md)
+con recuentos publicados antes de filtros y explicaciones de cobertura/métricas.
+Sin consultas nuevas GMA ni reparaciones; la migración de disponibilidad sigue
+pendiente. Este cambio de interfaz no recalifica los hallazgos económicos siguientes.
+
 Fecha: 2026-11-24 (Buenos Aires). Base de código: `40e95f7`; Git inicialmente limpio.
 Destino verificado: conexión Supabase **app papa**, proyecto `gma-software-prueba`,
 ref `zwdqnrbqqszjrtkhyqnz`, PostgreSQL 17.11, ACTIVE_HEALTHY. Es la base GMA

@@ -62,9 +62,9 @@ export function usdRounded(value: string | null | undefined) {
 
 export function reportWarnings(report: Pick<Report, "total" | "coverage" | "period">) {
   const t = report.total, warnings: string[] = [];
-  if (!t.aum_rows) warnings.push(`Sin registros de AUM al cierre de ${monthLabel(report.period.to)}. N/D no significa saldo cero.`);
+  if (!t.aum_rows) warnings.push(`Sin registros de AUM al cierre de ${monthLabel(report.period.to)} con los filtros seleccionados. N/D no significa saldo cero.`);
   else if (t.aum_missing_accounts) warnings.push(`AUM al cierre: ${t.aum_missing_accounts} cuentas del universo observado sin foto mensual; el total incluye sólo los importes conocidos.`);
-  if (!t.revenue_rows) warnings.push("Sin registros de Revenue en el rango seleccionado. N/D no significa ingresos cero.");
+  if (!t.revenue_rows) warnings.push("Sin registros de Revenue en el rango con los filtros seleccionados. N/D no significa ingresos cero.");
   if (t.aum_rows > t.aum_values) warnings.push(`AUM: ${t.aum_rows - t.aum_values} registros sin importe; la suma conocida es parcial.`);
   if (t.revenue_rows > t.revenue_values) warnings.push(`Revenue: ${t.revenue_rows - t.revenue_values} registros sin Payout broker; la suma conocida es parcial.`);
   if (report.coverage.some((c) => !c.published)) warnings.push("Hay meses o custodios observados sin publicación de AUM o Revenue. Revisá la cobertura por fuente; la completitud esperada aún no está confirmada.");
@@ -77,7 +77,7 @@ export function monthLabel(value: string) {
   return `${value.slice(5, 7)}/${value.slice(0, 4)}`;
 }
 export function dateLabel(value: string) {
-  return new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", dateStyle: "short", timeStyle: "short", hourCycle: "h23" }).format(new Date(value));
 }
 
 // Solo redondeo de presentación; el porcentaje original se conserva en el reporte y la exportación.

@@ -42,6 +42,7 @@ export type Metrics = {
   revenue_without_advisor_usd: string | null;
 };
 export type Report = {
+  availability?: import("./availability.ts").Availability;
   reference_filters?: ReferenceFilters | Record<string, never>;
   reference_options?: ReferenceOptions | null;
   reference_classification?: {
@@ -157,6 +158,7 @@ export function reportCsv(report: Report): string {
     row(["definiciones", "Variaciones contra el mes calendario anterior con población comparable e importes presentes; no son rendimiento. Porcentaje N/D si falta base o es cero. Participaciones sobre el conjunto filtrado, N/D con negativos, importes ausentes o total no positivo."]),
     row(["definiciones", "Cobertura: universo observado del rango y mes anterior; cobertura esperada sin confirmar. Publicado no acredita completitud. Textos protegidos con apóstrofo; importes numéricos sin alterar."]),
     row(["cobertura", report.coverage_basis]),
+    ...(report.availability ? [row(["disponibilidad_periodo_antes_de_filtros", "filas_publicadas",report.availability.period_rows,"cuentas_sin_cliente",report.availability.accounts_without_client,"cuentas_sin_servicio",report.availability.unclassified_accounts,"Sólo publicados; no incluye preparación ni certifica cobertura esperada."])] : []),
     row(["tipo", "clave", "etiqueta", "AUM_USD", "Revenue_USD", "filas_AUM", "valores_AUM", "filas_Revenue", "valores_Revenue", "cuentas_con_AUM", "clientes_con_AUM", "cuentas_con_Revenue", "cuentas_sin_AUM", "cuenta_meses_sin_Revenue", "cuentas_AUM_sin_comercial", "cuentas_Revenue_sin_comercial", "cuentas_AUM_sin_cliente", "cuentas_AUM_sin_equipo", "cuentas_Revenue_sin_equipo", "AUM_sin_comercial_USD", "Revenue_sin_comercial_USD", "participacion_AUM_porcentaje", "participacion_Revenue_porcentaje"]),
     metricRow("total", report.total),
     ...report.rows.map((m) => metricRow("fila", m)),

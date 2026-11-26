@@ -12,6 +12,7 @@ export function ReportChart({ report, source, distribution = false }: { report: 
   const data = distribution ? report.rows.slice(0, 8).map((r) => ({ label: r.label, exact: r[field], value: r[field] == null ? null : Number(r[field]) }))
     : report.months.map((m) => ({ label: monthLabel(m.period), exact: m[field], value: m[field] == null ? null : Number(m[field]) }));
   const hasValues = data.some((d) => d.value !== null);
+  const recordCount=(distribution?report.rows:report.months).reduce((n,m)=>n+(m[source==="aum"?"aum_rows":"revenue_rows"]??0),0);
   const title = distribution ? `${label} por ${DIMENSIONS[report.group_by].toLowerCase()} · página visible` : `Evolución mensual de ${label}`;
   const color = source === "aum" ? "#204c6b" : "#557d8b";
   const axes = <><CartesianGrid stroke="#e8edf3" vertical={false} /><XAxis padding={{ left: 12, right: 30 }} dataKey="label" tick={{ fontSize: 12, fill: "#65758a" }} interval="preserveStartEnd" /><YAxis domain={([min, max]: readonly [number, number]) => [Math.min(min, 0), Math.max(max, 0)]} tick={{ fontSize: 12, fill: "#65758a" }} width={76} tickFormatter={(v: number) => new Intl.NumberFormat("es-AR", { notation: "compact", maximumFractionDigits: 1 }).format(v)} /><ReferenceLine y={0} stroke="#a5b3c2" /></>;
@@ -26,10 +27,10 @@ export function ReportChart({ report, source, distribution = false }: { report: 
       {hasValues ? <div className="report-chart" aria-hidden="true"><ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{ width: 600, height: 260 }}>
         {distribution || source === "revenue" ? <BarChart data={data} layout={distribution ? "vertical" : "horizontal"} accessibilityLayer={false}>{distribution ? distributionAxes : axes}{tooltip}<Bar dataKey="value" maxBarSize={36} radius={[3, 3, 0, 0]} fill={color} isAnimationActive={false} /></BarChart>
           : <LineChart data={data} accessibilityLayer={false}>{axes}{tooltip}<Line dataKey="value" stroke={color} strokeWidth={2} dot={{ r: 4 }} connectNulls={false} isAnimationActive={false} /></LineChart>}
-      </ResponsiveContainer></div> : <div className="chart-no-values"><ChartNoAxesCombined size={28} aria-hidden="true" /><strong>Sin valores publicados</strong><span>Los datos de este gráfico aparecerán al publicar la fuente correspondiente.</span></div>}
+      </ResponsiveContainer></div> : <div className="chart-no-values"><ChartNoAxesCombined size={28} aria-hidden="true" /><strong>{recordCount>0?"Hay registros sin importes para graficar":distribution&&report.row_count>0&&!report.rows.length?"Esta página no tiene grupos para graficar":`No hay registros de ${label} incluidos en este gráfico`}</strong><span>{recordCount>0?"Revisá los importes ausentes: se conservan como N/D.":"Revisá el período, la cobertura de esta fuente y los filtros. La tabla conserva los valores exactos y distingue los faltantes de cero."}</span></div>}
       <figcaption>USD · escalas independientes. N/D indica faltante, nunca cero. {distribution ? "Hasta 8 grupos de la página visible, en el orden del desglose (AUM o UUID según dimensión). No es un ranking por Revenue. Todos los grupos e importes exactos están en la tabla; el total filtrado incluye todas las páginas." : "La variación de AUM no representa rendimiento."}</figcaption>
     </figure>
-    {!distribution && data.some((d) => d.value === null) && <p>Meses faltantes: {data.filter((d) => d.value === null).map((d) => d.label).join(", ")} · N/D</p>}
+    {!distribution && data.some((d) => d.value === null) && <p>Meses sin importe incluido en el gráfico: {data.filter((d) => d.value === null).map((d) => d.label).join(", ")} · N/D</p>}
     {!distribution && <details><summary>Ver meses e importes de {label}</summary><ul className="month-values">{report.months.map((m) => <li key={m.period}><strong>{monthLabel(m.period)}</strong>: {usd(m[field])}{m[field] == null ? " · Faltante" : ""}</li>)}</ul></details>}
   </section>;
 }

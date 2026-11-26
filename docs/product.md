@@ -1,5 +1,14 @@
 # App Papá — Producto
 
+> Fase 10 (2026-11-25): QA final de estados vacíos, filtros, importaciones,
+> métricas y permisos; timeouts de Calidad y fechas corregidos. Nueve migraciones
+> aplicadas, originales conservados. Ver [QA final](data-quality-final-qa.md).
+> Las notas locales de fases anteriores se conservan como registro histórico.
+
+> Fase 9 (local, 2026-11-25): estados vacíos por causa, cobertura e impedimentos
+> de métricas explícitos. Diagnóstico publicado bajo los permisos existentes;
+> migración nueva pendiente. Ver [data-empty-states.md](data-empty-states.md).
+
 > Actualización 2026-11-24: migraciones REF y Calidad de datos aplicadas en GMA
 > con autorización del dueño. Las menciones históricas de pendientes siguientes
 > corresponden al cierre local previo; ver [progress.md](progress.md).

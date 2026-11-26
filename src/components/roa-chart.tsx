@@ -18,7 +18,7 @@ export function RoaChart({ points, source }: { points: RoaTrendPoint[]; source: 
         <Legend />{rate && <Line name="ROA Advisory · provisional" dataKey="advisory" stroke="#477e69" connectNulls={false} isAnimationActive={false} />}<Line name={rate ? "ROA total · provisional" : title} dataKey="value" stroke="#204c6b" strokeWidth={2} connectNulls={false} isAnimationActive={false} />
         {rate && <Line name="Fee anual Advisory" dataKey="fee" stroke="#86652c" strokeDasharray="5 3" connectNulls={false} isAnimationActive={false} />}
       </LineChart></ResponsiveContainer>
-    </div> : <p>Sin valores calculables para este gráfico.</p>}
+    </div> : <p>{points.some(p=>p.error)?"Hay consultas trimestrales que fallaron. Revisá los errores de cada trimestre; no se reemplazaron por ceros.":"No hay valores calculables con estos filtros. Revisá en la tabla si faltan registros, cobertura o una base válida; N/D no equivale a cero."}</p>}
     <p>{rate ? "Porcentaje anual · Fee y ROA Advisory corresponden al subconjunto Advisory." : "USD · escala independiente."} N/D interrumpe la serie. Valores exactos y estados en la tabla trimestral.</p>
   </section>;
 }

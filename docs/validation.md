@@ -1,5 +1,25 @@
 # Validación — evidencia local y pendientes
 
+## Fase 10 verificada — 2026-11-25
+
+98/98 unitarias, lint/typecheck/build, Auth HTTP, suite SQL completa (incluidas
+concurrencia/restauración) y HTTP + Chrome, 14 vistas 1440/390, correctos.
+QA y correcciones reales, matriz reproducible, roles, nueve migraciones aplicadas
+y comparación de once proyecciones originales en [QA final](data-quality-final-qa.md).
+41 versiones alineadas, ningún cambio de valores financieros/originales. Calidad,
+importaciones, auditoría completa y filtro AUM comprobados con sesión admin real.
+Sin sesión remota de lector, nuevas importaciones reales o reparación de publicados;
+completitud económica y backup no certificados. Los registros locales anteriores
+son históricos y no describen el estado de aplicación actual.
+
+## Estados vacíos de Fase 9, local — 2026-11-25
+
+97 unitarias, lint/typecheck/build, suite SQL y recorrido HTTP integral correctos.
+Pruebas/capturas locales por causa y rol, con datos sintéticos explícitos, en
+[data-quality-validation.md](data-quality-validation.md). Nueva migración de
+disponibilidad pendiente de aplicar; sin modificaciones de datos o esquema GMA,
+push o despliegue. No certifica sesión real ni completitud económica.
+
 ## Calidad de datos, migraciones aplicadas — 2026-11-24
 
 Fases 1–8 y aplicación remota autorizada de REF/panel documentadas en

@@ -7,6 +7,7 @@ import type { RoaMetrics, RoaReport } from "@/lib/roa/contracts";
 import { FEE_STATUS, ROA_FILTERS, ROA_STATUS, roaHref } from "@/lib/roa/presentation";
 import { DIMENSIONS, exact, percent, usd } from "@/lib/queries/presentation";
 import type { Report } from "@/lib/queries/contracts";
+import { feeReason } from "@/lib/queries/availability";
 
 export function RoaFilters({ params, options, references }: { params: URLSearchParams; options?: Report["options"]; references?: Report["reference_options"] }) {
   return <section className="panel report-filters roa-filters" aria-label="Filtros de rentabilidad">
@@ -51,7 +52,7 @@ export function RoaMetricTable({ rows, params, report }: { rows: RoaMetrics[]; p
       <Table.Cell className="money">{usd(m.aum_average_usd)}</Table.Cell><Table.Cell className="money">{usd(m.revenue_quarter_usd)}</Table.Cell>
       <Table.Cell>{m.roa_percent === null ? "N/D" : `${exact(m.roa_percent)} %`}<span className="roa-cell-note"><RoaClassification metric={m} /></span></Table.Cell>
       <Table.Cell>{percent(m.advisory_reference_percent)}{m.advisory_reference_percent != null && <small className="roa-cell-note">Vinculada al trimestre</small>}</Table.Cell>
-      <Table.Cell>{m.advisory_fee_percent === null ? "N/D" : `${exact(m.advisory_fee_percent)} %`}</Table.Cell><Table.Cell>{m.advisory_difference_pp === null ? "N/D" : `${exact(m.advisory_difference_pp)} pp`}</Table.Cell>
+      <Table.Cell>{m.advisory_fee_percent === null ? <>N/D<small className="roa-cell-note">{feeReason(m)}</small></> : `${exact(m.advisory_fee_percent)} %`}</Table.Cell><Table.Cell>{m.advisory_difference_pp === null ? "N/D" : `${exact(m.advisory_difference_pp)} pp`}</Table.Cell>
       <Table.Cell><details><summary aria-label={`Ver cobertura de ${m.label}`}>Ver cobertura</summary><RoaCoverageFacts metric={m} /><p>Tasas vinculadas: {m.advisory_rate_accounts ?? "N/D"} de {m.advisory_accounts ?? "N/D"} cuentas Advisory. La tasa individual se muestra sin requerir AUM; la ponderación requiere fotos completas.</p><p>{FEE_STATUS[m.advisory_fee_status]}. Sin tasa/obsoleta: {m.missing_rate_account_months}/{m.obsolete_rate_account_months} cuenta-meses.</p><p>Exposición Advisory: {usd(m.advisory_aum_month_sum_usd)}; con tasa: {usd(m.rate_covered_aum_month_sum_usd)}. ROA: {percent(m.roa_percent)} presentado; la clasificación proviene del cálculo exacto.</p></details></Table.Cell>
     </Table.Row>)}</Table.Body></Table.Root>
   </div>;

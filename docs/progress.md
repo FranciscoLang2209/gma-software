@@ -1,5 +1,68 @@
 # App Papá — Progreso
 
+## Fase 10 — QA final y migraciones autorizadas, 2026-11-25
+
+Completado QA de Fases 9–10: 98 unitarias, lint, typecheck, build, Auth HTTP,
+suite SQL con concurrencia/restauración y recorrido HTTP + Chrome de 14 vistas
+1440/390 correctos. Corregidos timeouts reales de Calidad/historial/auditoría y
+la diferencia AM/PM servidor–Chrome que causaba hidratación. Evidencia, matriz
+de casos, cambios y límites en [QA final](data-quality-final-qa.md).
+
+Nueve migraciones nuevas aplicadas sólo en GMA; historial 41/41 y SQL idéntico
+local/remoto. Contexto de auditoría generado sin cambiar sus originales; ejecutor
+interno de sólo lectura administrativa, con RLS y sin login/bypass/membresías.
+Once proyecciones originales y las 59.359 filas del diagnóstico conservan huellas.
+Los 658 alcances y totales exactos de 44 meses siguen conciliados. Se verificaron
+Calidad y sus dos historiales con sesión admin real, incluido filtro AUM.
+
+Entrega a main y despliegue autorizados por el dueño en esta solicitud. Los avisos
+históricos de Fase 9 local/pending siguientes quedan superados por este cierre.
+Persisten dos pares ambiguos, clasificación/cobertura económica, revisión de
+fuentes y backup real no certificado; no se repararon publicados ni se inventaron
+identidades o ceros. Lector remoto no suplantado; permisos comprobados localmente
+y ACL/RLS remotas verificadas. Advisors conserva avisos previos, sin nuevos.
+
+Próximo prompt, sólo si se decide avanzar: «Revisemos las evidencias privadas de
+los dos pares ambiguos y las clasificaciones pendientes; prepará un dry-run
+individual con conservación de importes, sin aplicar reparaciones hasta revisar
+el manifiesto». No queda otra fase técnica automática de este plan.
+
+## Calidad de datos: Fase 9 local — 2026-11-25
+
+Estados diferenciados en Resumen, Análisis, Cuentas/detalle, ROA, Comisiones y
+Calidad: período sin registros publicados, filtros sin coincidencias, relaciones
+pendientes, cobertura incompleta, importes/bases insuficientes y error de consulta.
+Separadas búsqueda sin cuentas y página fuera del resultado. Acciones limpian
+filtros conservando fechas; enlaces de revisión sólo para administrador.
+Gráficos y métricas explican N/D sin pedir reimportar por filtros ni imputar cero.
+Fee distingue conjunto mixto, falta de tasas/fotos, referencia obsoleta y trimestre
+abierto; comparación mensual explica base no comparable o base anterior cero.
+Contrato en [data-empty-states.md](data-empty-states.md).
+
+Migración local 20261125234324_report_availability_diagnostics.sql, creada por CLI
+3.1.0 y pendiente de aplicación. Helper privado invoker con recuentos de publicados
+del período antes de filtros; dentro del snapshot/revisión de las RPC REF existentes.
+Directorio/detalle heredan el diagnóstico. Comisiones conserva expectativas y
+Revenue por revisar usando su propio reporte; no inventa comisiones con tasas Master.
+Sin tablas/roles nuevos, cambio de fórmulas, dependencias o lockfile.
+
+97 unitarias, lint, typecheck completo, build y suite SQL completa correctos con
+Node 24.22.3/PostgreSQL 17.12 locales. Verificados recuentos independientes, NULL,
+finanzas conservadas, revisión obsoleta al cambiar el diagnóstico, proyección
+admin/lector idéntica y permisos privados. HTTP integral Next → PostgreSQL pasa,
+incluidos circuitos anteriores y nuevos vacíos, filtros, errores y roles. Evidencia
+y revisión final de navegador en [data-quality-validation.md](data-quality-validation.md).
+
+Sin consultas/escrituras de datos GMA, migración remota, publicación, push ni
+despliegue en esta fase. Las 32 migraciones anteriores siguen aplicadas; la nueva
+debe revisarse/aplicarse antes de desplegar Fase 9. Persisten pares ambiguos,
+cobertura económica y QA de sesión real. No se inicia Fase 10 automáticamente.
+
+Próximo prompt: «Continuá con Fase 10: realizá QA integral de normalización,
+reconciliación, filtros, métricas, importaciones, estados vacíos y permisos.
+Diferenciá pruebas sintéticas de evidencia real y verificá conservación de datos,
+reintentos y rollback; sin reparar publicados ni modificar producción o desplegar».
+
 ## Migraciones de calidad aplicadas y entrega a main autorizada — 2026-11-24
 
 Pedido del dueño: aplicar las migraciones y pushear el trabajo a main. Destino

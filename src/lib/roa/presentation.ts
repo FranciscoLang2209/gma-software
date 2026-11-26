@@ -4,7 +4,7 @@ import type { Search } from "../queries/presentation.ts";
 export const ROA_FILTERS = { custodio: "Custodio", equipo: "Equipo", comercial: "Comercial", cliente: "Cliente", cuenta: "Cuenta" } as const;
 export const ROA_STATUS: Record<RoaMetrics["calculation_status"], string> = {
   calculable: "Calculable · provisional", incomplete: "Cobertura incompleta", zero_aum: "AUM promedio cero",
-  negative_aum: "AUM promedio negativo", no_data: "Sin datos", open_quarter: "Trimestre abierto",
+  negative_aum: "AUM promedio negativo", no_data: "Sin registros incluidos", open_quarter: "Trimestre abierto",
 };
 export const FEE_STATUS: Record<RoaMetrics["advisory_fee_status"], string> = {
   not_applicable: "No aplicable a este conjunto", verified_reference: "Referencia publicada comparable",

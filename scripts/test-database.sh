@@ -25,9 +25,14 @@ for migration in supabase/migrations/*.sql; do
 done
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -d app_papa_managed_synthetic -f tests/database/managed-migrations.test.sql
 "$pg_bin/dropdb" app_papa_managed_synthetic
-"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -c 'drop role app_papa_executor; drop role app_papa_migration_test;'
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -c 'drop role app_papa_quality_reader; drop role app_papa_executor; drop role app_papa_migration_test;'
 echo 'OK: migraciones con operador CREATEROLE/BYPASSRLS sin SUPERUSER y permiso temporal retirado.'
 for migration in supabase/migrations/*.sql; do
+  if [[ "$migration" == *quality_records_set_diagnostics.sql ]]; then
+    "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q <<'SQL'
+do $$ begin execute 'create view app_private.quality_records_before with(security_invoker=true) as '||pg_get_viewdef('app_private.quality_records'::regclass,true); end $$;
+SQL
+  fi
   echo "Aplicando $migration"
   "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f "$migration"
 done
@@ -46,14 +51,19 @@ done
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/report-capacity.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/accounts.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/reference-filters.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/availability.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/commissions.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/master-import.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/master-rate-range.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/master-rate-capacity.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quarterly-roa.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/financial-metrics.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quality-records-equivalence.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -c 'drop view app_private.quality_records_before;'
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quality-executor.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/data-quality.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/data-quality-capacity.test.sql
+"$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quality-history-capacity.test.sql
 "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -q -f tests/database/quarterly-roa-capacity.test.sql
 bash scripts/test-commission-concurrency.sh "$pg_bin" "$test_root"
 bash scripts/test-roa-concurrency.sh "$pg_bin" "$test_root"

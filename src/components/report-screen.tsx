@@ -4,7 +4,8 @@ import { DatePicker } from "./ui/date-picker";
 import { requireAccess } from "@/lib/auth/access";
 import { loadScreen } from "@/lib/queries/screen";
 import { type Search, reportHref } from "@/lib/queries/presentation";
-import { EmptyState } from "./empty-state";
+import { DataNoticeView } from "./availability-notice";
+import { reportNotice } from "@/lib/queries/availability";
 import { ReferenceClassification } from "./reference-classification";
 import { CommercialOverview } from "./commercial-overview";
 import { CoverageDisclosure } from "./coverage-disclosure";
@@ -12,7 +13,7 @@ import { SummaryActions, SummaryOverview } from "./summary-overview";
 import { ReportDataStatus, ReportFilters, ReportTable } from "./report-view";
 
 export async function ReportScreen({ search, commercial = false }: { search: Search; commercial?: boolean }) {
-  const { supabase } = await requireAccess();
+  const { supabase, role } = await requireAccess();
   const result = await loadScreen(supabase, search, commercial);
   const path = commercial ? "/analisis-comercial" : "/";
   if ("error" in result) return <section className="panel report-section" role="alert">
@@ -26,12 +27,11 @@ export async function ReportScreen({ search, commercial = false }: { search: Sea
     <Link href={result.params ? reportHref(path, result.params, { ...((result.kind === "revision" || result.kind === "filters") ? clearReferenceFilters() : {}), ...(commercial ? { agrupar: result.params.get("agrupar") ?? "custodian" } : {}) }) : path}>Reiniciar consulta{(result.kind === "revision" || result.kind === "filters") && " · limpiar selección REF"}</Link>
   </section>;
   const { report, params, consultedAt } = result;
-  const t = report.total;
   return <>
     <SummaryActions report={report} params={params} commercial={commercial} />
     <ReportFilters params={params} report={report} path={path} commercial={commercial} compact />
+    <DataNoticeView notice={reportNotice(report)} availability={report.availability} params={params} path={path} admin={role === "admin"} />
     <ReportDataStatus report={report} params={params} path={path} />
-    {!t.aum_rows && !t.revenue_rows && <EmptyState title="Sin datos publicados para estos filtros">Los meses faltantes conservan N/D. Cambiá el rango o limpiá los filtros; una ausencia no equivale a cero.</EmptyState>}
     {!commercial && <SummaryOverview report={report} params={params} />}
     {commercial && <CommercialOverview report={report} params={params} />}
     <ReferenceClassification report={report} params={params} />

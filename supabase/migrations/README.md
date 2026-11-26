@@ -1,5 +1,21 @@
 # Migraciones de App Papá
 
+Fase 10 aplicada en GMA, 2026-11-25: nueve migraciones nuevas desde
+20261125234324_report_availability_diagnostics hasta
+20261126001636_quality_audit_generated_context; historial local/remoto 41/41.
+SQL idéntico a statements remotos; archivos nuevos alineados a versiones MCP.
+Las notas «local/pendiente» siguientes son históricas y quedan superadas.
+Detalles de cada migración, pruebas, RLS y conservación de originales en
+[QA final](../../docs/data-quality-final-qa.md). No se reejecutaron las 32 previas
+ni se modificaron sus registros.
+
+`20261125234324_report_availability_diagnostics.sql`: Fase 9 local, pendiente.
+Recuentos publicados antes de filtros dentro de las RPC REF existentes y su
+revisión; Comisiones conserva su universo separado. Sin cambios de hechos,
+fórmulas, roles o tablas; helper privado invoker y RLS existentes. Creada con
+CLI 3.1.0. Contrato en [data-empty-states.md](../../docs/data-empty-states.md).
+No se aplicó ni se desplegó esta fase.
+
 Actualización 2026-11-24: migraciones de Fases 5 y 8 aplicadas en GMA por pedido
 del dueño. Archivos alineados a las versiones asignadas por MCP:
 20261124202626 (antes 20261124172735) y 20261124202631 (antes 20261124193823),

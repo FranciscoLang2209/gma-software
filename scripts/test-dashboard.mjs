@@ -1,5 +1,7 @@
 import { verifyReferenceFilters } from "./test-reference-filters-http.mjs";
 import { verifyDataQuality } from "./test-data-quality-http.mjs";
+import { verifyAvailability } from "./test-availability-http.mjs";
+import { verifyQualityBrowser } from "./test-quality-browser.mjs";
 // Recorrido SINTÉTICO: PostgreSQL temporal real + Auth/HTTP simulado. Nunca conecta destinos remotos.
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -93,7 +95,7 @@ try {
     if (req.url === "/auth/v1/user") return res.end(JSON.stringify({ ...user, id: actor }));
     if (req.url === "/rest/v1/rpc/current_access") return res.end(sql(asRole(actor, "select to_json(public.current_access())")).trim());
     const url = new URL(req.url, "http://synthetic.invalid");
-    if (["/rest/v1/admin_custodians", "/rest/v1/admin_import_batches", "/rest/v1/admin_import_rows", "/rest/v1/admin_import_uploads"].includes(url.pathname)) {
+    if (["/rest/v1/admin_accounts", "/rest/v1/admin_commercial_advisors", "/rest/v1/admin_account_identifiers", "/rest/v1/admin_custodians", "/rest/v1/admin_import_batches", "/rest/v1/admin_import_rows", "/rest/v1/admin_import_uploads"].includes(url.pathname)) {
       const view = url.pathname.split("/").at(-1);
       const id = url.searchParams.get("id")?.replace(/^eq\./, "") ?? "";
       const batch = url.searchParams.get("batch_id")?.replace(/^eq\./, "") ?? "";
@@ -105,6 +107,7 @@ try {
       try {
         const where = `( :'id'='' or t.id::text=:'id')${view === "admin_import_rows" ? " and (:'batch'='' or t.batch_id::text=:'batch')" : ""}`
           + (view === "admin_import_batches" ? " and (:'upload'='' or t.upload_id::text=:'upload')" : "")
+          + (view === "admin_account_identifiers" ? " and t.resolution_status='resolved'" : "")
           + (statuses ? " and t.status in(select jsonb_array_elements_text(:'statuses'::jsonb))" : "");
         const order = view === "admin_import_batches" && url.searchParams.get("order") ? " order by t.period,t.custodian_id,t.id" : "";
         const result = JSON.parse(sql(asRole(actor, `select coalesce(jsonb_agg(to_jsonb(t)),'[]') from (select * from public.${view} t where ${where}${order}${limit ? ` limit ${limit}` : ""})t`), ["-v", `id=${id}`, "-v", `batch=${batch}`, "-v", `upload=${upload}`, "-v", `statuses=${JSON.stringify(statuses)}`]).trim());
@@ -209,7 +212,7 @@ try {
   const unassignedHtml = await (await request(`/?${base}`)).text();
   assert.ok(unassignedHtml.includes("Clasificación de clientes pendiente") && unassignedHtml.includes("Sin asignación comercial"));
   assert.ok(unassignedHtml.includes("registros sin Payout broker"));
-  const empty = await (await request(`/?desde=2027-01&hasta=2027-02`)).text(); assert.ok(empty.includes("Sin datos publicados para estos filtros"));
+  const empty = await (await request(`/?desde=2027-01&hasta=2027-02`)).text(); assert.ok(empty.includes("No existen registros publicados para este período"));
   const invalid = await (await request(`/?desde=2026-13`)).text(); assert.ok(invalid.includes("Revisá los filtros"));
   const accounts = await (await request(`/cuentas?${base}&buscar=0001`)).text();
   assert.ok(accounts.includes("0001") && accounts.includes("USD 22") && accounts.includes("Cambió durante el rango"));
@@ -233,14 +236,15 @@ try {
   assert.equal((await postModel({ operation: "save", review_id: preview.review_id })).status, 200);
   const savedCatalog = await (await request("/configuracion?entidad=teams", true)).text();
   assert.ok(savedCatalog.includes("Equipo SINTETICO nuevo") && savedCatalog.includes("Alta SINTETICA de integración"));
-  if (!process.argv.includes("--reference-only") && !process.argv.includes("--quality-only")) {
+  await verifyAvailability({request});
+  if (!process.argv.includes("--reference-only") && !process.argv.includes("--quality-only") && !process.argv.includes("--availability-only")) {
   await verifyCommissions({ request, appOrigin, sql });
   await verifyRoa({ request, appOrigin, sql });
   await verifyImportWorkflow({ request, appOrigin, sql, asRole, adminSub, sub, interruptStorage: () => { failNextStorageWrite = true; }, interruptHistory: () => { failNextHistoryRegistration = true; } });
   await verifyMaster({ request, appOrigin, sql, interruptStorage: () => { failNextStorageWrite = true; } });
   }
   await verifyReferenceFilters({ request, sql, appOrigin, cookies: cookieValues });
-  if (!process.argv.includes("--reference-only")) await verifyDataQuality({ request,sql,asRole,adminSub,appOrigin });
+  if (!process.argv.includes("--reference-only") && !process.argv.includes("--availability-only")) await verifyDataQuality({ request,sql,asRole,adminSub,appOrigin });
   reportTimeout = true;
   assert.equal((await request('/api/calidad-datos', true)).status, 504);
   const qualityTimeout = await (await request('/calidad-datos', true)).text();
@@ -264,6 +268,10 @@ try {
   const failed = await (await request(`/?${base}`)).text(); assert.ok(failed.includes("Consulta no disponible") && !failed.includes("SYNTHETIC PRIVATE FAILURE")); failure = false;
   assert.ok(!appOutput.includes("Error:"), appOutput);
   console.log("OK: Next → RPC → PostgreSQL → HTML/API; 120/22, global119/38, ranking, cuentas, ceros, historia, originales por rol, administración revisada, auditoría, faltantes y errores.");
+  if(process.argv.includes("--browser")) {
+    await verifyQualityBrowser({appOrigin,readerLogin:backendUrl+"/fixture-login",adminLogin:backendUrl+"/fixture-login-admin"});
+    assert.ok(!appOutput.includes("Error:"), appOutput);
+  }
   if (process.argv.includes("--serve")) {
     // Este control pertenece solo al arnés local, nunca a la aplicación ni al build.
     gate = createServer((req, res) => { failure = req.url === "/error"; res.end(failure ? "SINTÉTICO: error activado" : "SINTÉTICO: consulta restaurada"); });

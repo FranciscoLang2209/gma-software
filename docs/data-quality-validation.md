@@ -1,5 +1,89 @@
 # Calidad de datos — evidencia de validación
 
+## Fase 10 verificada — 2026-11-25
+
+98/98 unitarias, lint/typecheck/build, Auth HTTP, suite SQL completa (incluidas
+concurrencia/restauración) y HTTP + Chrome, 14 vistas 1440/390, correctos.
+QA y correcciones reales, matriz reproducible, roles, nueve migraciones aplicadas
+y comparación de once proyecciones originales en [QA final](data-quality-final-qa.md).
+41 versiones alineadas, ningún cambio de valores financieros/originales. Calidad,
+importaciones, auditoría completa y filtro AUM comprobados con sesión admin real.
+Sin sesión remota de lector, nuevas importaciones reales o reparación de publicados;
+completitud económica y backup no certificados. Los registros locales anteriores
+son históricos y no describen el estado de aplicación actual.
+
+## Fase 9 — estados vacíos, 2026-11-25
+
+### Unitarias, lint, typecheck y build
+
+97/97 unitarias (5 nuevas), lint, typecheck completo y build correctos con Node
+24.22.3 Homebrew. Cubren período/filtros/diagnóstico no disponible, un cierre sin
+foto pero con AUM anterior dentro del rango, cero/negativos/null, estados ROA y
+motivos Fee, incluyendo conjunto mixto y trimestre abierto. No se calculan importes
+en el código de mensajes. Logs /tmp/gma-phase9-{unit,lint,types}-final.log y
+/tmp/gma-phase9-build-final.log. Sin paquetes o lockfile nuevos.
+
+### PostgreSQL local
+
+Suite npm run test:db completa correcta en PostgreSQL 17.12, incluidas migraciones
+con operador no SUPERUSER, RLS/roles, concurrencia, capacidad y restauración.
+Nueva migración local 20261125234324_report_availability_diagnostics y test
+availability.test.sql: recuento independiente por período, filtro sin coincidencias,
+clasificación pendiente, período sin registros, búsqueda, ROA, Comisiones, NULL,
+proyección publicada idéntica admin/lector y EXECUTE privado denegado.
+Cambiar una clasificación antes del filtro invalida la revisión del diagnóstico;
+se conserva igualdad de totales con aggregate_report anterior. Los tests de
+capacidad existentes ejercitan opciones REF de 800 cuentas, ROA y Calidad;
+no se declara un SLA remoto del diagnóstico nuevo.
+Log /tmp/gma-phase9-db-final.log; clúster temporal eliminado.
+
+### HTTP y navegador
+
+Next → PostgreSQL local real con Auth/PostgREST/Storage sintéticos explícitos.
+Recorrido integral correcto: agrega test-availability-http.mjs y conserva Comisiones,
+ROA, importaciones/historia de 36 meses, reintentos/correcciones, REF, Master y panel
+Calidad. Comprueba API/SSR, período sin registros, filtros excluyentes, relaciones
+pendientes publicadas, importes nulos, cierre faltante, búsqueda sin cuentas,
+página fuera del resultado y ausencia de enlaces privados al lector. Timeout 504,
+fallo 503 y revisión obsoleta mantienen el error, sin mostrar payloads privados.
+Log /tmp/gma-phase9-http-final.log. Tras ajustes finales de explicaciones de Fee y
+comparación mensual: build/checks y recorrido focalizado Calidad/REF/errores
+correctos en /tmp/gma-phase9-http-final-ui.log.
+
+Chrome headless admin/lector: 1440/390 px, seis vistas (filtros, período, importe,
+ROA, búsqueda de cuentas y Comisiones), limpieza conserva fechas. El primer
+recorrido focal también seleccionó custodio y servicio desde el formulario para
+producir una combinación sin coincidencias. Sin errores JS/consola ni desborde
+global; capturas finales de viewport inspeccionadas en
+/tmp/gma-phase9-{filters,period,amounts,roa,accounts,commissions}-{1440,390}.png.
+Driver /tmp/gma-phase9-browser.mjs y log /tmp/gma-phase9-browser-final.log.
+No se ejecutó axe ni auditoría manual completa de accesibilidad. Se aplicó la
+revisión React: servidor para diagnósticos/rol, sin efectos o dependencias nuevas,
+estilos y controles existentes, acciones accesibles con teclado.
+
+### Incidencias y límites
+
+El primer fixture TypeScript omitía campos de un mes: corregido antes de repetir
+build. La primera aserción Comisiones esperaba cero eventos, pero su reporte
+incluye Revenue sin clasificar por revisar; se corrigieron contrato/prueba/texto
+conservando ese universo, sin modificar cálculos. Un fixture de cobertura también
+tenía importes nulos: se separó la cuenta completa para probar cierre faltante,
+manteniendo prioridad del aviso de información insuficiente cuando coexisten.
+
+Una repetición focal no encontró el aviso ROA esperado. No se capturó su HTML en
+ese intento; se añadió captura al fallar. El recorrido completo previo y la
+repetición posterior pasaron, igual que Chrome. Ocho consultas adicionales API y
+ocho respuestas SSR ROA fueron consistentes, sin reproducir el fallo. No hay causa confirmada: conservar
+este antecedente para QA de Fase 10, sin atribuirlo a datos o servicios remotos.
+Las primeras capturas fullPage móviles repetían franjas del viewport; se sustituyeron
+por capturas de la vista real sobre el aviso, junto con comprobación DOM de overflow.
+
+Sin consultas/escrituras de datos GMA, aplicación remota, push, despliegue, cambios
+financieros ni reparación real. Migración nueva pendiente de revisar/aplicar antes
+de desplegar esta fase. Sesión remota, volumen real y cobertura económica siguen
+sin certificarse. No es el QA integral de Fase 10. Contrato en
+[data-empty-states.md](data-empty-states.md).
+
 ## Aplicación remota autorizada — 2026-11-24
 
 Aplicadas sólo en gma-software-prueba, conexión app papa:

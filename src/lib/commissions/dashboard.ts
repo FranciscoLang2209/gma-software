@@ -23,7 +23,7 @@ export type CommissionGroup = {
   balance: string | null; expected: string | null; comparable_expected: string | null;
   actual: string | null; variance: string | null; variance_percentage: string | null;
 };
-export type CommissionDashboard = { rows: CommissionRow[]; summary: CommissionGroup[]; owners: CommissionGroup[]; quarters: CommissionGroup[]; row_count: number; revision: string };
+export type CommissionDashboard = { availability?:{period_rows:number}; rows: CommissionRow[]; summary: CommissionGroup[]; owners: CommissionGroup[]; quarters: CommissionGroup[]; row_count: number; revision: string };
 
 export function commissionFilters(params: Record<string, string | string[] | undefined>) {
   return Object.fromEntries(COMMISSION_FILTERS.flatMap(key => typeof params[key] === "string" && params[key] !== "" ? [[key, params[key]]] : []));

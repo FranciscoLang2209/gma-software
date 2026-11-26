@@ -10,9 +10,11 @@ import { CoverageDisclosure } from "./coverage-disclosure";
 import { Table } from "@radix-ui/themes";
 import { requireAccess } from "@/lib/auth/access";
 import { accountParameters, accountHref, type Directory, type AccountDetail, type Provenance } from "@/lib/accounts/contracts";
-import { monthLabel, usd, dateLabel, type Search } from "@/lib/queries/presentation";
+import { monthLabel, usd, dateLabel, ENTITY_FILTERS, type Search } from "@/lib/queries/presentation";
+import { reportNotice } from "@/lib/queries/availability";
+import { DataNoticeView } from "./availability-notice";
 import { UUID } from "@/lib/imports/contracts";
-import { ReportFilters } from "./report-view";
+import { ReportFilters, ReportDataStatus } from "./report-view";
 
 function ProvenanceLink({ item, admin }: { item: Provenance; admin: boolean }) {
   return <span>Importación {admin ? <Link href={`/correspondencias?lote=${item.batch_id}`}>{item.batch_id}</Link> : item.batch_id} · v{item.version} · fila {item.import_row_id}<br />Publicada {dateLabel(item.published_at)} · por {item.published_by}</span>;
@@ -36,7 +38,7 @@ function DirectoryTable({ data, params }: { data: Directory; params: URLSearchPa
           <Table.Cell className="money">{usd(a.aum_usd)}<br /><small>{a.aum_values}/{a.aum_rows} importes</small></Table.Cell><Table.Cell className="money">{usd(a.revenue_usd)}<br /><small>{a.revenue_values}/{a.revenue_rows} importes</small></Table.Cell>
         </Table.Row>)}</Table.Body></Table.Root>
     </div>
-    {!data.rows.length && <p role="status">Sin cuentas para estos filtros. La ausencia de una fuente no equivale a cero.</p>}
+    {!data.rows.length && <div role="status"><h3>{data.row_count>0?"Esta página no tiene cuentas":"No hay cuentas que cumplan esta búsqueda y sus filtros"}</h3><p>{data.row_count>0?"El directorio tiene resultados en otras páginas.":"La búsqueda se aplica al catálogo de cuentas, incluso si no tienen cifras en el período. Este resultado no confirma ausencia de AUM o Revenue."}</p><Link href={accountHref("/cuentas",params,data.row_count>0?{}:{buscar:null,...Object.fromEntries(Object.keys(ENTITY_FILTERS).map(key=>[key,null])),...clearReferenceFilters()})}>{data.row_count>0?"Volver a la primera página":"Quitar búsqueda y filtros conservando el período"}</Link></div>}
     <Pagination count={data.row_count} offset={data.offset} limit={data.limit} label="Paginación de cuentas" href={(offset) => accountHref("/cuentas", params, { offset: String(offset), revision: data.revision })} />
     <p>Identificador principal: primera referencia explícita por fuente Revenue, AUM, FA o manual; desempate por namespace, texto e ID. No infiere equivalencias. Orden seleccionado con desempate por UUID.</p>
   </section>;
@@ -70,6 +72,7 @@ function DetailView({ data, params, admin }: { data: AccountDetail; params: URLS
     <section className="panel report-section" id="registros"><h2>Registros de Revenue publicados</h2><p>Registros del rango y de los filtros históricos. Repeticiones legítimas conservadas. {admin ? "Las columnas originales se muestran como texto inerte." : "Los originales y archivos fuente están reservados al administrador."} Las correcciones financieras se realizan por importación versionada.</p>
       <div className="table-scroll" role="region" aria-label="Registros Revenue paginados" tabIndex={0}><Table.Root className="data-table"><Table.Header><Table.Row>{["Mes", "Payout broker · USD", "Procedencia", ...(admin ? ["Originales"] : [])].map((h) => <Table.ColumnHeaderCell key={h}>{h}</Table.ColumnHeaderCell>)}</Table.Row></Table.Header><Table.Body>{data.records.map((r) => <Table.Row key={r.id}><Table.RowHeaderCell>{monthLabel(r.period)}</Table.RowHeaderCell><Table.Cell align="right" className="money">{usd(r.amount_usd)}</Table.Cell><Table.Cell><ProvenanceLink item={r} admin={admin} /></Table.Cell>{admin && <Table.Cell>{r.original && <details><summary>Ver columnas originales</summary><p>{r.original.file} · {r.original.sheet} · fila {r.original.row}</p><dl>{Object.entries(r.original.cells).map(([key, value]) => <div key={key}><dt>{r.original?.headers?.find((h) => String(h.position) === key)?.original ?? key}</dt><dd>{value ?? "N/D"}</dd></div>)}</dl></details>}</Table.Cell>}</Table.Row>)}</Table.Body></Table.Root></div>
       <Pagination count={data.record_count} offset={data.offset} limit={data.limit} label="Paginación de registros Revenue" href={(offset) => accountHref(`/cuentas/${a.id}`, params, { offset: String(offset), revision: data.revision }) + "#registros"} />
+      {!data.records.length&&<p role="status">{data.record_count>0?"Esta página no tiene registros Revenue; volvé a la primera página.":data.months.some(m=>m.revenue_rows>0)?"Los registros Revenue de la cuenta quedan fuera de los filtros seleccionados.":"No hay registros Revenue publicados para esta cuenta en el período. Su importe permanece N/D."} <Link href={accountHref(`/cuentas/${a.id}`,params)+"#registros"}>Primera página con estos filtros</Link></p>}
     </section>
   </>;
 }
@@ -83,7 +86,7 @@ export async function AccountScreen({ search, id }: { search: Search; id?: strin
   const path = id ? `/cuentas/${id}` : "/cuentas";
   const result = await Promise.resolve(id ? supabase.rpc("account_detail_ref", { reference_filters: p.reference_filters ?? {}, target_id: id, month_from: p.month_from, month_to: p.month_to,
     team: p.team, advisor: p.advisor, custodian: p.custodian, client: p.client, service_filter: p.service_filter, page_size: p.page_size, page_offset: p.page_offset, expected_revision: p.expected_revision }) : supabase.rpc("account_directory_ref", { ...p, reference_filters: p.reference_filters ?? {} })).catch(() => ({ data: null, error: { code: "" } }));
-  if (result.error) return <section className="panel report-section" role="alert"><h2>Consulta no disponible</h2><p>{result.error.code === "40001" ? "Los datos cambiaron. Reiniciá la consulta para ver una única revisión." : ["22023", "22P02"].includes(result.error.code) ? "Selección de filtros inválida. Reiniciá la selección REF." : "No se pudo consultar la información. Reintentá más tarde."}</p><Link href={accountHref(path, params, ["40001", "22023", "22P02"].includes(result.error.code) ? clearReferenceFilters() : {})}>Reiniciar consulta{["40001", "22023", "22P02"].includes(result.error.code) && " · limpiar selección REF"}</Link></section>;
+  if (result.error || (!id&&!result.data)) {const code=result.error?.code??"";return <section className="panel report-section" role="alert"><h2>Consulta no disponible</h2><p>{code === "40001" ? "Los datos cambiaron. Reiniciá la consulta para ver una única revisión." : ["22023", "22P02"].includes(code) ? "Selección de filtros inválida. Reiniciá la selección REF." : code==="57014"?"La consulta superó el tiempo disponible. Acotá el período o un custodio y reintentá.":"Ocurrió un error al consultar la base de datos. Reintentá más tarde; no se confirma ausencia de registros."}</p><Link href={accountHref(path, params, ["40001", "22023", "22P02"].includes(code) ? clearReferenceFilters() : {})}>Reiniciar consulta{["40001", "22023", "22P02"].includes(code) && " · limpiar selección REF"}</Link></section>;}
   if (id && !result.data) notFound();
   const data = result.data as Directory | AccountDetail;
   return <>
@@ -92,6 +95,8 @@ export async function AccountScreen({ search, id }: { search: Search; id?: strin
       {!id && <><label>Buscar identificador o cliente<input type="search" name="buscar" maxLength={200} defaultValue={params.get("buscar") ?? ""} placeholder="Ej.: 000123" /></label><label>Orden<Select name="orden" defaultValue={params.get("orden") ?? "identifier"}><option value="identifier">Identificador · ascendente</option><option value="client">Cliente · ascendente</option><option value="aum">AUM · descendente</option><option value="revenue">Revenue · descendente</option></Select></label></>}
       <label>Filas por página<Select name="limite" defaultValue={String(p.page_size)}>{[...new Set([10, 25, 50, 100, p.page_size])].sort((a,b) => a-b).map((n) => <option key={n}>{n}</option>)}</Select></label>
     </ReportFilters>
+    <DataNoticeView notice={reportNotice(data.report)} availability={data.report.availability} params={params} path={id?"/cuentas":path} admin={role==="admin"} />
+    <ReportDataStatus report={data.report} params={params} path={path}/>
     {id ? <DetailView data={data as AccountDetail} params={params} admin={role === "admin"} /> : <DirectoryTable data={data as Directory} params={params} />}
     <ReferenceClassification report={data.report} params={params} />
     {!id && <p className="section-note">La cobertura siguiente usa el rango y los filtros de entidades. La búsqueda textual acota el directorio; orden y paginación organizan sus filas.</p>}

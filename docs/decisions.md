@@ -1,5 +1,38 @@
 # App Papá — Decisiones y pendientes
 
+## Fase 10 — cierre autorizado, 2026-11-25
+
+El dueño autoriza QA final, migraciones necesarias y push a main. Aplicadas nueve
+migraciones en GMA; 41 versiones alineadas sin reescribir historial remoto.
+Se aísla únicamente quality_report en un ejecutor interno de sólo lectura con
+RLS administrativa; los informes financieros y la escritura de equivalencias
+conservan su ejecutor. No se amplían accesos de usuarios ni se elevan timeouts.
+Auditoría genera contexto mínimo para filtros, conservando before/after íntegros.
+Las revisiones de historiales siguen sus propias filas; la cola conserva su
+revisión completa. Fechas fijan 24 horas en Buenos Aires para evitar hidratación.
+No cambia fórmulas ni reglas de identidad. Ver [QA final](data-quality-final-qa.md).
+Los pendientes y restricciones históricos de Fase 9 quedan superados sólo en
+migración/entrega; las decisiones de identidad y cobertura siguen pendientes.
+
+## Calidad de datos: Fase 9 local — 2026-11-25
+
+La disponibilidad financiera se verifica con hechos publicados del período antes
+de todos los filtros, sin mirar preparación ni originales. Se informa como contexto
+global del rango, no como cifra del conjunto filtrado. Admin y lector reciben la
+misma proyección publicada. Cuentas sin cliente/servicio pueden explicar exclusión,
+pero sus conteos no acreditan la causa de una fila ni resuelven una relación.
+
+El diagnóstico forma parte del mismo snapshot y revisión de las RPC existentes.
+Comisiones conserva su universo propio, incluido Revenue sin clasificar por revisar;
+no se confunde con eventos de comisión ya acreditados ni con tasas ROA. Los vacíos
+de catálogo, búsqueda, página y métricas son conceptos separados.
+
+N/D nunca se convierte en cero; un diagnóstico no disponible se muestra sin
+verificar, sin declarar ausencia. Errores/timeout/revisión conservan su estado de
+fallo. No se cambia fórmula de comparación, ROA o Fee. Migración nueva sólo local,
+sin push/despliegue ni reparación real autorizada por esta continuación.
+Ver [data-empty-states.md](data-empty-states.md). Próxima fase: 10.
+
 ## Aplicación y publicación autorizadas — 2026-11-24
 
 El dueño autoriza aplicar las dos migraciones pendientes y pushear a main las

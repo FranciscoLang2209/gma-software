@@ -29,6 +29,7 @@ export type RoaMetrics = {
   missing_rate_account_months: number; obsolete_rate_account_months: number;
 };
 export type RoaReport = {
+  availability?: import("../queries/availability.ts").Availability;
   reference_filters?: ReferenceFilters | Record<string, never>;
   reference_options?: ReferenceOptions | null;
   revision: string; formula_version: "quarterly_roa_v1";

@@ -116,5 +116,6 @@ export function ReportTable({ report, params, path }: { report: Report; params: 
       <span>{report.row_count ? `${Math.min(report.offset + 1, report.row_count)}–${Math.min(report.offset + report.limit, report.row_count)} de ${report.row_count}` : "Sin filas de desglose"}</span>
       {report.offset + report.limit < report.row_count && <Link href={page(report.offset + report.limit) + "#detalle"}>Siguiente</Link>}
     </nav>
+    {!report.rows.length && report.row_count > 0 && <p role="status">Esta página no tiene filas. <Link href={reportHref(path,params,{agrupar:report.group_by})}>Volver a la primera página con los mismos filtros</Link>.</p>}
   </section>;
 }

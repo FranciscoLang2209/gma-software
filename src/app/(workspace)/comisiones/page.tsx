@@ -8,6 +8,7 @@ import { CommissionChart } from "@/components/commission-chart";
 import { CommissionReview } from "@/components/commission-review";
 import { BASES, COMMISSION_STATUSES, VIEWS, commissionFilters, commissionHref, commissionSort, type CommissionDashboard, type CommissionRow, type CommissionGroup } from "@/lib/commissions/dashboard";
 import { usd, percent, ratePercent, type Search } from "@/lib/queries/presentation";
+import { emptyNotice } from "@/lib/queries/availability";
 export const metadata: Metadata = { title: "Comisiones" };
 const fields = [["year", "Año"], ["quarter", "Trimestre (1–4)"], ["broker", "Broker"], ["owner", "Owner Name payout"], ["account_id", "Cuenta (UUID)"], ["fee_type", "Fee type"], ["min_absolute_variance", "Diferencia absoluta mínima USD"], ["min_absolute_percentage", "Diferencia porcentual mínima"]] as const;
 const money = new Set(["balance", "expected", "comparable_expected", "actual", "variance", "expected_quarterly", "actual_received"]);
@@ -29,7 +30,7 @@ export default async function CommissionsPage({ searchParams }: { searchParams: 
   const { supabase } = await requireAccess(true);
   const params = await searchParams;
   const view = typeof params.vista === "string" && Object.hasOwn(VIEWS, params.vista) ? params.vista : "resumen";
-  const { data, error } = await supabase.rpc("commission_dashboard", { filters: commissionFilters(params) });
+  const { data, error } = await Promise.resolve(supabase.rpc("commission_dashboard", { filters: commissionFilters(params) })).catch(()=>({data:null,error:{code:""}}));
   const report = data as CommissionDashboard | null;
   const ownersWithVariance = new Set(report?.rows.filter(row => row.status === "variance").map(row => JSON.stringify([row.owner, row.basis])));
   const columns = view === "representantes" ? groups : view === "cuentas" ? accounts : view === "conciliaciones" ? queue : quarterly;
@@ -56,12 +57,12 @@ export default async function CommissionsPage({ searchParams }: { searchParams: 
       <label>Estado<select name="status" defaultValue={typeof params.status === "string" ? params.status : ""}><option value="">Todos</option>{Object.entries(COMMISSION_STATUSES).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       <div className="report-actions"><Button type="submit">Aplicar filtros</Button><Link href={`/comisiones?vista=${view}`}>Limpiar</Link></div>
     </form><p>Filtros conservados en URL. Owner es la referencia literal del archivo, no una identidad inferida por nombre.</p></section>
-    {error || !report ? <section className="panel report-section" role="alert"><h2>No se pudo consultar Comisiones</h2><p>Revisá los filtros y la disponibilidad del motor. Si el conjunto supera 10.000 registros, acotá año o trimestre.</p><Link href={href({})}>Reintentar consulta</Link></section> : <>
+    {error || !report ? <section className="panel report-section" role="alert"><h2>No se pudo consultar Comisiones</h2><p>{["22023","22P02"].includes(error?.code??"")?"Los filtros no son válidos; revisá año, trimestre y demás selecciones.":error?.code==="57014"?"La consulta superó el tiempo disponible. Acotá año o trimestre y reintentá.":error?.code==="54000"?"El conjunto supera 10.000 registros. Acotá año o trimestre.":"Ocurrió un error al consultar la base de datos. Reintentá; este error no confirma ausencia de comisiones."}</p><Link href={href({})}>Reintentar consulta</Link></section> : <>
       <section className="panel report-section"><div className="report-actions"><strong>Cobertura: {report.row_count} registros observados</strong><Link href={commissionHref(params, { formato: "csv", revision: report.revision, vista: view }, "/api/comisiones")}>Exportar {VIEWS[view].toLowerCase()} · CSV completo</Link></div>
         <p>Datos revisados de administración. Ausente = N/D. Cobertura referida al conjunto filtrado; no acredita que se recibió toda la información esperada. Sin cobro comparable no implica deuda.</p>
         <p>Esperado: Balance × tasa anual / 4, únicamente con evidencia aplicable al trimestre. Real y diferencias: sólo pares conciliados. Bruto, neto y payout se mantienen separados.</p>
       </section>
-      {report.row_count === 0 && <section className="panel report-section"><h2>Sin registros para estos filtros</h2><p>Los importes aparecerán al registrar snapshots revisados y clasificar Revenue. No se generan expectativas para períodos sin evidencia.</p><Link href="/importaciones">Ir a importaciones</Link></section>}
+      {report.row_count === 0 && <section className="panel report-section" role="status"><h2>{emptyNotice(report.availability,"Comisiones y movimientos por revisar").title}</h2><p>{emptyNotice(report.availability,"Comisiones y movimientos por revisar").message}</p><p>El circuito incluye expectativas y filas Revenue para revisar. Una tasa Master o un movimiento sin clasificar no acredita una comisión calculada ni un cobro conciliado; no se generan expectativas sin evidencia.</p><Link href={href(Object.fromEntries(["broker","owner","account_id","fee_type","basis","status","min_absolute_variance","min_absolute_percentage","page","detalle"].map(key=>[key,null])))}>Quitar filtros y conservar año/trimestre</Link></section>}
       {view === "resumen" && report.summary.map(group => <section key={group.basis ?? "unclassified"} aria-label={BASES[group.basis ?? ""] ?? "Sin base clasificada"}>
         <h2>{BASES[group.basis ?? ""] ?? "Sin base clasificada"}</h2>
         <div className="metric-grid commission-metrics">
